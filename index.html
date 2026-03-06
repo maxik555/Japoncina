@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="windows-1250">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japonsky Trening - Ultimate</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6; --primary-hover: #2563eb; --success: #10b981; --danger: #ef4444;
+            --dark-bg: #0f172a; --container-bg: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --input-bg: #0f172a; --border: #334155; --card-back: #1e3a8a;
+        }
+
+        body { font-family: 'Nunito', 'Segoe UI', sans-serif; background: var(--dark-bg); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 90vh; }
+        .container { background: var(--container-bg); width: 100%; max-width: 600px; padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: var(--text-main); margin-top: 0; font-size: 26px; margin-bottom: 25px; }
+        
+        .nav { display: flex; background: var(--dark-bg); border-radius: 16px; padding: 5px; margin-bottom: 25px; overflow-x: auto; }
+        .btn-nav { flex: 1; min-width: 100px; background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.3s ease; white-space: nowrap; }
+        .btn-nav:hover { color: var(--text-main); }
+        .btn-nav.active { background: var(--container-bg); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        button.action-btn { background: var(--primary); color: #ffffff; border: none; padding: 14px 20px; border-radius: 16px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: transform 0.1s, background 0.2s, box-shadow 0.2s; box-shadow: 0 4px 0px #1e40af; margin-bottom: 10px; }
+        button.action-btn:hover { background: var(--primary-hover); transform: translateY(2px); box-shadow: 0 2px 0px #1e40af; }
+        button.action-btn:active { transform: translateY(4px); box-shadow: none; }
+        
+        button.server-btn { background: var(--success); color: #ffffff; border: none; padding: 16px 20px; border-radius: 16px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s; box-shadow: 0 4px 0px #047857; margin-bottom: 20px; }
+        button.server-btn:hover { background: #059669; transform: translateY(2px); box-shadow: 0 2px 0px #047857; }
+        button.server-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        button.danger-btn { background: transparent; color: var(--danger); border: 2px solid var(--danger); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        button.danger-btn:hover { background: rgba(239, 68, 68, 0.1); }
+        button.small-btn { background: var(--dark-bg); color: var(--text-muted); border: 1px solid var(--border); padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-right: 5px;}
+        button.small-btn:hover { color: var(--text-main); border-color: var(--text-muted); }
+
+        .tab { display: none; animation: fadeIn 0.3s; }
+        .tab.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        input[type="text"], input[type="number"], select { width: 100%; padding: 22px; border: 2px solid var(--border); border-radius: 16px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none; transition: border-color 0.2s; background: var(--input-bg); color: var(--text-main); }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+        
+        .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; max-height: 160px; overflow-y: auto; background: var(--dark-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .lesson-checkbox { color: var(--text-main); font-size: 22px; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;}
+        .lesson-checkbox input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); margin: 0;}
+        .lesson-grid::-webkit-scrollbar { width: 6px; }
+        .lesson-grid::-webkit-scrollbar-track { background: var(--dark-bg); }
+        .lesson-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .flashcard-container { perspective: 1000px; width: 100%; height: 260px; margin-bottom: 25px; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 2px solid var(--border); }
+        .card-front { background: var(--dark-bg); color: var(--text-main); }
+        .card-back { background: var(--card-back); color: var(--text-main); transform: rotateY(180deg); border-color: var(--primary); }
+        
+        .fc-word { font-size: 40px; font-weight: 800; text-align: center; margin-bottom: 15px; }
+        .fc-romaji { font-size: 30px; font-weight: bold; color: #93c5fd; margin-bottom: 10px; }
+        .fc-kana { font-size: 30px; margin-bottom: 5px; }
+        .fc-kanji { font-size: 35px; color: #60a5fa; }
+        .fc-hint { font-size: 30px; color: var(--text-muted); position: absolute; bottom: 15px; }
+        .fc-lesson { font-size: 12px; color: var(--text-muted); position: absolute; top: 15px; }
+        
+        .fc-controls { display: flex; gap: 10px; }
+        .fc-btn { flex: 1; background: var(--dark-bg); color: var(--text-main); border: 2px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .fc-btn:hover { background: var(--border); }
+
+        .dict-table-wrapper { max-height: 350px; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); }
+        .dict-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 22px; }
+        .dict-table th { background: var(--dark-bg); color: var(--primary); padding: 12px; position: sticky; top: 0; z-index: 10; font-weight: bold; border-bottom: 2px solid var(--border); }
+        .dict-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+        .dict-table tr:hover { background: rgba(255,255,255,0.02); }
+        .dict-kana-kanji { color: var(--text-muted); font-size: 12px; }
+
+        .progress-container { width: 100%; height: 10px; background: var(--dark-bg); border-radius: 10px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--border); }
+        .progress-bar { height: 100%; background: var(--success); width: 0%; border-radius: 10px; transition: width 0.4s ease; }
+        .word-display { font-size: 32px; font-weight: 800; margin-bottom: 25px; color: var(--text-main); }
+        .feedback { font-size: 18px; font-weight: bold; min-height: 28px; margin-bottom: 15px; border-radius: 12px; padding: 10px; display: none; }
+        .correct { color: #34d399; background: rgba(5, 150, 105, 0.2); display: block; }
+        .incorrect { color: #f87171; background: rgba(220, 38, 38, 0.2); display: block; }
+        .results { background: var(--dark-bg); padding: 20px; border-radius: 16px; margin-top: 15px; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
+        .error-item { border-bottom: 1px solid var(--border); padding: 10px 0; text-align: left; }
+        .error-item:last-child { border-bottom: none; }
+        .slovak-err { font-weight: bold; font-size: 16px; margin-bottom: 4px; color: var(--text-main); }
+        
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>&#127884; Japonsky Trening - Ultimate</h1>
+    
+    <div class="nav">
+        <button id="btnTabDict" class="btn-nav active" onclick="switchTab('dict')">&#128214; Slovnik</button>
+        <button id="btnTabCards" class="btn-nav" onclick="switchTab('cards')">&#127183; Karticky</button>
+        <button id="btnTabTest" class="btn-nav" onclick="switchTab('test')">&#128221; Test</button>
+        <button id="btnTabDb" class="btn-nav" onclick="switchTab('db')">&#128190; Excel</button>
+    </div>
+
+    <div id="tab-dict" class="tab active text-center">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="dictSearch" placeholder="Hladat slovensky alebo romaji..." onkeyup="renderDictionary()">
+            <select id="dictLessonFilter" style="width: 140px;" onchange="renderDictionary()">
+                <option value="all">Vsetky lekcie</option>
+            </select>
+        </div>
+        <div class="dict-table-wrapper">
+            <table class="dict-table">
+                <thead><tr><th>Lekcia</th><th>Slovensky</th><th>Japonsky (Romaji / Znaky)</th></tr></thead>
+                <tbody id="dictTableBody"><tr><td colspan="3" class="text-center">Stiahni databazu v založke Excel.</td></tr></tbody>
+            </table>
+        </div>
+        <div id="dictCount" style="margin-top: 10px; font-size: 12px; color: var(--text-muted);"></div>
+    </div>
+
+    <div id="tab-cards" class="tab text-center">
+        <div id="cardsSetupArea">
+            <div style="text-align: left; margin-bottom: 5px;">
+                <label style="font-weight:bold; color:var(--text-muted);">Z ktorych lekcii chces robit karticky?</label>
+                <div style="float: right;">
+                    <button class="small-btn" onclick="toggleAllLessons('cards-cb', true)">Vsetky</button>
+                    <button class="small-btn" onclick="toggleAllLessons('cards-cb', false)">Ziadne</button>
+                </div>
+            </div>
+            <div id="lessonCheckboxesCards" class="lesson-grid"></div>
+            <button class="action-btn" onclick="startFlashcards()">&#9654;&#65039; Spustit ucenie</button>
+        </div>
+
+        <div id="cardsPlayArea" class="hidden">
+            <div style="margin-bottom: 10px; color: var(--text-muted); font-size: 14px;" id="cardsProgress">Karta 1 / 20</div>
+            
+            <div class="flashcard-container" onclick="flipCard()">
+                <div class="flashcard" id="flashcardElement">
+                    <div class="card-face card-front">
+                        <div class="fc-lesson" id="fcFrontLesson">Lekcia 0</div>
+                        <div class="fc-word" id="fcFrontWord">Slovo</div>
+                        <div class="fc-hint">Klikni na kartu pre otocenie</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="fc-lesson" id="fcBackLesson">Lekcia 0</div>
+                        <div class="fc-romaji" id="fcBackRomaji">romaji</div>
+                        <div class="fc-kana" id="fcBackKana">hiragana</div>
+                        <div class="fc-kanji" id="fcBackKanji">kanji</div>
+                        <div class="fc-hint">Klikni pre otocenie spat</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fc-controls">
+                <button class="fc-btn" onclick="prevCard()">&#11013;&#65039; Predosla</button>
+                <button class="fc-btn" onclick="nextCard()">Dalsia &#10145;&#65039;</button>
+            </div>
+            <button class="danger-btn" style="margin-top: 20px; padding: 10px;" onclick="resetCards()">&#10006;&#65039; Ukoncit ucenie</button>
+        </div>
+    </div>
+
+    <div id="tab-test" class="tab text-center">
+        <div id="setupArea">
+            <div style="text-align: left; margin-bottom: 5px;">
+                <label style="font-weight:bold; color:var(--text-muted);">Vyber si lekcie na test:</label>
+                <div style="float: right;">
+                    <button class="small-btn" onclick="toggleAllLessons('test-cb', true)">Vsetky</button>
+                    <button class="small-btn" onclick="toggleAllLessons('test-cb', false)">Ziadne</button>
+                </div>
+            </div>
+            <div id="lessonCheckboxesTest" class="lesson-grid"></div>
+
+            <label style="display:block; text-align:left; font-weight:bold; margin-bottom:10px; margin-top:10px; color:var(--text-muted);">Pocet slovicok v teste:</label>
+            <input type="number" id="testCount" value="20" min="1">
+            <button class="action-btn" onclick="startTest()">&#128640; Spustit test</button>
+        </div>
+
+        <div id="testingArea" class="hidden">
+            <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+            <div id="wordPrompt" class="word-display">Slovenske slovo</div>
+            <div id="feedbackBox" class="feedback"></div>
+            <input type="text" id="answerInput" placeholder="Romaji, hiragana alebo kanji..." autocomplete="off">
+            <button class="action-btn" onclick="checkAnswer()">Skontrolovat (Enter)</button>
+        </div>
+
+        <div id="resultArea" class="hidden text-center">
+            <h2 style="color: var(--text-muted); margin-top:0;">Tvoj vysledok</h2>
+            <div id="scoreDisplay" class="word-display" style="color: var(--primary); font-size: 46px;">0%</div>
+            <div id="errorList" class="results hidden">
+                <h3 style="margin-top:0; color:var(--danger); font-size:16px;">Treba zopakovat:</h3>
+                <div id="errorItems"></div>
+            </div>
+            <button class="action-btn" style="margin-top: 20px;" onclick="resetTest()">&#128260; Dalsi test</button>
+        </div>
+    </div>
+
+    <div id="tab-db" class="tab text-center">
+        <h3 style="margin-top:0;">Zdroj databazy</h3>
+        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
+            Ak si prave otvoril appku na novom zariadeni (napr. na mobile), stiahni si databazu z cloudu.
+        </p>
+        
+        <button class="server-btn" onclick="fetchExcelFromServer()">&#127183; Stiahnut databazu (50 Lekcii)</button>
+        
+        <p style="color: var(--text-muted); font-size: 12px; margin-top: 20px;">Alebo mozes manualne nahrat iny Excel z tohto zariadenia:</p>
+        <label class="action-btn" style="display: block; cursor: pointer; background: var(--border); box-shadow: none;">
+            &#128194; Manualne vybrat Excel
+            <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUpload(event)">
+        </label>
+        
+        <div id="dbSaveMessage" style="text-align: center; margin-top: 20px; font-weight: bold; min-height: 30px;"></div>
+        <hr style="margin: 30px 0 20px 0; border: none; border-top: 2px dashed var(--border);">
+        <button class="danger-btn" onclick="clearDatabase()">&#128465; Vymazat pamat z prehliadaca</button>
+    </div>
+</div>
+
+<script>
+    let database = [];
+    let currentTestQueue = []; let currentWord = null; let mistakes = []; let currentIndex = 0; let totalQuestions = 0;
+    let flashcardQueue = []; let flashcardIndex = 0;
+
+    window.onload = function() {
+        let savedData = localStorage.getItem('japonsky_slovnik_ultimate');
+        if (savedData) { database = JSON.parse(savedData); initApp(); }
+        document.getElementById("answerInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") { event.preventDefault(); checkAnswer(); }
+        });
+    };
+
+    function initApp() {
+        renderLessonCheckboxes('lessonCheckboxesTest', 'test-cb');
+        renderLessonCheckboxes('lessonCheckboxesCards', 'cards-cb');
+        populateLessonFilter(); renderDictionary();
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        
+        if (tabName === 'dict') { document.getElementById('btnTabDict').classList.add('active'); renderDictionary(); }
+        if (tabName === 'cards') { document.getElementById('btnTabCards').classList.add('active'); }
+        if (tabName === 'test') { document.getElementById('btnTabTest').classList.add('active'); }
+        if (tabName === 'db') { document.getElementById('btnTabDb').classList.add('active'); document.getElementById('dbSaveMessage').innerHTML = ""; }
+    }
+
+    function cleanString(str) {
+        if (!str) return "";
+        return String(str).replace(/^[\??\s]+/, '').replace(/[\??\s]+$/, '').trim();
+    }
+
+    function processExcelData(excelRows, msgEl) {
+        let newDb = [];
+        excelRows.forEach(row => {
+            let keys = Object.keys(row);
+            let lekciaKey = keys.find(k => k.toLowerCase().includes("lekcia"));
+            let slovakKey = keys.find(k => k.toLowerCase().includes("slovensk"));
+            let romajiKey = keys.find(k => k.toLowerCase().includes("romaji") || k.toLowerCase().includes("romadzi"));
+            let hiraKey = keys.find(k => k.toLowerCase().includes("hiragana") || k.toLowerCase().includes("katakana"));
+            let kanjiKey = keys.find(k => k.toLowerCase().includes("kanji") || k.toLowerCase().includes("kandzi"));
+
+            if(slovakKey && romajiKey) {
+                let slovak = cleanString(row[slovakKey]);
+                let romaji = cleanString(row[romajiKey]);
+                let hira = hiraKey ? cleanString(row[hiraKey]) : "-";
+                let kanji = kanjiKey ? cleanString(row[kanjiKey]) : "-";
+                let lekcia = lekciaKey ? parseInt(row[lekciaKey]) : 0;
+                
+                if (slovak && romaji && !slovak.toLowerCase().includes("slovensk") && romaji !== "-") {
+                    newDb.push({ lekcia: isNaN(lekcia) ? 0 : lekcia, slovak: slovak, romaji: romaji, hiragana: hira, kanji: kanji });
+                }
+            }
+        });
+
+        if (newDb.length > 0) {
+            database = newDb;
+            localStorage.setItem('japonsky_slovnik_ultimate', JSON.stringify(database));
+            msgEl.style.color = "var(--success)"; msgEl.innerHTML = `&#9989; Uspesne ulozenych ${database.length} slovicok.`;
+            initApp();
+        } else {
+            msgEl.style.color = "var(--danger)"; msgEl.innerHTML = "&#10060; Nenasli sa platne slovicka.";
+        }
+    }
+
+    // AUTOMATICKE STIAHNUTIE Z WEBU
+    async function fetchExcelFromServer() {
+        let msgEl = document.getElementById('dbSaveMessage');
+        msgEl.style.color = "var(--text-main)"; msgEl.innerHTML = "&#8987; Stahujem databazu zo servera...";
+        try {
+            let response = await fetch('Kompletny_Japonsky_Slovnik_50_Lekcii.xlsx');
+            if (!response.ok) throw new Error("Subor sa nenasiel na webe");
+            let arrayBuffer = await response.arrayBuffer();
+            let data = new Uint8Array(arrayBuffer);
+            let workbook = XLSX.read(data, {type: 'array'});
+            let excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+            processExcelData(excelRows, msgEl);
+        } catch (error) {
+            msgEl.style.color = "var(--danger)"; 
+            msgEl.innerHTML = "&#10060; Nepodarilo sa stiahnut Excel. (Funguje to len ked je appka uz nahrata na webe).";
+            console.error(error);
+        }
+    }
+
+    // MANUALNE NAHRATIE Z PC
+    function handleFileUpload(e) {
+        let file = e.target.files[0]; if(!file) return;
+        let msgEl = document.getElementById('dbSaveMessage');
+        msgEl.style.color = "var(--text-main)"; msgEl.innerHTML = "&#8987; Spracovavam...";
+
+        let reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                let data = new Uint8Array(evt.target.result);
+                let workbook = XLSX.read(data, {type: 'array'});
+                let excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                processExcelData(excelRows, msgEl);
+            } catch (error) { msgEl.style.color = "var(--danger)"; msgEl.innerHTML = "&#10060; Nastala chyba pri citani."; }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderLessonCheckboxes(containerId, cbClass) {
+        let container = document.getElementById(containerId);
+        if (database.length === 0) { container.innerHTML = '<div style="color:var(--text-muted); font-size:14px; grid-column:1/-1;">Zatial nemas databazu.</div>'; return; }
+        let uniqueLessons = [...new Set(database.map(w => w.lekcia))].filter(l => l > 0).sort((a,b) => a-b);
+        container.innerHTML = "";
+        
+        uniqueLessons.forEach(lekcia => {
+            let count = database.filter(w => w.lekcia === lekcia).length;
+            let label = document.createElement('label'); label.className = "lesson-checkbox";
+            let isChecked = lekcia <= 24 ? "checked" : "";
+            label.innerHTML = `<input type="checkbox" value="${lekcia}" class="${cbClass}" ${isChecked}> L${lekcia} (${count})`;
+            container.appendChild(label);
+        });
+    }
+
+    function toggleAllLessons(cbClass, state) { document.querySelectorAll('.' + cbClass).forEach(cb => cb.checked = state); }
+    function clearDatabase() { if(confirm("Naozaj chces vymazat celu databazu z prehliadaca?")) { localStorage.removeItem('japonsky_slovnik_ultimate'); database = []; initApp(); document.getElementById('dbSaveMessage').innerHTML = ""; } }
+
+    function populateLessonFilter() {
+        let filter = document.getElementById('dictLessonFilter'); filter.innerHTML = '<option value="all">Vsetky lekcie</option>';
+        if(database.length === 0) return;
+        [...new Set(database.map(w => w.lekcia))].filter(l => l > 0).sort((a,b) => a-b).forEach(l => { filter.innerHTML += `<option value="${l}">Lekcia ${l}</option>`; });
+    }
+
+    function renderDictionary() {
+        let tbody = document.getElementById('dictTableBody'); let countDisplay = document.getElementById('dictCount');
+        if(database.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center">Databaza je prazdna.</td></tr>'; countDisplay.innerText = ""; return; }
+        let searchQ = document.getElementById('dictSearch').value.toLowerCase(); let filterL = document.getElementById('dictLessonFilter').value;
+        let filtered = database.filter(w => { let matchSearch = w.slovak.toLowerCase().includes(searchQ) || w.romaji.toLowerCase().includes(searchQ); let matchLesson = filterL === "all" ? true : w.lekcia === parseInt(filterL); return matchSearch && matchLesson; });
+        tbody.innerHTML = "";
+        if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenasli sa ziadne slovicka.</td></tr>'; } 
+        else { filtered.forEach(w => { let kanaKanjiStr = ""; if(w.hiragana !== "-" && w.kanji !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.hiragana} / ${w.kanji}</div>`; else if(w.hiragana !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.hiragana}</div>`; else if(w.kanji !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.kanji}</div>`; tbody.innerHTML += `<tr><td>${w.lekcia}</td><td style="font-weight:bold;">${w.slovak}</td><td>${w.romaji} ${kanaKanjiStr}</td></tr>`; }); }
+        countDisplay.innerText = `Zobrazenych slov: ${filtered.length}`;
+    }
+
+    function startFlashcards() {
+        if (database.length === 0) { alert("Nemáš databázu!"); return; }
+        let selected = Array.from(document.querySelectorAll('.cards-cb:checked')).map(cb => parseInt(cb.value));
+        if (selected.length === 0) { alert("Vyber si aspoň jednu lekciu!"); return; }
+        flashcardQueue = database.filter(w => selected.includes(w.lekcia));
+        for (let i = flashcardQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [flashcardQueue[i], flashcardQueue[j]] = [flashcardQueue[j], flashcardQueue[i]]; }
+        flashcardIndex = 0; document.getElementById('cardsSetupArea').classList.add('hidden'); document.getElementById('cardsPlayArea').classList.remove('hidden'); updateFlashcardView();
+    }
+
+    function updateFlashcardView() {
+        if(flashcardQueue.length === 0) return; let w = flashcardQueue[flashcardIndex];
+        document.getElementById('flashcardElement').classList.remove('is-flipped');
+        setTimeout(() => { document.getElementById('cardsProgress').innerText = `Karta ${flashcardIndex + 1} z ${flashcardQueue.length}`; document.getElementById('fcFrontLesson').innerText = `Lekcia ${w.lekcia}`; document.getElementById('fcFrontWord').innerText = w.slovak; document.getElementById('fcBackLesson').innerText = `Lekcia ${w.lekcia}`; document.getElementById('fcBackRomaji').innerText = w.romaji; document.getElementById('fcBackKana').innerText = w.hiragana === "-" ? "" : w.hiragana; document.getElementById('fcBackKanji').innerText = w.kanji === "-" ? "" : w.kanji; }, 150);
+    }
+    function flipCard() { document.getElementById('flashcardElement').classList.toggle('is-flipped'); }
+    function nextCard() { if(flashcardIndex < flashcardQueue.length - 1) { flashcardIndex++; updateFlashcardView(); } else { alert("Posledná karta!"); } }
+    function prevCard() { if(flashcardIndex > 0) { flashcardIndex--; updateFlashcardView(); } }
+    function resetCards() { document.getElementById('cardsPlayArea').classList.add('hidden'); document.getElementById('cardsSetupArea').classList.remove('hidden'); }
+
+    function startTest() {
+        if (database.length === 0) { alert("Nemáš databázu!"); return; }
+        let selected = Array.from(document.querySelectorAll('.test-cb:checked')).map(cb => parseInt(cb.value));
+        if (selected.length === 0) { alert("Vyber si aspoň jednu lekciu!"); return; }
+        let testDb = database.filter(w => selected.includes(w.lekcia));
+        let count = parseInt(document.getElementById('testCount').value); if (isNaN(count) || count < 1) count = 20; if (count > testDb.length) count = testDb.length;
+        for (let i = testDb.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [testDb[i], testDb[j]] = [testDb[j], testDb[i]]; }
+        currentTestQueue = testDb.slice(0, count); totalQuestions = currentTestQueue.length; currentIndex = 0; mistakes = [];
+        document.getElementById('setupArea').classList.add('hidden'); document.getElementById('resultArea').classList.add('hidden'); document.getElementById('testingArea').classList.remove('hidden'); document.getElementById('feedbackBox').className = "feedback";
+        updateProgressBar(); loadNextWordTest();
+    }
+    function updateProgressBar() { document.getElementById('progressBar').style.width = ((currentIndex / totalQuestions) * 100) + "%"; }
+    function loadNextWordTest() {
+        if (currentIndex >= currentTestQueue.length) { endTest(); return; }
+        currentWord = currentTestQueue[currentIndex];
+        document.getElementById('wordPrompt').innerHTML = `<span style="font-size:14px; color:var(--text-muted); display:block; margin-bottom:5px;">Lekcia ${currentWord.lekcia}</span>${currentWord.slovak}`;
+        document.getElementById('answerInput').value = ""; document.getElementById('answerInput').focus();
+    }
+    function checkAnswer() {
+        let inputEl = document.getElementById('answerInput'); let userAnswer = cleanString(inputEl.value.toLowerCase().replace(/\s+/g, ' ')); let feedbackBox = document.getElementById('feedbackBox');
+        if (userAnswer === "") return;
+        let parseAns = (s) => (s && s!=="-") ? s.toLowerCase().split('/').map(x=>cleanString(x)).filter(x=>x) : [];
+        let allValid = [...parseAns(currentWord.romaji), ...parseAns(currentWord.hiragana), ...parseAns(currentWord.kanji)];
+        if (allValid.includes(userAnswer)) { feedbackBox.innerHTML = "&#10024; <strong>Spravne!</strong>"; feedbackBox.className = "feedback correct"; } 
+        else { let cDisp = `<u>${currentWord.romaji}</u>`; if (currentWord.hiragana && currentWord.hiragana !== "-") cDisp += ` alebo <u>${currentWord.hiragana}</u>`; if (currentWord.kanji && currentWord.kanji !== "-") cDisp += ` / <u>${currentWord.kanji}</u>`; feedbackBox.innerHTML = `&#10060; <strong>Chyba!</strong> Spravne je: ${cDisp}`; feedbackBox.className = "feedback incorrect"; mistakes.push({ slovak: currentWord.slovak, user: userAnswer, correct: currentWord.romaji + (currentWord.hiragana !== "-" ? " / " + currentWord.hiragana : "") }); }
+        currentIndex++; updateProgressBar(); inputEl.disabled = true; setTimeout(() => { inputEl.disabled = false; feedbackBox.className = "feedback"; loadNextWordTest(); }, 1800);
+    }
+    function endTest() {
+        document.getElementById('testingArea').classList.add('hidden'); document.getElementById('resultArea').classList.remove('hidden');
+        let perc = (((totalQuestions - mistakes.length) / totalQuestions) * 100).toFixed(0); document.getElementById('scoreDisplay').innerText = `${perc}%`;
+        let errItems = document.getElementById('errorItems');
+        if (mistakes.length > 0) { document.getElementById('errorList').classList.remove('hidden'); errItems.innerHTML = mistakes.map(m => `<div class="error-item"><div class="slovak-err">${m.slovak}</div><span style="color:var(--danger); text-decoration:line-through; margin-right:15px;">${m.user}</span><span style="color:var(--success); font-weight:bold;">&#128073; ${m.correct}</span></div>`).join(''); } 
+        else { document.getElementById('errorList').classList.add('hidden'); errItems.innerHTML = ""; document.getElementById('scoreDisplay').innerHTML += "<br><span style='font-size: 20px; color: var(--text-muted);'>&#127881; Dokonale!</span>"; }
+    }
+    function resetTest() { document.getElementById('resultArea').classList.add('hidden'); document.getElementById('setupArea').classList.remove('hidden'); document.getElementById('progressBar').style.width = "0%"; }
+</script>
+</body>
+</html>
