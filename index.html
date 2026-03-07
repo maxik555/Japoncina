@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.7 (Master Dictionary)</title>
+    <title>Japonský Tréning - Finále 1.7.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -45,6 +45,9 @@
         .btn-outline:hover { border-color: var(--primary); }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         
+        /* Info box pre Učenie (aby nekolidoval s Testami) */
+        .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
+
         /* Tabuľka Zoznamu */
         .vocab-table-wrapper { max-height: 60vh; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
         .vocab-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
@@ -124,13 +127,13 @@
         <div id="learnSetup">
             <h2 data-sk="Tréning a Slovník" data-en="Training & Dictionary">Tréning a Slovník</h2>
             
-            <div class="setup-section">
+            <div class="info-box">
                 <label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label>
                 <select id="learnLessonSelect" style="margin-top:8px;"></select>
                 <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button>
             </div>
 
-            <div class="setup-section" style="margin-top: 15px;">
+            <div class="info-box">
                 <p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p>
                 <button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button>
             </div>
@@ -281,7 +284,7 @@
         document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
 
         document.querySelectorAll('[data-sk]').forEach(el => { el.innerHTML = el.getAttribute(`data-${lang}`); });
-        populateSelects(); // Preklad slova Lekcia/Lesson v selectoch
+        populateSelects();
 
         if(!document.getElementById('learnListRun').classList.contains('hidden')) showUnlockedList();
         if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
@@ -370,7 +373,6 @@
         } 
     }
 
-    // NOVÁ FUNKCIA PRE CELÝ ZOZNAM
     function showUnlockedList() {
         document.getElementById('learnSetup').classList.add('hidden');
         document.getElementById('learnCardsRun').classList.add('hidden');
@@ -394,7 +396,14 @@
     function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
     function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
 
-    function selectTestModeUI(mode) { document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } document.querySelectorAll('.setup-section').forEach(el => el.classList.add('hidden')); document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); }
+    // OPRAVA: Prehľadávame len v rámci Testov (trainSetup)
+    function selectTestModeUI(mode) { 
+        document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); 
+        let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); 
+        if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } 
+        document.querySelectorAll('#trainSetup .setup-section').forEach(el => el.classList.add('hidden')); 
+        document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); 
+    }
 
     function startTraining(type) {
         currentTestType = type; mistakes = 0; currentIdx = 0; let pool = [];
