@@ -489,9 +489,9 @@ function renderMap() {
             
             if (isUnlocked) {
                 div.onclick = () => { 
-                    document.getElementById('learnLessonSelect').value = l; 
-                    switchTab('learn'); 
-                    startLearn('cards'); // <-- Toto hneď spustí kartičky!
+                    switchTab('learn'); // 1. Najprv prepneme okno (vygeneruje roletku)
+                    document.getElementById('learnLessonSelect').value = l; // 2. Až teraz donútime roletku vybrať tvoju lekciu
+                    startLearn('cards'); // 3. A spustíme kartičky
                 }; 
             }
             map.appendChild(div); 
@@ -534,4 +534,5 @@ function renderMap() {
 </script>
 </body>
 </html>
+
 
