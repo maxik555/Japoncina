@@ -3,26 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.7.1</title>
+    <title>Japonský Tréning - Finále 1.8 (Shinobi Edition)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* CSS Premenné - Základná tmavá téma */
         :root {
             --bg-dark: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
             --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
             --locked: #334155; --border: #334155; --card-back: #1e3a8a;
         }
-        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
-        .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+
+        /* --- NOVÉ TÉMY --- */
+        [data-theme="light"] {
+            --bg-dark: #f1f5f9; --bg-card: #ffffff; --text-main: #0f172a; --text-muted: #64748b;
+            --primary: #2563eb; --border: #cbd5e1; --card-back: #e2e8f0;
+        }
+        [data-theme="sharingan"] {
+            --bg-dark: #1a0505; --bg-card: #2b0a0a; --text-main: #fca5a5; --text-muted: #ef4444;
+            --primary: #dc2626; --border: #7f1d1d; --card-back: #450a0a;
+        }
+        [data-theme="konoha"] {
+            --bg-dark: #064e3b; --bg-card: #14532d; --text-main: #d1fae5; --text-muted: #6ee7b7;
+            --primary: #10b981; --border: #065f46; --card-back: #065f46;
+        }
+        [data-theme="uzumaki"] {
+            --bg-dark: #7c2d12; --bg-card: #9a3412; --text-main: #fff7ed; --text-muted: #fdba74;
+            --primary: #f97316; --border: #c2410c; --card-back: #ea580c;
+        }
+        [data-theme="nara"] {
+            --bg-dark: #171717; --bg-card: #262626; --text-main: #e5e5e5; --text-muted: #a3a3a3;
+            --primary: #525252; --border: #404040; --card-back: #404040;
+        }
+        /* ------------------ */
+
+        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+        .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; transition: background 0.3s; }
         
-        .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.3s; }
         .rpg-stat { text-align: center; }
-        .rpg-val { font-size: 20px; font-weight: 800; color: var(--primary); }
-        .rpg-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
+        .rpg-val { font-size: 18px; font-weight: 800; color: var(--primary); }
+        .rpg-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
         .lang-flags span { cursor: pointer; font-size: 24px; transition: 0.2s; padding: 0 5px; }
         .lang-flags span.inactive { opacity: 0.3; filter: grayscale(100%); }
         
         .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; text-align: center; }
+        .btn-nav { flex: 1; min-width: 75px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; text-align: center; }
         .btn-nav.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
@@ -35,47 +60,43 @@
         .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
         
-        input[type="text"], input[type="number"], select { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 18px; margin-bottom: 15px; box-sizing: border-box; transition: 0.3s; }
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin-bottom: 10px; }
-        .btn-primary { background: var(--primary); box-shadow: 0 4px 0 #1e40af; }
+        .btn-primary { background: var(--primary); box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
         .btn-primary:active { transform: translateY(4px); box-shadow: none; }
-        .btn-success { background: var(--success); box-shadow: 0 4px 0 #065f46; }
+        .btn-success { background: var(--success); box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
         .btn-warning { background: var(--warning); color: #000; }
         .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--primary); }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         
-        /* Info box pre Učenie (aby nekolidoval s Testami) */
-        .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
-
-        /* Tabuľka Zoznamu */
+        .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; transition: 0.3s; }
         .vocab-table-wrapper { max-height: 60vh; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
         .vocab-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
         .vocab-table th, .vocab-table td { border-bottom: 1px solid var(--border); padding: 12px; text-align: left; }
-        .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; position: sticky; top: 0; z-index: 1; }
+        .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; position: sticky; top: 0; z-index: 1; transition: 0.3s; }
         .vocab-table tr:hover { background: rgba(255,255,255,0.05); }
         
-        /* Kartičky */
         .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
         .flashcard.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.3); border: 2px solid var(--border); text-align: center; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.3); border: 2px solid var(--border); text-align: center; transition: 0.3s; }
         .card-front { background: var(--bg-dark); }
         .card-back { background: var(--card-back); transform: rotateY(180deg); border-color: var(--primary); }
         .fc-img { font-size: 60px; margin-bottom: 15px; max-height: 100px; border-radius: 10px; }
         .fc-sk { font-size: 32px; font-weight: 800; }
-        .fc-romaji { font-size: 28px; font-weight: bold; color: #93c5fd; margin-bottom: 10px; }
+        .fc-romaji { font-size: 28px; font-weight: bold; color: var(--primary); margin-bottom: 10px; }
         .fc-kana { font-size: 24px; margin-bottom: 5px; }
-        .fc-kanji { font-size: 32px; color: #60a5fa; }
+        .fc-kanji { font-size: 32px; color: var(--text-muted); }
         
         .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
         .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
         .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
-        .fb-correct { background: rgba(16, 185, 129, 0.2); color: #34d399; display: block; }
-        .fb-wrong { background: rgba(239, 68, 68, 0.2); color: #f87171; display: block; }
+        .fb-correct { background: rgba(16, 185, 129, 0.2); color: var(--success); display: block; border: 1px solid var(--success); }
+        .fb-wrong { background: rgba(239, 68, 68, 0.2); color: var(--danger); display: block; border: 1px solid var(--danger); }
         
         .quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .btn-quiz { background: var(--bg-dark); border: 2px solid var(--border); padding: 20px 10px; border-radius: 12px; font-size: 18px; cursor: pointer; color: white; transition: 0.2s; font-weight: bold; }
+        .btn-quiz { background: var(--bg-dark); border: 2px solid var(--border); padding: 20px 10px; border-radius: 12px; font-size: 18px; cursor: pointer; color: var(--text-main); transition: 0.2s; font-weight: bold; }
         .btn-quiz:hover { border-color: var(--primary); }
         .btn-quiz.correct { background: rgba(16, 185, 129, 0.2); border-color: var(--success); color: var(--success); }
         .btn-quiz.wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger); }
@@ -83,23 +104,30 @@
         .timer-container { width: 100%; height: 8px; background: var(--bg-dark); border-radius: 4px; margin-bottom: 15px; overflow: hidden; }
         .timer-bar { height: 100%; width: 100%; background: var(--warning); transition: width 0.1s linear; }
         .hidden { display: none !important; }
-        .setup-section { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .setup-section { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; transition: 0.3s; }
         
+        /* Tlačidlá pre výber témy */
+        .theme-btn { padding: 10px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .theme-btn:hover:not(:disabled) { border-color: var(--primary); }
+        .theme-btn.active { border-color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+        .theme-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; transition: opacity 0.5s; }
         .spinner { border: 6px solid var(--border); border-top: 6px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h2 id="loadingText" data-sk="Synchronizujem dáta z cloudu..." data-en="Syncing data from cloud...">Synchronizujem dáta z cloudu...</h2>
+    <h2 id="loadingText" data-sk="Synchronizujem dáta..." data-en="Syncing data...">Synchronizujem dáta...</h2>
 </div>
 
 <div class="app-container">
     <div class="topbar">
         <div style="display:flex; gap:15px;">
+            <div class="rpg-stat"><div class="rpg-val" id="uiRank">🥷 Genin</div><div class="rpg-label" data-sk="Hodnosť" data-en="Rank">Hodnosť</div></div>
             <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label" data-sk="Level" data-en="Level">Level</div></div>
             <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label" data-sk="XP" data-en="XP">XP</div></div>
             <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label" data-sk="Streak" data-en="Streak">Streak</div></div>
@@ -114,8 +142,7 @@
         <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap" data-sk="🗺️ Cesta" data-en="🗺️ Path">🗺️ Cesta</button>
         <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
         <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
-        <button class="btn-nav" onclick="switchTab('dojo')" id="btnTabDojo" data-sk="🏯 Dódžó" data-en="🏯 Dojo">🏯 Dódžó</button>
-        <button class="btn-nav" onclick="switchTab('db')" id="btnTabDb" data-sk="☁️ Cloud" data-en="☁️ Cloud">☁️ Cloud</button>
+        <button class="btn-nav" onclick="switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
     </div>
 
     <div id="tab-map" class="tab active">
@@ -126,13 +153,11 @@
     <div id="tab-learn" class="tab">
         <div id="learnSetup">
             <h2 data-sk="Tréning a Slovník" data-en="Training & Dictionary">Tréning a Slovník</h2>
-            
             <div class="info-box">
                 <label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label>
                 <select id="learnLessonSelect" style="margin-top:8px;"></select>
                 <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button>
             </div>
-
             <div class="info-box">
                 <p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p>
                 <button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button>
@@ -154,13 +179,8 @@
                     </div>
                 </div>
             </div>
-            <div style="text-align: center; margin-bottom: 15px;">
-                <button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button>
-                <button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button>
-            </div>
+            <div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button></div>
+            <div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button><button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button></div>
             <button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button>
         </div>
 
@@ -171,17 +191,7 @@
             </div>
             <div class="vocab-table-wrapper">
                 <table class="vocab-table">
-                    <thead>
-                        <tr>
-                            <th data-sk="Lekcia" data-en="Lesson">Lekcia</th>
-                            <th data-sk="Úroveň" data-en="Level">Úroveň</th>
-                            <th>#</th>
-                            <th data-sk="Význam" data-en="Meaning">Význam</th>
-                            <th>Romaji</th>
-                            <th>Kana</th>
-                            <th>Kanji</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th data-sk="Lekcia" data-en="Lesson">Lekcia</th><th data-sk="Úroveň" data-en="Level">Úroveň</th><th>#</th><th data-sk="Význam" data-en="Meaning">Význam</th><th>Romaji</th><th>Kana</th><th>Kanji</th></tr></thead>
                     <tbody id="vocabListBody"></tbody>
                 </table>
             </div>
@@ -249,33 +259,51 @@
         </div>
     </div>
 
-    <div id="tab-dojo" class="tab">
-        <h2 data-sk="Gramatické Dódžó" data-en="Grammar Dojo">Gramatické Dódžó</h2>
-        <div id="dojoSetup"><button class="btn btn-primary" onclick="startDojo()" data-sk="Spustiť Dódžó" data-en="Start Dojo">Spustiť Dódžó</button></div>
-        <div id="dojoRun" class="hidden">
-            <div class="word-display" style="font-size: 24px;" id="djPrompt">Slovenská veta</div>
-            <div id="djFeedback" class="feedback-box"></div>
-            <input type="text" id="djInput" placeholder="Romaji..." autocomplete="off">
-            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()" data-sk="Skontrolovať" data-en="Check">Skontrolovať</button>
-            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button>
+    <div id="tab-profile" class="tab">
+        <h2 data-sk="Tvoj Shinobi Profil" data-en="Your Shinobi Profile">Tvoj Shinobi Profil</h2>
+        
+        <div class="info-box" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <h3 style="margin:0 0 5px 0;" id="profileRankName">🥷 Genin</h3>
+                <span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span>
+            </div>
+            <div style="font-size:40px;" id="profileRankIcon">🥷</div>
         </div>
-    </div>
 
-    <div id="tab-db" class="tab">
-        <h2 data-sk="Cloud Synchronizácia" data-en="Cloud Sync">Cloud Synchronizácia</h2>
-        <button class="btn btn-primary" onclick="fetchDatabaseFromCloud()" data-sk="🔄 Vynútiť stiahnutie z cloudu" data-en="🔄 Force cloud sync">🔄 Vynútiť stiahnutie z cloudu</button>
-        <div id="dbMsg" style="margin-top:15px; font-weight:bold;"></div>
+        <h3 data-sk="Odomknuté Motívy (Témy)" data-en="Unlocked Themes">Odomknuté Motívy (Témy)</h3>
+        <div id="themeList" class="info-box" style="padding:10px;">
+            </div>
+
+        <hr style="border-color:var(--border); margin:30px 0;">
+        <button class="btn btn-outline" onclick="fetchDatabaseFromCloud()" data-sk="🔄 Vynútiť stiahnutie z cloudu" data-en="🔄 Force cloud sync">🔄 Vynútiť stiahnutie z cloudu</button>
     </div>
 </div>
 
 <script>
     let db = [];
-    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null };
+    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark' };
     let testQueue = []; let currentIdx = 0; let mistakes = 0; let currentTestType = ''; 
     let currentUnlockTarget = 0; let isBossTest = false;
     let quizOptions = []; let quizTimer; let timeLeft = 7.0;
     
     let currentLang = localStorage.getItem('finale_lang') || 'sk';
+
+    // Definovanie úrovní a tém
+    const RANKS = [
+        { maxLvl: 10, sk: "Genin", en: "Genin", icon: "🥷" },
+        { maxLvl: 20, sk: "Chuunin", en: "Chunin", icon: "📜" },
+        { maxLvl: 30, sk: "Jounin", en: "Jonin", icon: "🦅" },
+        { maxLvl: 999, sk: "Kage", en: "Kage", icon: "👑" }
+    ];
+
+    const THEMES = [
+        { id: 'dark', sk: 'Základná (Tmavá)', en: 'Default (Dark)', req: 1, icon: '🌙' },
+        { id: 'light', sk: 'Základná (Svetlá)', en: 'Default (Light)', req: 1, icon: '☀️' },
+        { id: 'sharingan', sk: 'Sharingan', en: 'Sharingan', req: 10, icon: '👁️' },
+        { id: 'konoha', sk: 'Konoha', en: 'Konoha', req: 10, icon: '🍃' },
+        { id: 'uzumaki', sk: 'Uzumaki Clan', en: 'Uzumaki Clan', req: 15, icon: '🌀' },
+        { id: 'nara', sk: 'Nara Clan', en: 'Nara Clan', req: 15, icon: '🦌' }
+    ];
 
     function setLang(lang) {
         currentLang = lang;
@@ -284,16 +312,48 @@
         document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
 
         document.querySelectorAll('[data-sk]').forEach(el => { el.innerHTML = el.getAttribute(`data-${lang}`); });
-        populateSelects();
+        populateSelects(); updateUI(); renderThemes();
 
         if(!document.getElementById('learnListRun').classList.contains('hidden')) showUnlockedList();
         if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
         if(!document.getElementById('trainRun').classList.contains('hidden') && testQueue.length > 0) document.getElementById('twWord').innerText = currentLang === 'sk' ? testQueue[currentIdx].sk : testQueue[currentIdx].en;
     }
 
+    function applyTheme(themeId) {
+        state.theme = themeId;
+        document.body.setAttribute('data-theme', themeId);
+        saveState();
+        renderThemes();
+    }
+
+    function renderThemes() {
+        const lvl = Math.floor(state.xp / 500) + 1;
+        const container = document.getElementById('themeList');
+        container.innerHTML = '';
+
+        THEMES.forEach(t => {
+            const isUnlocked = lvl >= t.req;
+            const isActive = state.theme === t.id;
+            const btn = document.createElement('button');
+            btn.className = `theme-btn ${isActive ? 'active' : ''}`;
+            btn.disabled = !isUnlocked;
+            
+            let name = currentLang === 'sk' ? t.sk : t.en;
+            let status = isUnlocked ? (isActive ? (currentLang==='sk'?'Aktívne':'Active') : '') : `🔒 Lvl ${t.req}`;
+            
+            btn.innerHTML = `<span>${t.icon} ${name}</span> <span style="color:var(--text-muted); font-size:12px;">${status}</span>`;
+            
+            if(isUnlocked) btn.onclick = () => applyTheme(t.id);
+            container.appendChild(btn);
+        });
+    }
+
     window.onload = async () => {
-        if (localStorage.getItem('finale_state')) state = JSON.parse(localStorage.getItem('finale_state'));
-        checkStreak(); updateUI(); setLang(currentLang);
+        if (localStorage.getItem('finale_state')) {
+            let savedState = JSON.parse(localStorage.getItem('finale_state'));
+            state = { ...state, ...savedState }; 
+        }
+        checkStreak(); setLang(currentLang); applyTheme(state.theme);
         await fetchDatabaseFromCloud();
 
         document.addEventListener('keypress', e => {
@@ -301,9 +361,6 @@
                 if (!document.getElementById('trainRun').classList.contains('hidden') && currentTestType !== 'quiz') {
                     if(document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer();
                     else nextTrainWord();
-                } else if (!document.getElementById('dojoRun').classList.contains('hidden')) {
-                    if(document.getElementById('djNextBtn').classList.contains('hidden')) checkDojoAnswer();
-                    else nextDojoSentence();
                 } else if (!document.getElementById('learnCardsRun').classList.contains('hidden')) {
                     if(!document.getElementById('fcElement').classList.contains('is-flipped')) flipCard();
                     else nextFc();
@@ -322,20 +379,14 @@
             
             db = rows.map((r, i) => ({ 
                 id: parseInt(r['#']) || i + 1,
-                lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, 
-                jlpt: r['JLPT']||'N5', 
-                kategoria: r['Kategória']||'', 
-                sk: r['Slovenský']||'', 
-                en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', 
-                romaji: String(r['Rómadži']||'').trim(), 
-                kana: r['Hiragana / Katakana']||'-', 
-                kanji: r['Kandži']||'-', 
-                obrazok: r['Obrázok']||r['Obrazok']||'' 
+                lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, jlpt: r['JLPT']||'N5', kategoria: r['Kategória']||'', 
+                sk: r['Slovenský']||'', en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', 
+                romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||r['Obrazok']||'' 
             })).filter(w => w.sk && w.romaji && w.lekcia > 0);
             
-            if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); msg.innerHTML = `✅ Data synced (${db.length} words).`; renderMap(); selectTestModeUI('free'); }
+            if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); if(msg) msg.innerHTML = `✅ Data synced (${db.length} words).`; renderMap(); selectTestModeUI('free'); }
         } catch (error) {
-            msg.innerHTML = `⚠️ Cloud offline. Using local data.`;
+            if(msg) msg.innerHTML = `⚠️ Cloud offline. Using local data.`;
             if (localStorage.getItem('finale_db')) { db = JSON.parse(localStorage.getItem('finale_db')); renderMap(); selectTestModeUI('free'); }
         }
         setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => overlay.style.display = 'none', 500); }, 500);
@@ -344,7 +395,25 @@
     function saveState() { localStorage.setItem('finale_state', JSON.stringify(state)); updateUI(); }
     function addXP(amount) { state.xp += amount; saveState(); }
     function checkStreak() { const today = new Date().toDateString(); if (state.lastDate !== today) { let y = new Date(); y.setDate(y.getDate() - 1); if (state.lastDate === y.toDateString()) state.streak++; else if (state.lastDate !== null) state.streak = 1; else state.streak = 1; state.lastDate = today; saveState(); } }
-    function updateUI() { document.getElementById('uiLevel').innerText = Math.floor(state.xp / 500) + 1; document.getElementById('uiXp').innerText = state.xp; document.getElementById('uiStreak').innerText = state.streak + " 🔥"; }
+    
+    function updateUI() { 
+        let level = Math.floor(state.xp / 500) + 1;
+        document.getElementById('uiLevel').innerText = level; 
+        document.getElementById('uiXp').innerText = state.xp; 
+        document.getElementById('uiStreak').innerText = state.streak + " 🔥"; 
+
+        // Rank logik
+        let currentRank = RANKS.find(r => level <= r.maxLvl) || RANKS[RANKS.length - 1];
+        let rankName = currentLang === 'sk' ? currentRank.sk : currentRank.en;
+        document.getElementById('uiRank').innerText = `${currentRank.icon} ${rankName}`;
+        
+        if(document.getElementById('profileRankName')) {
+            document.getElementById('profileRankName').innerText = `${rankName}`;
+            document.getElementById('profileRankIcon').innerText = currentRank.icon;
+        }
+        renderThemes();
+    }
+
     function switchTab(t) { document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + t).classList.add('active'); document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); if(t === 'map' && db.length > 0) renderMap(); if(t === 'train' || t === 'learn') populateSelects(); }
 
     function renderMap() {
@@ -364,30 +433,14 @@
     }
 
     function startLearn(mode) { 
-        if(db.length === 0) return;
-        document.getElementById('learnSetup').classList.add('hidden'); 
-        if (mode === 'cards') {
-            fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value));
-            if(fcQueue.length === 0) return alert('No words here.');
-            fcIdx = 0; document.getElementById('learnCardsRun').classList.remove('hidden'); loadFc(); 
-        } 
+        if(db.length === 0) return; document.getElementById('learnSetup').classList.add('hidden'); 
+        if (mode === 'cards') { fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value)); if(fcQueue.length === 0) return alert('No words here.'); fcIdx = 0; document.getElementById('learnCardsRun').classList.remove('hidden'); loadFc(); } 
     }
 
     function showUnlockedList() {
-        document.getElementById('learnSetup').classList.add('hidden');
-        document.getElementById('learnCardsRun').classList.add('hidden');
-        document.getElementById('learnListRun').classList.remove('hidden');
-        
-        let pool = db.filter(w => w.lekcia <= state.unlockedLesson);
-        let tbody = document.getElementById('vocabListBody');
-        tbody.innerHTML = '';
-        
-        pool.forEach(w => {
-            let tr = document.createElement('tr');
-            let meaning = currentLang === 'sk' ? w.sk : w.en;
-            tr.innerHTML = `<td>${w.lekcia}</td><td>${w.jlpt}</td><td>${w.id}</td><td style="font-weight:bold;">${meaning}</td><td>${w.romaji}</td><td>${w.kana !== '-' ? w.kana : ''}</td><td style="font-size:20px;">${w.kanji !== '-' ? w.kanji : ''}</td>`;
-            tbody.appendChild(tr);
-        });
+        document.getElementById('learnSetup').classList.add('hidden'); document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.remove('hidden');
+        let pool = db.filter(w => w.lekcia <= state.unlockedLesson); let tbody = document.getElementById('vocabListBody'); tbody.innerHTML = '';
+        pool.forEach(w => { let tr = document.createElement('tr'); let meaning = currentLang === 'sk' ? w.sk : w.en; tr.innerHTML = `<td>${w.lekcia}</td><td>${w.jlpt}</td><td>${w.id}</td><td style="font-weight:bold;">${meaning}</td><td>${w.romaji}</td><td>${w.kana !== '-' ? w.kana : ''}</td><td style="font-size:20px;">${w.kanji !== '-' ? w.kanji : ''}</td>`; tbody.appendChild(tr); });
     }
 
     function loadFc() { document.getElementById('fcElement').classList.remove('is-flipped'); setTimeout(() => { let w = fcQueue[fcIdx]; document.getElementById('fcProgress').innerText = currentLang === 'sk' ? `Karta ${fcIdx + 1}/${fcQueue.length}` : `Card ${fcIdx + 1}/${fcQueue.length}`; document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en; let imgDiv = document.getElementById('fcImg'); if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; }, 150); }
@@ -396,14 +449,7 @@
     function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
     function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
 
-    // OPRAVA: Prehľadávame len v rámci Testov (trainSetup)
-    function selectTestModeUI(mode) { 
-        document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); 
-        let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); 
-        if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } 
-        document.querySelectorAll('#trainSetup .setup-section').forEach(el => el.classList.add('hidden')); 
-        document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); 
-    }
+    function selectTestModeUI(mode) { document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } document.querySelectorAll('#trainSetup .setup-section').forEach(el => el.classList.add('hidden')); document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); }
 
     function startTraining(type) {
         currentTestType = type; mistakes = 0; currentIdx = 0; let pool = [];
@@ -430,12 +476,6 @@
 
     function playAudioText(text) { let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85; let voices = window.speechSynthesis.getVoices(); let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP'); if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech); }
     function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji); }
-
-    let dojoQueue = []; let dojoIdx = 0;
-    function startDojo() { if(db.length === 0) return; dojoQueue = []; let pool = db.filter(w => w.lekcia <= state.unlockedLesson); let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst')); let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves')); if(nouns.length < 2 || verbs.length < 1) return alert("Unlock more lessons."); for(let i=0; i<5; i++) { let n = nouns[Math.floor(Math.random()*nouns.length)]; let v = verbs[Math.floor(Math.random()*verbs.length)]; dojoQueue.push({ sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, correct: `watashi wa ${n.romaji.split('/')[0]} o ${v.romaji.split('/')[0]}` }); } dojoIdx = 0; document.getElementById('dojoSetup').classList.add('hidden'); document.getElementById('dojoRun').classList.remove('hidden'); loadDojoSentence(); }
-    function loadDojoSentence() { document.getElementById('djInput').value = ''; document.getElementById('djInput').disabled = false; document.getElementById('djFeedback').className = 'feedback-box hidden'; document.getElementById('djSubmitBtn').classList.remove('hidden'); document.getElementById('djNextBtn').classList.add('hidden'); document.getElementById('djPrompt').innerText = dojoQueue[dojoIdx].sk; }
-    function checkDojoAnswer() { let input = document.getElementById('djInput').value.trim().toLowerCase().replace(/\s+/g, ' '); let s = dojoQueue[dojoIdx]; let fb = document.getElementById('djFeedback'); if(input === s.correct) { fb.innerHTML = `✅ <strong>Brilantné! +50 XP</strong>`; fb.className = 'feedback-box fb-correct'; addXP(50); } else { fb.innerHTML = `❌ Chyba. Vzor: ${s.correct}`; fb.className = 'feedback-box fb-wrong'; } document.getElementById('djInput').disabled = true; document.getElementById('djSubmitBtn').classList.add('hidden'); document.getElementById('djNextBtn').classList.remove('hidden'); }
-    function nextDojoSentence() { dojoIdx++; if(dojoIdx < dojoQueue.length) loadDojoSentence(); else { document.getElementById('dojoRun').classList.add('hidden'); document.getElementById('dojoSetup').classList.remove('hidden'); } }
 </script>
 </body>
 </html>
