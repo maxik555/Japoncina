@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.5 (Pro-Scoring)</title>
+    <title>Japonský Tréning - Finále 1.6 (Bilingual)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -12,12 +12,14 @@
             --locked: #334155; --border: #334155; --card-back: #1e3a8a;
         }
         body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
-        .app-container { background: var(--bg-card); width: 100%; max-width: 700px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         
         .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
         .rpg-stat { text-align: center; }
         .rpg-val { font-size: 20px; font-weight: 800; color: var(--primary); }
         .rpg-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
+        .lang-flags span { cursor: pointer; font-size: 24px; transition: 0.2s; padding: 0 5px; }
+        .lang-flags span.inactive { opacity: 0.3; filter: grayscale(100%); }
         
         .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; text-align: center; }
@@ -39,8 +41,18 @@
         .btn-primary:active { transform: translateY(4px); box-shadow: none; }
         .btn-success { background: var(--success); box-shadow: 0 4px 0 #065f46; }
         .btn-warning { background: var(--warning); color: #000; }
+        .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--primary); }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         
+        /* Tabuľka Zoznamu */
+        .vocab-table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .vocab-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
+        .vocab-table th, .vocab-table td { border-bottom: 1px solid var(--border); padding: 12px; text-align: left; }
+        .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; }
+        .vocab-table tr:hover { background: rgba(255,255,255,0.05); }
+        
+        /* Kartičky */
         .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
         .flashcard.is-flipped { transform: rotateY(180deg); }
@@ -79,42 +91,52 @@
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h2 id="loadingText">Synchronizujem dáta z cloudu...</h2>
+    <h2 id="loadingText" data-sk="Synchronizujem dáta z cloudu..." data-en="Syncing data from cloud...">Synchronizujem dáta z cloudu...</h2>
 </div>
 
 <div class="app-container">
     <div class="topbar">
-        <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label">Level</div></div>
-        <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label">XP</div></div>
-        <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label">Streak</div></div>
+        <div style="display:flex; gap:15px;">
+            <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label" data-sk="Level" data-en="Level">Level</div></div>
+            <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label" data-sk="XP" data-en="XP">XP</div></div>
+            <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label" data-sk="Streak" data-en="Streak">Streak</div></div>
+        </div>
+        <div class="lang-flags">
+            <span id="flag-sk" onclick="setLang('sk')">🇸🇰</span>
+            <span id="flag-en" onclick="setLang('en')">🇬🇧</span>
+        </div>
     </div>
 
     <div class="nav">
-        <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap">🗺️ Cesta</button>
-        <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn">🎴 Učenie</button>
-        <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain">📝 Test</button>
-        <button class="btn-nav" onclick="switchTab('dojo')" id="btnTabDojo">🏯 Dódžó</button>
-        <button class="btn-nav" onclick="switchTab('db')" id="btnTabDb">☁️ Cloud</button>
+        <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap" data-sk="🗺️ Cesta" data-en="🗺️ Path">🗺️ Cesta</button>
+        <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
+        <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
+        <button class="btn-nav" onclick="switchTab('dojo')" id="btnTabDojo" data-sk="🏯 Dódžó" data-en="🏯 Dojo">🏯 Dódžó</button>
+        <button class="btn-nav" onclick="switchTab('db')" id="btnTabDb" data-sk="☁️ Cloud" data-en="☁️ Cloud">☁️ Cloud</button>
     </div>
 
     <div id="tab-map" class="tab active">
-        <h2 style="margin-top:0;">Tvoja cesta k plynulosti</h2>
+        <h2 style="margin-top:0;" data-sk="Tvoja cesta k plynulosti" data-en="Your path to fluency">Tvoja cesta k plynulosti</h2>
         <div id="lessonMap" class="map-grid"></div>
     </div>
 
     <div id="tab-learn" class="tab">
         <div id="learnSetup">
-            <h2>Vyber si lekciu na učenie</h2>
+            <h2 data-sk="Vyber si lekciu na učenie" data-en="Select a lesson to learn">Vyber si lekciu na učenie</h2>
             <select id="learnLessonSelect"></select>
-            <button class="btn btn-primary" onclick="startLearn()">Začať listovať</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Kartičky" data-en="🎴 Flashcards">🎴 Kartičky</button>
+                <button class="btn btn-outline" onclick="startLearn('list')" data-sk="📄 Zoznam slov" data-en="📄 Word List">📄 Zoznam slov</button>
+            </div>
         </div>
-        <div id="learnRun" class="hidden">
+
+        <div id="learnCardsRun" class="hidden">
             <div class="test-header"><span id="fcProgress">Karta 1/20</span></div>
             <div class="flashcard-container" onclick="flipCard()">
                 <div class="flashcard" id="fcElement">
                     <div class="card-face card-front">
                         <div id="fcImg" class="fc-img"></div>
-                        <div id="fcFrontSk" class="fc-sk">Slovensky</div>
+                        <div id="fcFrontSk" class="fc-sk">Význam</div>
                     </div>
                     <div class="card-face card-back">
                         <div id="fcBackRomaji" class="fc-romaji">romaji</div>
@@ -124,46 +146,66 @@
                 </div>
             </div>
             <div style="text-align: center; margin-bottom: 15px;">
-                <button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)">🔊 Prehrať</button>
+                <button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button>
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()">⬅️ Späť</button>
-                <button class="btn btn-success" onclick="nextFc()">Ďalšia ➡️</button>
+                <button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button>
+                <button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button>
             </div>
-            <button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()">Ukončiť učenie</button>
+            <button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button>
+        </div>
+
+        <div id="learnListRun" class="hidden">
+            <button class="btn btn-outline" onclick="closeLearn()" data-sk="⬅️ Späť na výber" data-en="⬅️ Back to selection">⬅️ Späť na výber</button>
+            <div class="vocab-table-wrapper">
+                <table class="vocab-table">
+                    <thead>
+                        <tr>
+                            <th data-sk="Lekcia" data-en="Lesson">Lekcia</th>
+                            <th data-sk="Úroveň" data-en="Level">Úroveň</th>
+                            <th>#</th>
+                            <th data-sk="Význam" data-en="Meaning">Význam</th>
+                            <th>Romaji</th>
+                            <th>Kana</th>
+                            <th>Kanji</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vocabListBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <div id="tab-train" class="tab">
         <div id="trainSetup">
             <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                <button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')">🔓 Odomknutie</button>
-                <button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')">⏱️ Kvíz</button>
-                <button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')">🏋️ Voľný</button>
+                <button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')" data-sk="🔓 Odomknutie" data-en="🔓 Unlock">🔓 Odomknutie</button>
+                <button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')" data-sk="⏱️ Kvíz" data-en="⏱️ Quiz">⏱️ Kvíz</button>
+                <button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')" data-sk="🏋️ Voľný" data-en="🏋️ Free">🏋️ Voľný</button>
             </div>
 
             <div id="setupUnlock" class="setup-section hidden">
-                <button class="btn btn-primary" onclick="startTraining('unlock')">Spustiť test (90% úspešnosť)</button>
+                <button class="btn btn-primary" onclick="startTraining('unlock')" data-sk="Spustiť test (90% úspešnosť)" data-en="Start test (90% required)">Spustiť test (90% úspešnosť)</button>
             </div>
 
             <div id="setupQuiz" class="setup-section hidden">
                 <div style="display:flex; gap:10px; margin-bottom: 10px;">
-                    <div style="flex:1"><label style="font-size:14px;">Od:</label><select id="quizFrom"></select></div>
-                    <div style="flex:1"><label style="font-size:14px;">Do:</label><select id="quizTo"></select></div>
+                    <div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="quizFrom"></select></div>
+                    <div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="quizTo"></select></div>
                 </div>
-                <label style="font-size:14px;">Počet slov (0 = Všetky):</label>
+                <label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label>
                 <input type="number" id="quizCount" value="20" min="0">
-                <button class="btn btn-warning" onclick="startTraining('quiz')">Spustiť Kvíz</button>
+                <button class="btn btn-warning" onclick="startTraining('quiz')" data-sk="Spustiť Kvíz" data-en="Start Quiz">Spustiť Kvíz</button>
             </div>
 
             <div id="setupFree" class="setup-section hidden">
                 <div style="display:flex; gap:10px; margin-bottom: 10px;">
-                    <div style="flex:1"><label style="font-size:14px;">Od:</label><select id="freeFrom"></select></div>
-                    <div style="flex:1"><label style="font-size:14px;">Do:</label><select id="freeTo"></select></div>
+                    <div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="freeFrom"></select></div>
+                    <div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="freeTo"></select></div>
                 </div>
-                <label style="font-size:14px;">Počet slov (0 = Všetky):</label>
+                <label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label>
                 <input type="number" id="freeCount" value="20" min="0">
-                <button class="btn btn-success" onclick="startTraining('free')">Spustiť Voľný tréning</button>
+                <button class="btn btn-success" onclick="startTraining('free')" data-sk="Spustiť Voľný tréning" data-en="Start Free Training">Spustiť Voľný tréning</button>
             </div>
         </div>
 
@@ -174,48 +216,43 @@
             </div>
             <div id="quizTimerContainer" class="timer-container hidden"><div id="quizTimerBar" class="timer-bar"></div></div>
             <div class="word-display" id="twWord">Slovo</div>
-            <div style="text-align: center; margin-bottom: 20px;"><button class="btn btn-audio hidden" id="twAudioBtn" onclick="playCurrentAudio()">🔊 Prehrať</button></div>
+            <div style="text-align: center; margin-bottom: 20px;"><button class="btn btn-audio hidden" id="twAudioBtn" onclick="playCurrentAudio()" data-sk="🔊 Prehrať" data-en="🔊 Play">🔊 Prehrať</button></div>
             <div id="twFeedback" class="feedback-box"></div>
             
             <div id="classicInputArea">
                 <input type="text" id="twInput" placeholder="Rómadži / Kana / Kandži..." autocomplete="off">
-                <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť (Enter)</button>
+                <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()" data-sk="Potvrdiť (Enter)" data-en="Submit (Enter)">Potvrdiť (Enter)</button>
             </div>
             <div id="quizInputArea" class="quiz-grid hidden">
                 <button class="btn-quiz" id="qb0" onclick="checkQuizAnswer(0)">A</button><button class="btn-quiz" id="qb1" onclick="checkQuizAnswer(1)">B</button>
                 <button class="btn-quiz" id="qb2" onclick="checkQuizAnswer(2)">C</button><button class="btn-quiz" id="qb3" onclick="checkQuizAnswer(3)">D</button>
             </div>
-            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Ďalšie ➡️</button>
+            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()" data-sk="Ďalšie ➡️" data-en="Next ➡️">Ďalšie ➡️</button>
         </div>
 
         <div id="trainResult" class="hidden text-center">
             <h1 style="font-size: 50px; color:var(--primary); margin-bottom: 5px;" id="trScore">0%</h1>
             <p id="trMessage" style="color:var(--text-muted);"></p>
-            <button class="btn btn-primary" onclick="closeTraining()">Späť</button>
+            <button class="btn btn-primary" onclick="closeTraining()" data-sk="Späť" data-en="Back">Späť</button>
         </div>
     </div>
 
     <div id="tab-dojo" class="tab">
-        <h2>Gramatické Dódžó</h2>
-        <div id="dojoSetup"><button class="btn btn-primary" onclick="startDojo()">Spustiť Dódžó</button></div>
+        <h2 data-sk="Gramatické Dódžó" data-en="Grammar Dojo">Gramatické Dódžó</h2>
+        <div id="dojoSetup"><button class="btn btn-primary" onclick="startDojo()" data-sk="Spustiť Dódžó" data-en="Start Dojo">Spustiť Dódžó</button></div>
         <div id="dojoRun" class="hidden">
             <div class="word-display" style="font-size: 24px;" id="djPrompt">Slovenská veta</div>
             <div id="djFeedback" class="feedback-box"></div>
-            <input type="text" id="djInput" placeholder="Napíš japonskú vetu..." autocomplete="off">
-            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()">Skontrolovať</button>
-            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()">Ďalšia ➡️</button>
+            <input type="text" id="djInput" placeholder="Romaji..." autocomplete="off">
+            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()" data-sk="Skontrolovať" data-en="Check">Skontrolovať</button>
+            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button>
         </div>
     </div>
 
     <div id="tab-db" class="tab">
-        <h2>Cloud Synchronizácia</h2>
-        <p style="color:var(--text-muted); font-size:14px;">Aplikácia automaticky sťahuje databázu z tvojho GitHubu.</p>
-        <button class="btn btn-primary" onclick="fetchDatabaseFromCloud()">🔄 Vynútiť stiahnutie z cloudu</button>
+        <h2 data-sk="Cloud Synchronizácia" data-en="Cloud Sync">Cloud Synchronizácia</h2>
+        <button class="btn btn-primary" onclick="fetchDatabaseFromCloud()" data-sk="🔄 Vynútiť stiahnutie z cloudu" data-en="🔄 Force cloud sync">🔄 Vynútiť stiahnutie z cloudu</button>
         <div id="dbMsg" style="margin-top:15px; font-weight:bold;"></div>
-        
-        <hr style="border-color:var(--border); margin:30px 0;">
-        <p style="color:var(--text-muted); font-size:14px;">Záchranné manuálne nahratie:</p>
-        <input type="file" id="excelFile" accept=".xlsx" style="background:var(--bg-dark); color:white; padding:10px; width:100%; border-radius:10px;" onchange="handleFileUpload(event)">
     </div>
 </div>
 
@@ -225,10 +262,32 @@
     let testQueue = []; let currentIdx = 0; let mistakes = 0; let currentTestType = ''; 
     let currentUnlockTarget = 0; let isBossTest = false;
     let quizOptions = []; let quizTimer; let timeLeft = 7.0;
+    
+    // --- JAZYKOVÝ SYSTÉM ---
+    let currentLang = localStorage.getItem('finale_lang') || 'sk';
+
+    function setLang(lang) {
+        currentLang = lang;
+        localStorage.setItem('finale_lang', lang);
+        
+        // Vizuál vlajok
+        document.getElementById('flag-sk').className = lang === 'sk' ? '' : 'inactive';
+        document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
+
+        // Preklad UI elementov
+        document.querySelectorAll('[data-sk]').forEach(el => {
+            el.innerHTML = el.getAttribute(`data-${lang}`);
+        });
+
+        // Živý preklad otvorených okien
+        if(!document.getElementById('learnListRun').classList.contains('hidden')) renderVocabList(parseInt(document.getElementById('learnLessonSelect').value));
+        if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
+        if(!document.getElementById('trainRun').classList.contains('hidden') && testQueue.length > 0) document.getElementById('twWord').innerText = currentLang === 'sk' ? testQueue[currentIdx].sk : testQueue[currentIdx].en;
+    }
 
     window.onload = async () => {
         if (localStorage.getItem('finale_state')) state = JSON.parse(localStorage.getItem('finale_state'));
-        checkStreak(); updateUI();
+        checkStreak(); updateUI(); setLang(currentLang);
         await fetchDatabaseFromCloud();
 
         document.addEventListener('keypress', e => {
@@ -239,7 +298,7 @@
                 } else if (!document.getElementById('dojoRun').classList.contains('hidden')) {
                     if(document.getElementById('djNextBtn').classList.contains('hidden')) checkDojoAnswer();
                     else nextDojoSentence();
-                } else if (!document.getElementById('learnRun').classList.contains('hidden')) {
+                } else if (!document.getElementById('learnCardsRun').classList.contains('hidden')) {
                     if(!document.getElementById('fcElement').classList.contains('is-flipped')) flipCard();
                     else nextFc();
                 }
@@ -254,20 +313,27 @@
             if (!response.ok) throw new Error('Súbor nenájdený.');
             const arrayBuffer = await response.arrayBuffer(); const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-            db = rows.map(r => ({ lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, jlpt: r['JLPT']||'N5', kategoria: r['Kategória']||'', sk: r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||r['Obrazok']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0);
-            if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); msg.innerHTML = `✅ Databáza úspešne stiahnutá z cloudu (${db.length} slov).`; renderMap(); selectTestModeUI('free'); }
+            
+            // Mapovanie (pridané ID pre poradie a anglický preklad)
+            db = rows.map((r, i) => ({ 
+                id: parseInt(r['#']) || i + 1,
+                lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, 
+                jlpt: r['JLPT']||'N5', 
+                kategoria: r['Kategória']||'', 
+                sk: r['Slovenský']||'', 
+                en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', // Fallback na SK ak EN chýba
+                romaji: String(r['Rómadži']||'').trim(), 
+                kana: r['Hiragana / Katakana']||'-', 
+                kanji: r['Kandži']||'-', 
+                obrazok: r['Obrázok']||r['Obrazok']||'' 
+            })).filter(w => w.sk && w.romaji && w.lekcia > 0);
+            
+            if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); msg.innerHTML = `✅ Data synced (${db.length} words).`; renderMap(); selectTestModeUI('free'); }
         } catch (error) {
-            msg.innerHTML = `⚠️ Cloud nedostupný. Načítavam poslednú lokálnu verziu.`;
+            msg.innerHTML = `⚠️ Cloud offline. Using local data.`;
             if (localStorage.getItem('finale_db')) { db = JSON.parse(localStorage.getItem('finale_db')); renderMap(); selectTestModeUI('free'); }
         }
         setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => overlay.style.display = 'none', 500); }, 500);
-    }
-
-    function handleFileUpload(e) {
-        let file = e.target.files[0]; if(!file) return; let reader = new FileReader();
-        reader.onload = function(evt) {
-            try { let workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'}); let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""}); db = rows.map(r => ({ lekcia: parseInt(r['Lekcia']||0), sk: r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||'', kategoria: r['Kategória']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0); if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); renderMap(); document.getElementById('dbMsg').innerHTML = `✅ Manuálne nahratých ${db.length} slov.`; } } catch (err) { document.getElementById('dbMsg').innerHTML = `❌ Chyba súboru.`; }
-        }; reader.readAsArrayBuffer(file);
     }
 
     function saveState() { localStorage.setItem('finale_state', JSON.stringify(state)); updateUI(); }
@@ -286,20 +352,60 @@
     }
 
     function populateSelects() {
-        let opts = ''; for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">Lekcia ${i}</option>`;
+        let opts = ''; for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">${currentLang==='sk'?'Lekcia':'Lesson'} ${i}</option>`;
         if(document.getElementById('learnLessonSelect')) document.getElementById('learnLessonSelect').innerHTML = opts;
         if(document.getElementById('quizFrom')) { document.getElementById('quizFrom').innerHTML = opts; document.getElementById('quizTo').innerHTML = opts; document.getElementById('quizTo').value = state.unlockedLesson; }
         if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; }
     }
 
+    // --- UČENIE (Nové rozdelenie Kartičky / Zoznam) ---
     let fcQueue = []; let fcIdx = 0;
-    function startLearn() { fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value)); if(fcQueue.length === 0) return alert('Žiadne slová v lekcii.'); fcIdx = 0; document.getElementById('learnSetup').classList.add('hidden'); document.getElementById('learnRun').classList.remove('hidden'); loadFc(); }
-    function loadFc() { document.getElementById('fcElement').classList.remove('is-flipped'); setTimeout(() => { let w = fcQueue[fcIdx]; document.getElementById('fcProgress').innerText = `Karta ${fcIdx + 1}/${fcQueue.length}`; document.getElementById('fcFrontSk').innerText = w.sk; let imgDiv = document.getElementById('fcImg'); if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; }, 150); }
+    
+    function startLearn(mode) { 
+        let lessonId = parseInt(document.getElementById('learnLessonSelect').value);
+        fcQueue = db.filter(w => w.lekcia === lessonId); 
+        if(fcQueue.length === 0) return; 
+        
+        document.getElementById('learnSetup').classList.add('hidden'); 
+        if (mode === 'cards') {
+            fcIdx = 0; document.getElementById('learnCardsRun').classList.remove('hidden'); loadFc(); 
+        } else if (mode === 'list') {
+            document.getElementById('learnListRun').classList.remove('hidden'); renderVocabList(lessonId);
+        }
+    }
+
+    function loadFc() { 
+        document.getElementById('fcElement').classList.remove('is-flipped'); 
+        setTimeout(() => { 
+            let w = fcQueue[fcIdx]; 
+            document.getElementById('fcProgress').innerText = currentLang === 'sk' ? `Karta ${fcIdx + 1}/${fcQueue.length}` : `Card ${fcIdx + 1}/${fcQueue.length}`; 
+            document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en; 
+            let imgDiv = document.getElementById('fcImg'); 
+            if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); 
+            document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; 
+            document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; 
+            document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; 
+        }, 150); 
+    }
+
+    function renderVocabList(lessonId) {
+        let pool = db.filter(w => w.lekcia === lessonId);
+        let tbody = document.getElementById('vocabListBody');
+        tbody.innerHTML = '';
+        pool.forEach(w => {
+            let tr = document.createElement('tr');
+            let meaning = currentLang === 'sk' ? w.sk : w.en;
+            tr.innerHTML = `<td>${w.lekcia}</td><td>${w.jlpt}</td><td>${w.id}</td><td style="font-weight:bold;">${meaning}</td><td>${w.romaji}</td><td>${w.kana !== '-' ? w.kana : ''}</td><td style="font-size:20px;">${w.kanji !== '-' ? w.kanji : ''}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
     function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
     function nextFc() { if(fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } else closeLearn(); }
     function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
-    function closeLearn() { document.getElementById('learnRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
+    function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
 
+    // --- TRÉNING ---
     function selectTestModeUI(mode) { document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } document.querySelectorAll('.setup-section').forEach(el => el.classList.add('hidden')); document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); }
 
     function startTraining(type) {
@@ -307,65 +413,78 @@
         if (type === 'unlock') { currentUnlockTarget = state.unlockedLesson; isBossTest = (currentUnlockTarget === 40 || currentUnlockTarget === 115); pool = isBossTest ? db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50) : db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10); testQueue = pool; } 
         else if (type === 'quiz') { let from = parseInt(document.getElementById('quizFrom').value); let to = parseInt(document.getElementById('quizTo').value); let count = parseInt(document.getElementById('quizCount').value) || 0; if(from > to) { let temp = from; from = to; to = temp; } pool = db.filter(w => w.lekcia >= from && w.lekcia <= to); testQueue = pool.sort(()=>0.5-Math.random()); if (count > 0 && count < testQueue.length) testQueue = testQueue.slice(0, count); } 
         else if (type === 'free') { let from = parseInt(document.getElementById('freeFrom').value); let to = parseInt(document.getElementById('freeTo').value); let count = parseInt(document.getElementById('freeCount').value) || 0; if(from > to) { let temp = from; from = to; to = temp; } pool = db.filter(w => w.lekcia >= from && w.lekcia <= to); testQueue = pool.sort(()=>0.5-Math.random()); if (count > 0 && count < testQueue.length) testQueue = testQueue.slice(0, count); }
-        if(testQueue.length === 0) return alert('Nedostatok slov na test v tomto rozsahu.');
+        if(testQueue.length === 0) return alert('No words / Žiadne slová');
         document.getElementById('trainSetup').classList.add('hidden'); document.getElementById('trainResult').classList.add('hidden'); document.getElementById('trainRun').classList.remove('hidden');
         if(type === 'quiz') { document.getElementById('classicInputArea').classList.add('hidden'); document.getElementById('quizInputArea').classList.remove('hidden'); document.getElementById('quizTimerContainer').classList.remove('hidden'); } else { document.getElementById('classicInputArea').classList.remove('hidden'); document.getElementById('quizInputArea').classList.add('hidden'); document.getElementById('quizTimerContainer').classList.add('hidden'); }
         loadTrainWord();
     }
 
-    function loadTrainWord() { let w = testQueue[currentIdx]; document.getElementById('twWord').innerText = w.sk; document.getElementById('testProgress').innerText = `Slovo ${currentIdx + 1}/${testQueue.length}`; document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes; document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden'); if(currentTestType === 'quiz') { let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); quizOptions = [w, ...others].sort(()=>0.5-Math.random()); for(let i=0; i<4; i++) { let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; } startQuizTimer(); } else { document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden'); } }
+    function loadTrainWord() { 
+        let w = testQueue[currentIdx]; 
+        document.getElementById('twWord').innerText = currentLang === 'sk' ? w.sk : w.en; 
+        document.getElementById('testProgress').innerText = currentLang === 'sk' ? `Slovo ${currentIdx + 1}/${testQueue.length}` : `Word ${currentIdx + 1}/${testQueue.length}`; 
+        document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes; 
+        document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden'); 
+        
+        if(currentTestType === 'quiz') { 
+            let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); 
+            quizOptions = [w, ...others].sort(()=>0.5-Math.random()); 
+            for(let i=0; i<4; i++) { 
+                let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; 
+            } startQuizTimer(); 
+        } else { 
+            document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden'); 
+        } 
+    }
 
     function startQuizTimer() { timeLeft = 7.0; let bar = document.getElementById('quizTimerBar'); bar.style.width = '100%'; bar.style.backgroundColor = 'var(--warning)'; clearInterval(quizTimer); quizTimer = setInterval(() => { timeLeft -= 0.1; bar.style.width = (timeLeft / 7.0) * 100 + '%'; if(timeLeft < 2.5) bar.style.backgroundColor = 'var(--danger)'; if(timeLeft <= 0) { clearInterval(quizTimer); processQuizResult(null); } }, 100); }
     function checkQuizAnswer(optIdx) { clearInterval(quizTimer); processQuizResult(quizOptions[optIdx]); }
     
-    // ZMENA 1: Odstránené addXP() po každom slove
-    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = `✅ <strong>Rýchle a správne!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = `❌ <strong>Chyba alebo vypršal čas.</strong> Správne: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
+    function processQuizResult(selectedWord) { 
+        let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; 
+        if(selectedWord && selectedWord.sk === w.sk) { 
+            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; 
+            fb.className = 'feedback-box fb-correct'; playCurrentAudio(); 
+            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } 
+        } else { 
+            fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba.</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong.</strong> Correct: ${w.romaji}`; 
+            fb.className = 'feedback-box fb-wrong'; mistakes++; 
+            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } 
+        } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); 
+    }
 
-    // ZMENA 2: Odstránené addXP() po každom slove
-    function checkTrainAnswer() { let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); if(validAnswers.includes(input)) { fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); } else { fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; fb.className = 'feedback-box fb-wrong'; mistakes++; } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
+    function checkTrainAnswer() { 
+        let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; 
+        let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); 
+        if(validAnswers.includes(input)) { 
+            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); 
+        } else { 
+            fb.innerHTML = currentLang === 'sk' ? `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; 
+            fb.className = 'feedback-box fb-wrong'; mistakes++; 
+        } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); 
+    }
 
     function nextTrainWord() { currentIdx++; if(currentIdx < testQueue.length) loadTrainWord(); else endTraining(); }
     
-    // ZMENA 3: Nová logika bodovania na konci testu
     function endTraining() { 
-        document.getElementById('trainRun').classList.add('hidden'); 
-        document.getElementById('trainResult').classList.remove('hidden'); 
-        
-        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); 
-        document.getElementById('trScore').innerText = `${perc}%`; 
-        let msg = document.getElementById('trMessage'); 
+        document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); 
+        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); 
         
         if (currentTestType === 'unlock') { 
-            if (perc >= 90) { 
-                msg.innerHTML = "🎉 Odomkol si novú úroveň!"; 
-                msg.style.color = "var(--success)"; 
-                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; 
-                addXP(isBossTest ? 500 : 100); 
-            } else { 
-                msg.innerHTML = "❌ Potrebuješ úspešnosť aspoň 90%. Skús znova."; 
-                msg.style.color = "var(--danger)"; 
-            } 
+            if (perc >= 90) { msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); 
+            } else { msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; msg.style.color = "var(--danger)"; } 
         } else {
-            // Režim Kvíz a Voľný tréning
-            if (perc >= 90) {
-                let earnedPoints = testQueue.length;
-                msg.innerHTML = `🎉 Skvelá práca! Získavaš +${earnedPoints} XP!`;
-                msg.style.color = "var(--success)";
-                addXP(earnedPoints);
-            } else {
-                msg.innerHTML = "Tréning dokončený. Na získanie bodov musíš mať úspešnosť aspoň 90%.";
-                msg.style.color = "var(--text-main)";
-            }
+            if (perc >= 90) { let earnedPoints = testQueue.length; msg.innerHTML = currentLang === 'sk' ? `🎉 Skvelá práca! +${earnedPoints} XP!` : `🎉 Great job! +${earnedPoints} XP!`; msg.style.color = "var(--success)"; addXP(earnedPoints);
+            } else { msg.innerHTML = currentLang === 'sk' ? "Na získanie bodov potrebuješ aspoň 90%." : "You need 90% to earn points."; msg.style.color = "var(--text-main)"; }
         }
     }
     
     function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); }
-
     function playAudioText(text) { let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85; let voices = window.speechSynthesis.getVoices(); let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP'); if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech); }
     function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji); }
 
     let dojoQueue = []; let dojoIdx = 0;
-    function startDojo() { if(db.length === 0) return; dojoQueue = []; let pool = db.filter(w => w.lekcia <= state.unlockedLesson); let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst')); let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves')); if(nouns.length < 2 || verbs.length < 1) return alert("Potrebuješ odomknúť viac lekcií."); for(let i=0; i<5; i++) { let n = nouns[Math.floor(Math.random()*nouns.length)]; let v = verbs[Math.floor(Math.random()*verbs.length)]; dojoQueue.push({ sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, correct: `watashi wa ${n.romaji.split('/')[0]} o ${v.romaji.split('/')[0]}` }); } dojoIdx = 0; document.getElementById('dojoSetup').classList.add('hidden'); document.getElementById('dojoRun').classList.remove('hidden'); loadDojoSentence(); }
+    function startDojo() { if(db.length === 0) return; dojoQueue = []; let pool = db.filter(w => w.lekcia <= state.unlockedLesson); let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst')); let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves')); if(nouns.length < 2 || verbs.length < 1) return alert("Unlock more lessons."); for(let i=0; i<5; i++) { let n = nouns[Math.floor(Math.random()*nouns.length)]; let v = verbs[Math.floor(Math.random()*verbs.length)]; dojoQueue.push({ sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, correct: `watashi wa ${n.romaji.split('/')[0]} o ${v.romaji.split('/')[0]}` }); } dojoIdx = 0; document.getElementById('dojoSetup').classList.add('hidden'); document.getElementById('dojoRun').classList.remove('hidden'); loadDojoSentence(); }
     function loadDojoSentence() { document.getElementById('djInput').value = ''; document.getElementById('djInput').disabled = false; document.getElementById('djFeedback').className = 'feedback-box hidden'; document.getElementById('djSubmitBtn').classList.remove('hidden'); document.getElementById('djNextBtn').classList.add('hidden'); document.getElementById('djPrompt').innerText = dojoQueue[dojoIdx].sk; }
     function checkDojoAnswer() { let input = document.getElementById('djInput').value.trim().toLowerCase().replace(/\s+/g, ' '); let s = dojoQueue[dojoIdx]; let fb = document.getElementById('djFeedback'); if(input === s.correct) { fb.innerHTML = `✅ <strong>Brilantné! +50 XP</strong>`; fb.className = 'feedback-box fb-correct'; addXP(50); } else { fb.innerHTML = `❌ Chyba. Vzor: ${s.correct}`; fb.className = 'feedback-box fb-wrong'; } document.getElementById('djInput').disabled = true; document.getElementById('djSubmitBtn').classList.add('hidden'); document.getElementById('djNextBtn').classList.remove('hidden'); }
     function nextDojoSentence() { dojoIdx++; if(dojoIdx < dojoQueue.length) loadDojoSentence(); else { document.getElementById('dojoRun').classList.add('hidden'); document.getElementById('dojoSetup').classList.remove('hidden'); } }
