@@ -474,7 +474,29 @@
 
     function switchTab(t) { document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + t).classList.add('active'); document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); if(t === 'map' && db.length > 0) renderMap(); if(t === 'train' || t === 'learn') populateSelects(); }
 
-    function renderMap() { const map = document.getElementById('lessonMap'); map.innerHTML = ''; const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b); totalLessons.forEach(l => { let isUnlocked = l <= state.unlockedLesson; let div = document.createElement('div'); div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`; if((l === 40 || l === 115) && isUnlocked) div.classList.add('boss-node'); div.innerHTML = `L${l}` + ((l === 40 || l === 115) ? '<br><small>BOSS</small>' : ''); if (isUnlocked) div.onclick = () => { document.getElementById('learnLessonSelect').value = l; switchTab('learn'); }; map.appendChild(div); }); }
+function renderMap() { 
+        const map = document.getElementById('lessonMap'); 
+        map.innerHTML = ''; 
+        const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b); 
+        
+        totalLessons.forEach(l => { 
+            let isUnlocked = l <= state.unlockedLesson; 
+            let div = document.createElement('div'); 
+            div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`; 
+            
+            if((l === 40 || l === 115) && isUnlocked) div.classList.add('boss-node'); 
+            div.innerHTML = `L${l}` + ((l === 40 || l === 115) ? '<br><small>BOSS</small>' : ''); 
+            
+            if (isUnlocked) {
+                div.onclick = () => { 
+                    document.getElementById('learnLessonSelect').value = l; 
+                    switchTab('learn'); 
+                    startLearn('cards'); // <-- Toto hneď spustí kartičky!
+                }; 
+            }
+            map.appendChild(div); 
+        }); 
+    }
     function populateSelects() { let opts = ''; for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">${currentLang==='sk'?'Lekcia':'Lesson'} ${i}</option>`; if(document.getElementById('learnLessonSelect')) document.getElementById('learnLessonSelect').innerHTML = opts; if(document.getElementById('quizFrom')) { document.getElementById('quizFrom').innerHTML = opts; document.getElementById('quizTo').innerHTML = opts; document.getElementById('quizTo').value = state.unlockedLesson; } if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; } }
 
     let fcQueue = []; let fcIdx = 0;
@@ -512,3 +534,4 @@
 </script>
 </body>
 </html>
+
