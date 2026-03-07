@@ -1,411 +1,516 @@
 <!DOCTYPE html>
 <html lang="sk">
 <head>
-    <meta charset="windows-1250">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonsky Trening - Ultimate</title>
+    <title>Japonský Tréning - Finále 1.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
-            --primary: #3b82f6; --primary-hover: #2563eb; --success: #10b981; --danger: #ef4444;
-            --dark-bg: #0f172a; --container-bg: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
-            --input-bg: #0f172a; --border: #334155; --card-back: #1e3a8a;
+            --bg-dark: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --locked: #334155; --border: #334155;
         }
-
-        body { font-family: 'Nunito', 'Segoe UI', sans-serif; background: var(--dark-bg); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 90vh; }
-        .container { background: var(--container-bg); width: 100%; max-width: 600px; padding: 30px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        h1 { text-align: center; color: var(--text-main); margin-top: 0; font-size: 26px; margin-bottom: 25px; }
+        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
+        .app-container { background: var(--bg-card); width: 100%; max-width: 700px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         
-        .nav { display: flex; background: var(--dark-bg); border-radius: 16px; padding: 5px; margin-bottom: 25px; overflow-x: auto; }
-        .btn-nav { flex: 1; min-width: 100px; background: transparent; color: var(--text-muted); border: none; padding: 10px 15px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; transition: all 0.3s ease; white-space: nowrap; }
-        .btn-nav:hover { color: var(--text-main); }
-        .btn-nav.active { background: var(--container-bg); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-
-        button.action-btn { background: var(--primary); color: #ffffff; border: none; padding: 14px 20px; border-radius: 16px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: transform 0.1s, background 0.2s, box-shadow 0.2s; box-shadow: 0 4px 0px #1e40af; margin-bottom: 10px; }
-        button.action-btn:hover { background: var(--primary-hover); transform: translateY(2px); box-shadow: 0 2px 0px #1e40af; }
-        button.action-btn:active { transform: translateY(4px); box-shadow: none; }
+        /* Topbar & RPG */
+        .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .rpg-stat { text-align: center; }
+        .rpg-val { font-size: 20px; font-weight: 800; color: var(--primary); }
+        .rpg-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
         
-        button.server-btn { background: var(--success); color: #ffffff; border: none; padding: 16px 20px; border-radius: 16px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; transition: 0.2s; box-shadow: 0 4px 0px #047857; margin-bottom: 20px; }
-        button.server-btn:hover { background: #059669; transform: translateY(2px); box-shadow: 0 2px 0px #047857; }
-        button.server-btn:active { transform: translateY(4px); box-shadow: none; }
-
-        button.danger-btn { background: transparent; color: var(--danger); border: 2px solid var(--danger); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.2s; }
-        button.danger-btn:hover { background: rgba(239, 68, 68, 0.1); }
-        button.small-btn { background: var(--dark-bg); color: var(--text-muted); border: 1px solid var(--border); padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-right: 5px;}
-        button.small-btn:hover { color: var(--text-main); border-color: var(--text-muted); }
-
-        .tab { display: none; animation: fadeIn 0.3s; }
-        .tab.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        input[type="text"], input[type="number"], select { width: 100%; padding: 22px; border: 2px solid var(--border); border-radius: 16px; font-size: 16px; box-sizing: border-box; margin-bottom: 15px; outline: none; transition: border-color 0.2s; background: var(--input-bg); color: var(--text-main); }
-        input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
+        /* Navigácia */
+        .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .btn-nav { flex: 1; min-width: 90px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-nav.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; max-height: 160px; overflow-y: auto; background: var(--dark-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
-        .lesson-checkbox { color: var(--text-main); font-size: 22px; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;}
-        .lesson-checkbox input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); margin: 0;}
-        .lesson-grid::-webkit-scrollbar { width: 6px; }
-        .lesson-grid::-webkit-scrollbar-track { background: var(--dark-bg); }
-        .lesson-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-        .flashcard-container { perspective: 1000px; width: 100%; height: 260px; margin-bottom: 25px; cursor: pointer; }
-        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
-        .flashcard.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 24px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 2px solid var(--border); }
-        .card-front { background: var(--dark-bg); color: var(--text-main); }
-        .card-back { background: var(--card-back); color: var(--text-main); transform: rotateY(180deg); border-color: var(--primary); }
+        /* Map (Odomykanie) */
+        .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .lesson-node { padding: 15px 10px; border-radius: 12px; text-align: center; font-weight: bold; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
+        .node-unlocked { background: rgba(59, 130, 246, 0.1); border-color: var(--primary); color: var(--text-main); }
+        .node-unlocked:hover { background: var(--primary); color: white; }
+        .node-locked { background: var(--bg-dark); color: var(--text-muted); border-color: var(--border); opacity: 0.7; cursor: not-allowed; }
+        .boss-node { background: rgba(245, 158, 11, 0.1); border-color: var(--warning); color: var(--warning); }
         
-        .fc-word { font-size: 40px; font-weight: 800; text-align: center; margin-bottom: 15px; }
-        .fc-romaji { font-size: 30px; font-weight: bold; color: #93c5fd; margin-bottom: 10px; }
-        .fc-kana { font-size: 30px; margin-bottom: 5px; }
-        .fc-kanji { font-size: 35px; color: #60a5fa; }
-        .fc-hint { font-size: 30px; color: var(--text-muted); position: absolute; bottom: 15px; }
-        .fc-lesson { font-size: 12px; color: var(--text-muted); position: absolute; top: 15px; }
+        /* UI Elements */
+        .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
         
-        .fc-controls { display: flex; gap: 10px; }
-        .fc-btn { flex: 1; background: var(--dark-bg); color: var(--text-main); border: 2px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .fc-btn:hover { background: var(--border); }
-
-        .dict-table-wrapper { max-height: 350px; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); }
-        .dict-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 22px; }
-        .dict-table th { background: var(--dark-bg); color: var(--primary); padding: 12px; position: sticky; top: 0; z-index: 10; font-weight: bold; border-bottom: 2px solid var(--border); }
-        .dict-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
-        .dict-table tr:hover { background: rgba(255,255,255,0.02); }
-        .dict-kana-kanji { color: var(--text-muted); font-size: 12px; }
-
-        .progress-container { width: 100%; height: 10px; background: var(--dark-bg); border-radius: 10px; margin-bottom: 25px; overflow: hidden; border: 1px solid var(--border); }
-        .progress-bar { height: 100%; background: var(--success); width: 0%; border-radius: 10px; transition: width 0.4s ease; }
-        .word-display { font-size: 32px; font-weight: 800; margin-bottom: 25px; color: var(--text-main); }
-        .feedback { font-size: 18px; font-weight: bold; min-height: 28px; margin-bottom: 15px; border-radius: 12px; padding: 10px; display: none; }
-        .correct { color: #34d399; background: rgba(5, 150, 105, 0.2); display: block; }
-        .incorrect { color: #f87171; background: rgba(220, 38, 38, 0.2); display: block; }
-        .results { background: var(--dark-bg); padding: 20px; border-radius: 16px; margin-top: 15px; border: 1px solid var(--border); max-height: 200px; overflow-y: auto; }
-        .error-item { border-bottom: 1px solid var(--border); padding: 10px 0; text-align: left; }
-        .error-item:last-child { border-bottom: none; }
-        .slovak-err { font-weight: bold; font-size: 16px; margin-bottom: 4px; color: var(--text-main); }
+        input[type="text"] { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin-bottom: 10px; }
+        .btn-primary { background: var(--primary); box-shadow: 0 4px 0 #1e40af; }
+        .btn-primary:active { transform: translateY(4px); box-shadow: none; }
+        .btn-success { background: var(--success); box-shadow: 0 4px 0 #065f46; }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
+        
+        /* Testovanie */
+        .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
+        .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
+        .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
+        .fb-correct { background: rgba(16, 185, 129, 0.2); color: #34d399; display: block; }
+        .fb-wrong { background: rgba(239, 68, 68, 0.2); color: #f87171; display: block; }
+        .dojo-analysis { font-size: 14px; text-align: left; margin-top: 10px; color: var(--text-muted); }
         
         .hidden { display: none !important; }
-        .text-center { text-align: center; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>&#127884; Japonsky Trening - Ultimate</h1>
-    
+<div class="app-container">
+    <div class="topbar">
+        <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label">Level</div></div>
+        <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label">XP</div></div>
+        <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label">Streak</div></div>
+    </div>
+
     <div class="nav">
-        <button id="btnTabDict" class="btn-nav active" onclick="switchTab('dict')">&#128214; Slovnik</button>
-        <button id="btnTabCards" class="btn-nav" onclick="switchTab('cards')">&#127183; Karticky</button>
-        <button id="btnTabTest" class="btn-nav" onclick="switchTab('test')">&#128221; Test</button>
-        <button id="btnTabDb" class="btn-nav" onclick="switchTab('db')">&#128190; Excel</button>
+        <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap">🗺️ Cesta</button>
+        <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain">🏋️ Tréning</button>
+        <button class="btn-nav" onclick="switchTab('dojo')" id="btnTabDojo">🏯 Dódžó</button>
+        <button class="btn-nav" onclick="switchTab('db')" id="btnTabDb">⚙️ Dáta</button>
     </div>
 
-    <div id="tab-dict" class="tab active text-center">
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="dictSearch" placeholder="Hladat slovensky alebo romaji..." onkeyup="renderDictionary()">
-            <select id="dictLessonFilter" style="width: 140px;" onchange="renderDictionary()">
-                <option value="all">Vsetky lekcie</option>
-            </select>
-        </div>
-        <div class="dict-table-wrapper">
-            <table class="dict-table">
-                <thead><tr><th>Lekcia</th><th>Slovensky</th><th>Japonsky (Romaji / Znaky)</th></tr></thead>
-                <tbody id="dictTableBody"><tr><td colspan="3" class="text-center">Stiahni databazu v zalo�ke Excel.</td></tr></tbody>
-            </table>
-        </div>
-        <div id="dictCount" style="margin-top: 10px; font-size: 12px; color: var(--text-muted);"></div>
+    <div id="tab-map" class="tab active">
+        <h2 style="margin-top:0;">Tvoja cesta k plynulosti</h2>
+        <p style="color:var(--text-muted); font-size:14px;">Odomkni ďalšiu lekciu testom s 90% úspešnosťou.</p>
+        <div id="lessonMap" class="map-grid"></div>
     </div>
 
-    <div id="tab-cards" class="tab text-center">
-        <div id="cardsSetupArea">
-            <div style="text-align: left; margin-bottom: 5px;">
-                <label style="font-weight:bold; color:var(--text-muted);">Z ktorych lekcii chces robit karticky?</label>
-                <div style="float: right;">
-                    <button class="small-btn" onclick="toggleAllLessons('cards-cb', true)">Vsetky</button>
-                    <button class="small-btn" onclick="toggleAllLessons('cards-cb', false)">Ziadne</button>
-                </div>
+    <div id="tab-train" class="tab">
+        <div id="trainSetup">
+            <h2>Vyber si lekciu na bežný tréning</h2>
+            <select id="trainLessonSelect" style="width:100%; padding:15px; border-radius:12px; background:var(--bg-dark); color:white; border:1px solid var(--border); margin-bottom:15px;"></select>
+            <button class="btn btn-primary" onclick="startTraining('normal')">Spustiť tréning (Mód A)</button>
+        </div>
+
+        <div id="trainRun" class="hidden">
+            <div class="test-header">
+                <span id="testProgress">Slovo 1/20</span>
+                <span>✅ <span id="testCorrect">0</span> | ❌ <span id="testWrong">0</span></span>
             </div>
-            <div id="lessonCheckboxesCards" class="lesson-grid"></div>
-            <button class="action-btn" onclick="startFlashcards()">&#9654;&#65039; Spustit ucenie</button>
-        </div>
-
-        <div id="cardsPlayArea" class="hidden">
-            <div style="margin-bottom: 10px; color: var(--text-muted); font-size: 14px;" id="cardsProgress">Karta 1 / 20</div>
             
-            <div class="flashcard-container" onclick="flipCard()">
-                <div class="flashcard" id="flashcardElement">
-                    <div class="card-face card-front">
-                        <div class="fc-lesson" id="fcFrontLesson">Lekcia 0</div>
-                        <div class="fc-word" id="fcFrontWord">Slovo</div>
-                        <div class="fc-hint">Klikni na kartu pre otocenie</div>
-                    </div>
-                    <div class="card-face card-back">
-                        <div class="fc-lesson" id="fcBackLesson">Lekcia 0</div>
-                        <div class="fc-romaji" id="fcBackRomaji">romaji</div>
-                        <div class="fc-kana" id="fcBackKana">hiragana</div>
-                        <div class="fc-kanji" id="fcBackKanji">kanji</div>
-                        <div class="fc-hint">Klikni pre otocenie spat</div>
-                    </div>
-                </div>
+            <div class="word-display" id="twWord">Slovo</div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button class="btn btn-audio hidden" id="twAudioBtn" onclick="playCurrentAudio()">🔊 Prehrať</button>
             </div>
 
-            <div class="fc-controls">
-                <button class="fc-btn" onclick="prevCard()">&#11013;&#65039; Predosla</button>
-                <button class="fc-btn" onclick="nextCard()">Dalsia &#10145;&#65039;</button>
-            </div>
-            <button class="danger-btn" style="margin-top: 20px; padding: 10px;" onclick="resetCards()">&#10006;&#65039; Ukoncit ucenie</button>
+            <div id="twFeedback" class="feedback-box"></div>
+            
+            <input type="text" id="twInput" placeholder="Zadaj Rómadži..." autocomplete="off">
+            <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť</button>
+            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Ďalšie slovo ➡️</button>
+        </div>
+
+        <div id="trainResult" class="hidden text-center">
+            <h1 style="font-size: 50px; color:var(--primary); margin-bottom: 5px;" id="trScore">0%</h1>
+            <p id="trMessage" style="color:var(--text-muted);"></p>
+            <button class="btn btn-primary" onclick="closeTraining()">Späť na mapu</button>
         </div>
     </div>
 
-    <div id="tab-test" class="tab text-center">
-        <div id="setupArea">
-            <div style="text-align: left; margin-bottom: 5px;">
-                <label style="font-weight:bold; color:var(--text-muted);">Vyber si lekcie na test:</label>
-                <div style="float: right;">
-                    <button class="small-btn" onclick="toggleAllLessons('test-cb', true)">Vsetky</button>
-                    <button class="small-btn" onclick="toggleAllLessons('test-cb', false)">Ziadne</button>
-                </div>
-            </div>
-            <div id="lessonCheckboxesTest" class="lesson-grid"></div>
-
-            <label style="display:block; text-align:left; font-weight:bold; margin-bottom:10px; margin-top:10px; color:var(--text-muted);">Pocet slovicok v teste:</label>
-            <input type="number" id="testCount" value="20" min="1">
-            <button class="action-btn" onclick="startTest()">&#128640; Spustit test</button>
+    <div id="tab-dojo" class="tab">
+        <h2>Gramatické Dódžó</h2>
+        <p style="color:var(--text-muted); font-size:14px;">Skladaj vety zo slovíčok, ktoré už ovládaš.</p>
+        
+        <div id="dojoSetup">
+            <button class="btn btn-primary" onclick="startDojo()">Spustiť Dódžó (5 viet)</button>
         </div>
 
-        <div id="testingArea" class="hidden">
-            <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
-            <div id="wordPrompt" class="word-display">Slovenske slovo</div>
-            <div id="feedbackBox" class="feedback"></div>
-            <input type="text" id="answerInput" placeholder="Romaji, hiragana alebo kanji..." autocomplete="off">
-            <button class="action-btn" onclick="checkAnswer()">Skontrolovat (Enter)</button>
-        </div>
-
-        <div id="resultArea" class="hidden text-center">
-            <h2 style="color: var(--text-muted); margin-top:0;">Tvoj vysledok</h2>
-            <div id="scoreDisplay" class="word-display" style="color: var(--primary); font-size: 46px;">0%</div>
-            <div id="errorList" class="results hidden">
-                <h3 style="margin-top:0; color:var(--danger); font-size:16px;">Treba zopakovat:</h3>
-                <div id="errorItems"></div>
-            </div>
-            <button class="action-btn" style="margin-top: 20px;" onclick="resetTest()">&#128260; Dalsi test</button>
+        <div id="dojoRun" class="hidden">
+            <div class="word-display" style="font-size: 24px;" id="djPrompt">Slovenská veta</div>
+            <div id="djFeedback" class="feedback-box"></div>
+            <input type="text" id="djInput" placeholder="Napíš japonskú vetu (rómadži)..." autocomplete="off">
+            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()">Skontrolovať rozbor</button>
+            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()">Ďalšia veta</button>
         </div>
     </div>
 
-    <div id="tab-db" class="tab text-center">
-        <h3 style="margin-top:0;">Zdroj databazy</h3>
-        <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
-            Ak si prave otvoril appku na novom zariadeni (napr. na mobile), stiahni si databazu z cloudu.
-        </p>
+    <div id="tab-db" class="tab">
+        <h2>Zdrojová Databáza</h2>
+        <p style="color:var(--text-muted); font-size:14px;">Nahraj súbor Kompletna_Databaza_3000_Slov.xlsx</p>
+        <input type="file" id="excelFile" accept=".xlsx" style="background:var(--bg-dark); color:white; padding:10px; width:100%; border-radius:10px;" onchange="handleFileUpload(event)">
+        <div id="dbMsg" style="margin-top:15px; font-weight:bold;"></div>
         
-        <button class="server-btn" onclick="fetchExcelFromServer()">&#127183; Stiahnut databazu (50 Lekcii)</button>
-        
-        <p style="color: var(--text-muted); font-size: 12px; margin-top: 20px;">Alebo mozes manualne nahrat iny Excel z tohto zariadenia:</p>
-        <label class="action-btn" style="display: block; cursor: pointer; background: var(--border); box-shadow: none;">
-            &#128194; Manualne vybrat Excel
-            <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleFileUpload(event)">
-        </label>
-        
-        <div id="dbSaveMessage" style="text-align: center; margin-top: 20px; font-weight: bold; min-height: 30px;"></div>
-        <hr style="margin: 30px 0 20px 0; border: none; border-top: 2px dashed var(--border);">
-        <button class="danger-btn" onclick="clearDatabase()">&#128465; Vymazat pamat z prehliadaca</button>
+        <hr style="border-color:var(--border); margin:30px 0;">
+        <button class="btn btn-warning" onclick="hardReset()">⚠️ Vymazať celý postup (Hard Reset)</button>
     </div>
 </div>
 
 <script>
-    let database = [];
-    let currentTestQueue = []; let currentWord = null; let mistakes = []; let currentIndex = 0; let totalQuestions = 0;
-    let flashcardQueue = []; let flashcardIndex = 0;
+    // --- STAV APLIKÁCIE (State) ---
+    let db = [];
+    let state = {
+        unlockedLesson: 1,
+        xp: 0,
+        streak: 0,
+        lastDate: null
+    };
+    
+    // Aktuálny test
+    let testQueue = [];
+    let currentIdx = 0;
+    let mistakes = 0;
+    let testMode = 'normal'; // 'normal', 'unlock', 'boss'
+    let currentUnlockTarget = 0;
 
-    window.onload = function() {
-        let savedData = localStorage.getItem('japonsky_slovnik_ultimate');
-        if (savedData) { database = JSON.parse(savedData); initApp(); }
-        document.getElementById("answerInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") { event.preventDefault(); checkAnswer(); }
+    // --- INICIALIZÁCIA ---
+    window.onload = () => {
+        const savedDb = localStorage.getItem('finale_db');
+        const savedState = localStorage.getItem('finale_state');
+        if (savedDb) db = JSON.parse(savedDb);
+        if (savedState) state = JSON.parse(savedState);
+        
+        checkStreak();
+        updateUI();
+        if(db.length > 0) renderMap();
+        else switchTab('db');
+
+        // Enter key bindings
+        document.getElementById('twInput').addEventListener('keypress', e => {
+            if(e.key === 'Enter') {
+                if(document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer();
+                else nextTrainWord();
+            }
         });
     };
 
-    function initApp() {
-        renderLessonCheckboxes('lessonCheckboxesTest', 'test-cb');
-        renderLessonCheckboxes('lessonCheckboxesCards', 'cards-cb');
-        populateLessonFilter(); renderDictionary();
+    function saveState() {
+        localStorage.setItem('finale_state', JSON.stringify(state));
+        updateUI();
     }
 
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + tabName).classList.add('active');
-        
-        if (tabName === 'dict') { document.getElementById('btnTabDict').classList.add('active'); renderDictionary(); }
-        if (tabName === 'cards') { document.getElementById('btnTabCards').classList.add('active'); }
-        if (tabName === 'test') { document.getElementById('btnTabTest').classList.add('active'); }
-        if (tabName === 'db') { document.getElementById('btnTabDb').classList.add('active'); document.getElementById('dbSaveMessage').innerHTML = ""; }
+    function addXP(amount) {
+        state.xp += amount;
+        saveState();
     }
 
-    function cleanString(str) {
-        if (!str) return "";
-        return String(str).replace(/^[\??\s]+/, '').replace(/[\??\s]+$/, '').trim();
-    }
-
-    function processExcelData(excelRows, msgEl) {
-        let newDb = [];
-        excelRows.forEach(row => {
-            let keys = Object.keys(row);
-            let lekciaKey = keys.find(k => k.toLowerCase().includes("lekcia"));
-            let slovakKey = keys.find(k => k.toLowerCase().includes("slovensk"));
-            let romajiKey = keys.find(k => k.toLowerCase().includes("romaji") || k.toLowerCase().includes("romadzi"));
-            let hiraKey = keys.find(k => k.toLowerCase().includes("hiragana") || k.toLowerCase().includes("katakana"));
-            let kanjiKey = keys.find(k => k.toLowerCase().includes("kanji") || k.toLowerCase().includes("kandzi"));
-
-            if(slovakKey && romajiKey) {
-                let slovak = cleanString(row[slovakKey]);
-                let romaji = cleanString(row[romajiKey]);
-                let hira = hiraKey ? cleanString(row[hiraKey]) : "-";
-                let kanji = kanjiKey ? cleanString(row[kanjiKey]) : "-";
-                let lekcia = lekciaKey ? parseInt(row[lekciaKey]) : 0;
-                
-                if (slovak && romaji && !slovak.toLowerCase().includes("slovensk") && romaji !== "-") {
-                    newDb.push({ lekcia: isNaN(lekcia) ? 0 : lekcia, slovak: slovak, romaji: romaji, hiragana: hira, kanji: kanji });
-                }
+    function checkStreak() {
+        const today = new Date().toDateString();
+        if (state.lastDate !== today) {
+            let yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (state.lastDate === yesterday.toDateString()) {
+                state.streak++;
+            } else if (state.lastDate !== null) {
+                state.streak = 1; // Reset if missed a day
+            } else {
+                state.streak = 1; // First time
             }
-        });
-
-        if (newDb.length > 0) {
-            database = newDb;
-            localStorage.setItem('japonsky_slovnik_ultimate', JSON.stringify(database));
-            msgEl.style.color = "var(--success)"; msgEl.innerHTML = `&#9989; Uspesne ulozenych ${database.length} slovicok.`;
-            initApp();
-        } else {
-            msgEl.style.color = "var(--danger)"; msgEl.innerHTML = "&#10060; Nenasli sa platne slovicka.";
+            state.lastDate = today;
+            saveState();
         }
     }
 
-    // AUTOMATICKE STIAHNUTIE Z WEBU
-    async function fetchExcelFromServer() {
-        let msgEl = document.getElementById('dbSaveMessage');
-        msgEl.style.color = "var(--text-main)"; msgEl.innerHTML = "&#8987; Stahujem databazu zo servera...";
-        try {
-            let response = await fetch('Kompletny_Japonsky_Slovnik_50_Lekcii.xlsx');
-            if (!response.ok) throw new Error("Subor sa nenasiel na webe");
-            let arrayBuffer = await response.arrayBuffer();
-            let data = new Uint8Array(arrayBuffer);
-            let workbook = XLSX.read(data, {type: 'array'});
-            let excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-            processExcelData(excelRows, msgEl);
-        } catch (error) {
-            msgEl.style.color = "var(--danger)"; 
-            msgEl.innerHTML = "&#10060; Nepodarilo sa stiahnut Excel. (Funguje to len ked je appka uz nahrata na webe).";
-            console.error(error);
-        }
+    function updateUI() {
+        let level = Math.floor(state.xp / 500) + 1;
+        document.getElementById('uiLevel').innerText = level;
+        document.getElementById('uiXp').innerText = state.xp;
+        document.getElementById('uiStreak').innerText = state.streak + " 🔥";
     }
 
-    // MANUALNE NAHRATIE Z PC
+    function switchTab(t) {
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.btn-nav').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + t).classList.add('active');
+        document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
+        if(t === 'map' && db.length > 0) renderMap();
+        if(t === 'train') populateTrainSelect();
+    }
+
+    // --- SPRACOVANIE EXCELU ---
     function handleFileUpload(e) {
         let file = e.target.files[0]; if(!file) return;
-        let msgEl = document.getElementById('dbSaveMessage');
-        msgEl.style.color = "var(--text-main)"; msgEl.innerHTML = "&#8987; Spracovavam...";
-
         let reader = new FileReader();
         reader.onload = function(evt) {
             try {
                 let data = new Uint8Array(evt.target.result);
                 let workbook = XLSX.read(data, {type: 'array'});
-                let excelRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-                processExcelData(excelRows, msgEl);
-            } catch (error) { msgEl.style.color = "var(--danger)"; msgEl.innerHTML = "&#10060; Nastala chyba pri citani."; }
+                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                
+                db = rows.map(r => ({
+                    lekcia: parseInt(r['Lekcia'] || r['lekcia']) || 0,
+                    jlpt: r['JLPT'] || r['jlpt'] || 'N5',
+                    kategoria: r['Kategória'] || r['Kategoria'] || r['kategoria'] || '',
+                    sk: r['Slovenský'] || r['Slovensky'] || r['slovensky'] || '',
+                    romaji: String(r['Rómadži'] || r['Romaji'] || r['romaji']).trim(),
+                    kana: r['Hiragana / Katakana'] || '-',
+                    kanji: r['Kandži'] || r['Kanji'] || '-'
+                })).filter(w => w.sk && w.romaji && w.lekcia > 0);
+
+                if (db.length > 0) {
+                    localStorage.setItem('finale_db', JSON.stringify(db));
+                    document.getElementById('dbMsg').innerHTML = `<span style="color:var(--success)">✅ Úspech: ${db.length} slov načítaných!</span>`;
+                    renderMap();
+                }
+            } catch (err) {
+                document.getElementById('dbMsg').innerHTML = `<span style="color:var(--danger)">❌ Chyba pri čítaní súboru.</span>`;
+            }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    function renderLessonCheckboxes(containerId, cbClass) {
-        let container = document.getElementById(containerId);
-        if (database.length === 0) { container.innerHTML = '<div style="color:var(--text-muted); font-size:14px; grid-column:1/-1;">Zatial nemas databazu.</div>'; return; }
-        let uniqueLessons = [...new Set(database.map(w => w.lekcia))].filter(l => l > 0).sort((a,b) => a-b);
-        container.innerHTML = "";
+    // --- MAPA A GATING ---
+    function renderMap() {
+        const map = document.getElementById('lessonMap');
+        map.innerHTML = '';
+        const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b);
         
-        uniqueLessons.forEach(lekcia => {
-            let count = database.filter(w => w.lekcia === lekcia).length;
-            let label = document.createElement('label'); label.className = "lesson-checkbox";
-            let isChecked = lekcia <= 24 ? "checked" : "";
-            label.innerHTML = `<input type="checkbox" value="${lekcia}" class="${cbClass}" ${isChecked}> L${lekcia} (${count})`;
-            container.appendChild(label);
+        totalLessons.forEach(l => {
+            let div = document.createElement('div');
+            let isUnlocked = l <= state.unlockedLesson;
+            
+            // Boss Fight Check (Každá 40. lekcia je Boss)
+            let isBoss = (l === 40 || l === 115); 
+            
+            div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`;
+            if(isBoss && isUnlocked) div.classList.add('boss-node');
+            
+            div.innerHTML = `L${l}`;
+            if (isBoss) div.innerHTML += '<br><small>BOSS</small>';
+
+            if (isUnlocked) {
+                div.onclick = () => showLessonOptions(l, isBoss);
+            }
+            map.appendChild(div);
         });
     }
 
-    function toggleAllLessons(cbClass, state) { document.querySelectorAll('.' + cbClass).forEach(cb => cb.checked = state); }
-    function clearDatabase() { if(confirm("Naozaj chces vymazat celu databazu z prehliadaca?")) { localStorage.removeItem('japonsky_slovnik_ultimate'); database = []; initApp(); document.getElementById('dbSaveMessage').innerHTML = ""; } }
-
-    function populateLessonFilter() {
-        let filter = document.getElementById('dictLessonFilter'); filter.innerHTML = '<option value="all">Vsetky lekcie</option>';
-        if(database.length === 0) return;
-        [...new Set(database.map(w => w.lekcia))].filter(l => l > 0).sort((a,b) => a-b).forEach(l => { filter.innerHTML += `<option value="${l}">Lekcia ${l}</option>`; });
+    function showLessonOptions(l, isBoss) {
+        if (l === state.unlockedLesson) {
+            if (confirm(`Chceš spustiť postupový test z Lekcie ${l} pre odomknutie ďalšej?`)) {
+                startUnlockTest(l, isBoss);
+            }
+        } else {
+            alert(`Lekciu ${l} už máš odomknutú. Môžeš si ju precvičiť v záložke Tréning.`);
+            switchTab('train');
+        }
     }
 
-    function renderDictionary() {
-        let tbody = document.getElementById('dictTableBody'); let countDisplay = document.getElementById('dictCount');
-        if(database.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center">Databaza je prazdna.</td></tr>'; countDisplay.innerText = ""; return; }
-        let searchQ = document.getElementById('dictSearch').value.toLowerCase(); let filterL = document.getElementById('dictLessonFilter').value;
-        let filtered = database.filter(w => { let matchSearch = w.slovak.toLowerCase().includes(searchQ) || w.romaji.toLowerCase().includes(searchQ); let matchLesson = filterL === "all" ? true : w.lekcia === parseInt(filterL); return matchSearch && matchLesson; });
-        tbody.innerHTML = "";
-        if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="text-center">Nenasli sa ziadne slovicka.</td></tr>'; } 
-        else { filtered.forEach(w => { let kanaKanjiStr = ""; if(w.hiragana !== "-" && w.kanji !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.hiragana} / ${w.kanji}</div>`; else if(w.hiragana !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.hiragana}</div>`; else if(w.kanji !== "-") kanaKanjiStr = `<div class="dict-kana-kanji">${w.kanji}</div>`; tbody.innerHTML += `<tr><td>${w.lekcia}</td><td style="font-weight:bold;">${w.slovak}</td><td>${w.romaji} ${kanaKanjiStr}</td></tr>`; }); }
-        countDisplay.innerText = `Zobrazenych slov: ${filtered.length}`;
+    function populateTrainSelect() {
+        const sel = document.getElementById('trainLessonSelect');
+        sel.innerHTML = '';
+        for(let i = 1; i <= state.unlockedLesson; i++) {
+            sel.innerHTML += `<option value="${i}">Lekcia ${i}</option>`;
+        }
     }
 
-    function startFlashcards() {
-        if (database.length === 0) { alert("Nem� datab�zu!"); return; }
-        let selected = Array.from(document.querySelectorAll('.cards-cb:checked')).map(cb => parseInt(cb.value));
-        if (selected.length === 0) { alert("Vyber si aspo� jednu lekciu!"); return; }
-        flashcardQueue = database.filter(w => selected.includes(w.lekcia));
-        for (let i = flashcardQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [flashcardQueue[i], flashcardQueue[j]] = [flashcardQueue[j], flashcardQueue[i]]; }
-        flashcardIndex = 0; document.getElementById('cardsSetupArea').classList.add('hidden'); document.getElementById('cardsPlayArea').classList.remove('hidden'); updateFlashcardView();
+    // --- TRÉNINGOVÁ LOGIKA ---
+    function startTraining(mode) {
+        let pool = [];
+        testMode = mode;
+        mistakes = 0; currentIdx = 0;
+
+        if (mode === 'normal') {
+            let l = parseInt(document.getElementById('trainLessonSelect').value);
+            pool = db.filter(w => w.lekcia === l);
+        } else if (mode === 'unlock') {
+            pool = db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
+        } else if (mode === 'boss') {
+            pool = db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50);
+        }
+
+        testQueue = pool.sort(() => 0.5 - Math.random());
+        if(testQueue.length === 0) return alert('Žiadne slová v lekcii.');
+
+        document.getElementById('trainSetup').classList.add('hidden');
+        document.getElementById('trainResult').classList.add('hidden');
+        document.getElementById('trainRun').classList.remove('hidden');
+        
+        loadTrainWord();
     }
 
-    function updateFlashcardView() {
-        if(flashcardQueue.length === 0) return; let w = flashcardQueue[flashcardIndex];
-        document.getElementById('flashcardElement').classList.remove('is-flipped');
-        setTimeout(() => { document.getElementById('cardsProgress').innerText = `Karta ${flashcardIndex + 1} z ${flashcardQueue.length}`; document.getElementById('fcFrontLesson').innerText = `Lekcia ${w.lekcia}`; document.getElementById('fcFrontWord').innerText = w.slovak; document.getElementById('fcBackLesson').innerText = `Lekcia ${w.lekcia}`; document.getElementById('fcBackRomaji').innerText = w.romaji; document.getElementById('fcBackKana').innerText = w.hiragana === "-" ? "" : w.hiragana; document.getElementById('fcBackKanji').innerText = w.kanji === "-" ? "" : w.kanji; }, 150);
+    function startUnlockTest(lesson, isBoss) {
+        currentUnlockTarget = lesson;
+        switchTab('train');
+        startTraining(isBoss ? 'boss' : 'unlock');
     }
-    function flipCard() { document.getElementById('flashcardElement').classList.toggle('is-flipped'); }
-    function nextCard() { if(flashcardIndex < flashcardQueue.length - 1) { flashcardIndex++; updateFlashcardView(); } else { alert("Posledn� karta!"); } }
-    function prevCard() { if(flashcardIndex > 0) { flashcardIndex--; updateFlashcardView(); } }
-    function resetCards() { document.getElementById('cardsPlayArea').classList.add('hidden'); document.getElementById('cardsSetupArea').classList.remove('hidden'); }
 
-    function startTest() {
-        if (database.length === 0) { alert("Nem� datab�zu!"); return; }
-        let selected = Array.from(document.querySelectorAll('.test-cb:checked')).map(cb => parseInt(cb.value));
-        if (selected.length === 0) { alert("Vyber si aspo� jednu lekciu!"); return; }
-        let testDb = database.filter(w => selected.includes(w.lekcia));
-        let count = parseInt(document.getElementById('testCount').value); if (isNaN(count) || count < 1) count = 20; if (count > testDb.length) count = testDb.length;
-        for (let i = testDb.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [testDb[i], testDb[j]] = [testDb[j], testDb[i]]; }
-        currentTestQueue = testDb.slice(0, count); totalQuestions = currentTestQueue.length; currentIndex = 0; mistakes = [];
-        document.getElementById('setupArea').classList.add('hidden'); document.getElementById('resultArea').classList.add('hidden'); document.getElementById('testingArea').classList.remove('hidden'); document.getElementById('feedbackBox').className = "feedback";
-        updateProgressBar(); loadNextWordTest();
+    function loadTrainWord() {
+        document.getElementById('twInput').value = '';
+        document.getElementById('twInput').disabled = false;
+        document.getElementById('twInput').focus();
+        document.getElementById('twFeedback').className = 'feedback-box hidden';
+        document.getElementById('twSubmitBtn').classList.remove('hidden');
+        document.getElementById('twNextBtn').classList.add('hidden');
+        document.getElementById('twAudioBtn').classList.add('hidden'); // Skryjeme kým neuhádne
+
+        let w = testQueue[currentIdx];
+        document.getElementById('twWord').innerText = w.sk;
+        document.getElementById('testProgress').innerText = `Slovo ${currentIdx + 1}/${testQueue.length}`;
+        document.getElementById('testCorrect').innerText = currentIdx - mistakes;
+        document.getElementById('testWrong').innerText = mistakes;
     }
-    function updateProgressBar() { document.getElementById('progressBar').style.width = ((currentIndex / totalQuestions) * 100) + "%"; }
-    function loadNextWordTest() {
-        if (currentIndex >= currentTestQueue.length) { endTest(); return; }
-        currentWord = currentTestQueue[currentIndex];
-        document.getElementById('wordPrompt').innerHTML = `<span style="font-size:14px; color:var(--text-muted); display:block; margin-bottom:5px;">Lekcia ${currentWord.lekcia}</span>${currentWord.slovak}`;
-        document.getElementById('answerInput').value = ""; document.getElementById('answerInput').focus();
+
+    function checkTrainAnswer() {
+        let input = document.getElementById('twInput').value.trim().toLowerCase();
+        let w = testQueue[currentIdx];
+        let fb = document.getElementById('twFeedback');
+        
+        if(input === '') return;
+
+        let answers = w.romaji.toLowerCase().split('/').map(s=>s.trim());
+        let isCorrect = answers.includes(input);
+
+        if(isCorrect) {
+            fb.innerHTML = `✅ <strong>Správne!</strong> (${w.romaji})`;
+            fb.className = 'feedback-box fb-correct';
+            addXP(10);
+            playCurrentAudio(); // Automaticky prehrá ak je dobre
+        } else {
+            fb.innerHTML = `❌ <strong>Chyba.</strong> Správne je:<br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small>${w.kana !== '-' ? w.kana : ''}</small>`;
+            fb.className = 'feedback-box fb-wrong';
+            mistakes++;
+        }
+
+        document.getElementById('twInput').disabled = true;
+        document.getElementById('twSubmitBtn').classList.add('hidden');
+        document.getElementById('twNextBtn').classList.remove('hidden');
+        document.getElementById('twAudioBtn').classList.remove('hidden');
     }
-    function checkAnswer() {
-        let inputEl = document.getElementById('answerInput'); let userAnswer = cleanString(inputEl.value.toLowerCase().replace(/\s+/g, ' ')); let feedbackBox = document.getElementById('feedbackBox');
-        if (userAnswer === "") return;
-        let parseAns = (s) => (s && s!=="-") ? s.toLowerCase().split('/').map(x=>cleanString(x)).filter(x=>x) : [];
-        let allValid = [...parseAns(currentWord.romaji), ...parseAns(currentWord.hiragana), ...parseAns(currentWord.kanji)];
-        if (allValid.includes(userAnswer)) { feedbackBox.innerHTML = "&#10024; <strong>Spravne!</strong>"; feedbackBox.className = "feedback correct"; } 
-        else { let cDisp = `<u>${currentWord.romaji}</u>`; if (currentWord.hiragana && currentWord.hiragana !== "-") cDisp += ` alebo <u>${currentWord.hiragana}</u>`; if (currentWord.kanji && currentWord.kanji !== "-") cDisp += ` / <u>${currentWord.kanji}</u>`; feedbackBox.innerHTML = `&#10060; <strong>Chyba!</strong> Spravne je: ${cDisp}`; feedbackBox.className = "feedback incorrect"; mistakes.push({ slovak: currentWord.slovak, user: userAnswer, correct: currentWord.romaji + (currentWord.hiragana !== "-" ? " / " + currentWord.hiragana : "") }); }
-        currentIndex++; updateProgressBar(); inputEl.disabled = true; setTimeout(() => { inputEl.disabled = false; feedbackBox.className = "feedback"; loadNextWordTest(); }, 1800);
+
+    function nextTrainWord() {
+        currentIdx++;
+        if(currentIdx < testQueue.length) loadTrainWord();
+        else endTraining();
     }
-    function endTest() {
-        document.getElementById('testingArea').classList.add('hidden'); document.getElementById('resultArea').classList.remove('hidden');
-        let perc = (((totalQuestions - mistakes.length) / totalQuestions) * 100).toFixed(0); document.getElementById('scoreDisplay').innerText = `${perc}%`;
-        let errItems = document.getElementById('errorItems');
-        if (mistakes.length > 0) { document.getElementById('errorList').classList.remove('hidden'); errItems.innerHTML = mistakes.map(m => `<div class="error-item"><div class="slovak-err">${m.slovak}</div><span style="color:var(--danger); text-decoration:line-through; margin-right:15px;">${m.user}</span><span style="color:var(--success); font-weight:bold;">&#128073; ${m.correct}</span></div>`).join(''); } 
-        else { document.getElementById('errorList').classList.add('hidden'); errItems.innerHTML = ""; document.getElementById('scoreDisplay').innerHTML += "<br><span style='font-size: 20px; color: var(--text-muted);'>&#127881; Dokonale!</span>"; }
+
+    function endTraining() {
+        document.getElementById('trainRun').classList.add('hidden');
+        document.getElementById('trainResult').classList.remove('hidden');
+        
+        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100);
+        document.getElementById('trScore').innerText = `${perc}%`;
+        
+        let msg = document.getElementById('trMessage');
+        if (testMode === 'unlock' || testMode === 'boss') {
+            if (perc >= 90) {
+                msg.innerHTML = "🎉 <strong>Gratulujem!</strong> Odomkol si novú úroveň.";
+                msg.style.color = "var(--success)";
+                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
+                addXP(testMode === 'boss' ? 500 : 100);
+                saveState();
+            } else {
+                msg.innerHTML = "❌ Na odomknutie potrebuješ aspoň 90%. Skús to znova.";
+                msg.style.color = "var(--danger)";
+            }
+        } else {
+            msg.innerHTML = "Tréning dokončený. Dobrá práca!";
+            msg.style.color = "var(--text-main)";
+        }
     }
-    function resetTest() { document.getElementById('resultArea').classList.add('hidden'); document.getElementById('setupArea').classList.remove('hidden'); document.getElementById('progressBar').style.width = "0%"; }
+
+    function closeTraining() {
+        document.getElementById('trainSetup').classList.remove('hidden');
+        document.getElementById('trainResult').classList.add('hidden');
+        switchTab('map');
+    }
+
+    // --- AUDIO (Ženský hlas) ---
+    function playCurrentAudio() {
+        let w = testQueue[currentIdx];
+        let textToRead = (w.kana && w.kana !== '-') ? w.kana : w.romaji; // Ideálne čítať kanu pre prízvuk
+        let speech = new SpeechSynthesisUtterance(textToRead);
+        speech.lang = 'ja-JP';
+        speech.rate = 0.85; // Mierne spomalené
+        
+        // Pokus o výber ženského hlasu
+        let voices = window.speechSynthesis.getVoices();
+        let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female'));
+        if(!jpVoice) jpVoice = voices.find(v => v.lang === 'ja-JP');
+        if(jpVoice) speech.voice = jpVoice;
+
+        window.speechSynthesis.speak(speech);
+    }
+
+    // --- GRAMATICKÉ DÓDŽÓ ---
+    // Simulátor rozboru vety na základe náhodne odomknutých slovíčok
+    let dojoQueue = [];
+    let dojoIdx = 0;
+
+    function startDojo() {
+        if(db.length === 0) return;
+        dojoQueue = [];
+        
+        // Získame slová len z odomknutých lekcií
+        let pool = db.filter(w => w.lekcia <= state.unlockedLesson);
+        let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst'));
+        let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves'));
+
+        if(nouns.length < 2 || verbs.length < 1) {
+            return alert("Na dódžó potrebuješ odomknúť viac lekcií (podstatné mená a slovesá).");
+        }
+
+        // Vygenerujeme 5 "šablónových" viet
+        for(let i=0; i<5; i++) {
+            let n = nouns[Math.floor(Math.random()*nouns.length)];
+            let v = verbs[Math.floor(Math.random()*verbs.length)];
+            
+            dojoQueue.push({
+                sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, // Zjednodušený preklad
+                correct: `watashi wa ${n.romaji} o ${v.romaji}`,
+                analysis: `
+                    <strong>Watashi wa</strong> - Téma (Ja)<br>
+                    <strong>${n.romaji} o</strong> - Predmet (${n.sk}) + častica O<br>
+                    <strong>${v.romaji}</strong> - Prísudok (${v.sk})
+                `
+            });
+        }
+
+        dojoIdx = 0;
+        document.getElementById('dojoSetup').classList.add('hidden');
+        document.getElementById('dojoRun').classList.remove('hidden');
+        loadDojoSentence();
+    }
+
+    function loadDojoSentence() {
+        document.getElementById('djInput').value = '';
+        document.getElementById('djInput').disabled = false;
+        document.getElementById('djFeedback').className = 'feedback-box hidden';
+        document.getElementById('djSubmitBtn').classList.remove('hidden');
+        document.getElementById('djNextBtn').classList.add('hidden');
+        
+        document.getElementById('djPrompt').innerText = dojoQueue[dojoIdx].sk;
+    }
+
+    function checkDojoAnswer() {
+        let input = document.getElementById('djInput').value.trim().toLowerCase().replace(/\s+/g, ' ');
+        let s = dojoQueue[dojoIdx];
+        let fb = document.getElementById('djFeedback');
+
+        if(input === s.correct) {
+            fb.innerHTML = `✅ <strong>Brilantné! +50 XP</strong><div class="dojo-analysis">${s.analysis}</div>`;
+            fb.className = 'feedback-box fb-correct';
+            addXP(50);
+        } else {
+            fb.innerHTML = `❌ <strong>Chyba v štruktúre.</strong><br>Vzor: ${s.correct}<div class="dojo-analysis">${s.analysis}</div>`;
+            fb.className = 'feedback-box fb-wrong';
+        }
+
+        document.getElementById('djInput').disabled = true;
+        document.getElementById('djSubmitBtn').classList.add('hidden');
+        document.getElementById('djNextBtn').classList.remove('hidden');
+    }
+
+    function nextDojoSentence() {
+        dojoIdx++;
+        if(dojoIdx < dojoQueue.length) {
+            loadDojoSentence();
+        } else {
+            document.getElementById('dojoRun').classList.add('hidden');
+            document.getElementById('dojoSetup').classList.remove('hidden');
+            alert("Dódžó tréning dokončený! Získal si cenné skúsenosti.");
+        }
+    }
+
+    function hardReset() {
+        if(confirm("Si si istý? Toto vymaže všetky tvoje XP, Streak aj odomknuté lekcie!")) {
+            localStorage.removeItem('finale_state');
+            localStorage.removeItem('finale_db');
+            location.reload();
+        }
+    }
 </script>
 </body>
 </html>
