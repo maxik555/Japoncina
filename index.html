@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.4 (Cloud)</title>
+    <title>Japonský Tréning - Finále 1.5 (Pro-Scoring)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -70,7 +70,6 @@
         .hidden { display: none !important; }
         .setup-section { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
         
-        /* Loading Overlay */
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; transition: opacity 0.5s; }
         .spinner { border: 6px solid var(--border); border-top: 6px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -210,12 +209,12 @@
 
     <div id="tab-db" class="tab">
         <h2>Cloud Synchronizácia</h2>
-        <p style="color:var(--text-muted); font-size:14px;">Aplikácia teraz automaticky sťahuje databázu z tvojho GitHub repozitára. Vždy máš tú najnovšiu verziu.</p>
+        <p style="color:var(--text-muted); font-size:14px;">Aplikácia automaticky sťahuje databázu z tvojho GitHubu.</p>
         <button class="btn btn-primary" onclick="fetchDatabaseFromCloud()">🔄 Vynútiť stiahnutie z cloudu</button>
         <div id="dbMsg" style="margin-top:15px; font-weight:bold;"></div>
         
         <hr style="border-color:var(--border); margin:30px 0;">
-        <p style="color:var(--text-muted); font-size:14px;">Záchranné manuálne nahratie (ak nejde internet):</p>
+        <p style="color:var(--text-muted); font-size:14px;">Záchranné manuálne nahratie:</p>
         <input type="file" id="excelFile" accept=".xlsx" style="background:var(--bg-dark); color:white; padding:10px; width:100%; border-radius:10px;" onchange="handleFileUpload(event)">
     </div>
 </div>
@@ -227,12 +226,9 @@
     let currentUnlockTarget = 0; let isBossTest = false;
     let quizOptions = []; let quizTimer; let timeLeft = 7.0;
 
-    // --- AUTO-NAČÍTANIE Z CLOUDU PRI ŠTARTE ---
     window.onload = async () => {
         if (localStorage.getItem('finale_state')) state = JSON.parse(localStorage.getItem('finale_state'));
         checkStreak(); updateUI();
-
-        // Spustíme potichu sťahovanie Excelu
         await fetchDatabaseFromCloud();
 
         document.addEventListener('keypress', e => {
@@ -251,68 +247,29 @@
         });
     };
 
-    // FUNKCIA NA STIAHNUTIE Z GITHUB REPOZITÁRA
     async function fetchDatabaseFromCloud() {
-        const overlay = document.getElementById('loadingOverlay');
-        const msg = document.getElementById('dbMsg');
-        overlay.style.display = 'flex';
-        
+        const overlay = document.getElementById('loadingOverlay'); const msg = document.getElementById('dbMsg'); overlay.style.display = 'flex';
         try {
-            // Pridávame časovú pečiatku, aby sme obišli agresívnu cache GitHub Pages
-            const cacheBuster = new Date().getTime();
-            const response = await fetch(`./Kompletna_Databaza_3000_Slov.xlsx?v=${cacheBuster}`);
-            
-            if (!response.ok) throw new Error('Súbor Kompletna_Databaza_3000_Slov.xlsx sa nenašiel.');
-            
-            const arrayBuffer = await response.arrayBuffer();
-            const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
+            const cacheBuster = new Date().getTime(); const response = await fetch(`./Kompletna_Databaza_3000_Slov.xlsx?v=${cacheBuster}`);
+            if (!response.ok) throw new Error('Súbor nenájdený.');
+            const arrayBuffer = await response.arrayBuffer(); const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-            
-            db = rows.map(r => ({
-                lekcia: parseInt(r['Lekcia'] || r['lekcia']) || 0,
-                jlpt: r['JLPT'] || 'N5',
-                kategoria: r['Kategória'] || '',
-                sk: r['Slovenský'] || '',
-                romaji: String(r['Rómadži'] || '').trim(),
-                kana: r['Hiragana / Katakana'] || '-',
-                kanji: r['Kandži'] || '-',
-                obrazok: r['Obrázok'] || r['Obrazok'] || ''
-            })).filter(w => w.sk && w.romaji && w.lekcia > 0);
-
-            if (db.length > 0) {
-                localStorage.setItem('finale_db', JSON.stringify(db));
-                msg.innerHTML = `✅ Databáza úspešne stiahnutá z cloudu (${db.length} slov).`;
-                renderMap();
-                selectTestModeUI('free');
-            }
+            db = rows.map(r => ({ lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, jlpt: r['JLPT']||'N5', kategoria: r['Kategória']||'', sk: r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||r['Obrazok']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0);
+            if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); msg.innerHTML = `✅ Databáza úspešne stiahnutá z cloudu (${db.length} slov).`; renderMap(); selectTestModeUI('free'); }
         } catch (error) {
-            console.error("Chyba cloudu:", error);
             msg.innerHTML = `⚠️ Cloud nedostupný. Načítavam poslednú lokálnu verziu.`;
-            if (localStorage.getItem('finale_db')) {
-                db = JSON.parse(localStorage.getItem('finale_db'));
-                renderMap(); selectTestModeUI('free');
-            }
+            if (localStorage.getItem('finale_db')) { db = JSON.parse(localStorage.getItem('finale_db')); renderMap(); selectTestModeUI('free'); }
         }
-        
-        // Skryť loading screen
         setTimeout(() => { overlay.style.opacity = '0'; setTimeout(() => overlay.style.display = 'none', 500); }, 500);
     }
 
-    // MANUÁLNE NAHRATIE (Záloha)
     function handleFileUpload(e) {
-        let file = e.target.files[0]; if(!file) return;
-        let reader = new FileReader();
+        let file = e.target.files[0]; if(!file) return; let reader = new FileReader();
         reader.onload = function(evt) {
-            try {
-                let workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
-                let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-                db = rows.map(r => ({ lekcia: parseInt(r['Lekcia']||0), sk: r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||'', kategoria: r['Kategória']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0);
-                if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); renderMap(); document.getElementById('dbMsg').innerHTML = `✅ Manuálne nahratých ${db.length} slov.`; }
-            } catch (err) { document.getElementById('dbMsg').innerHTML = `❌ Chyba súboru.`; }
+            try { let workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'}); let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""}); db = rows.map(r => ({ lekcia: parseInt(r['Lekcia']||0), sk: r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||'', kategoria: r['Kategória']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0); if (db.length > 0) { localStorage.setItem('finale_db', JSON.stringify(db)); renderMap(); document.getElementById('dbMsg').innerHTML = `✅ Manuálne nahratých ${db.length} slov.`; } } catch (err) { document.getElementById('dbMsg').innerHTML = `❌ Chyba súboru.`; }
         }; reader.readAsArrayBuffer(file);
     }
 
-    // --- ZVYŠOK KÓDU ZOSTÁVA ROVNAKÝ ---
     function saveState() { localStorage.setItem('finale_state', JSON.stringify(state)); updateUI(); }
     function addXP(amount) { state.xp += amount; saveState(); }
     function checkStreak() { const today = new Date().toDateString(); if (state.lastDate !== today) { let y = new Date(); y.setDate(y.getDate() - 1); if (state.lastDate === y.toDateString()) state.streak++; else if (state.lastDate !== null) state.streak = 1; else state.streak = 1; state.lastDate = today; saveState(); } }
@@ -335,6 +292,7 @@
         if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; }
     }
 
+    let fcQueue = []; let fcIdx = 0;
     function startLearn() { fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value)); if(fcQueue.length === 0) return alert('Žiadne slová v lekcii.'); fcIdx = 0; document.getElementById('learnSetup').classList.add('hidden'); document.getElementById('learnRun').classList.remove('hidden'); loadFc(); }
     function loadFc() { document.getElementById('fcElement').classList.remove('is-flipped'); setTimeout(() => { let w = fcQueue[fcIdx]; document.getElementById('fcProgress').innerText = `Karta ${fcIdx + 1}/${fcQueue.length}`; document.getElementById('fcFrontSk').innerText = w.sk; let imgDiv = document.getElementById('fcImg'); if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; }, 150); }
     function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
@@ -359,12 +317,48 @@
 
     function startQuizTimer() { timeLeft = 7.0; let bar = document.getElementById('quizTimerBar'); bar.style.width = '100%'; bar.style.backgroundColor = 'var(--warning)'; clearInterval(quizTimer); quizTimer = setInterval(() => { timeLeft -= 0.1; bar.style.width = (timeLeft / 7.0) * 100 + '%'; if(timeLeft < 2.5) bar.style.backgroundColor = 'var(--danger)'; if(timeLeft <= 0) { clearInterval(quizTimer); processQuizResult(null); } }, 100); }
     function checkQuizAnswer(optIdx) { clearInterval(quizTimer); processQuizResult(quizOptions[optIdx]); }
-    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = `✅ <strong>Rýchle a správne!</strong>`; fb.className = 'feedback-box fb-correct'; addXP(5); playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = `❌ <strong>Chyba alebo vypršal čas.</strong> Správne: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
+    
+    // ZMENA 1: Odstránené addXP() po každom slove
+    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = `✅ <strong>Rýchle a správne!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = `❌ <strong>Chyba alebo vypršal čas.</strong> Správne: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
-    function checkTrainAnswer() { let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); if(validAnswers.includes(input)) { fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; addXP(10); playCurrentAudio(); } else { fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; fb.className = 'feedback-box fb-wrong'; mistakes++; } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
+    // ZMENA 2: Odstránené addXP() po každom slove
+    function checkTrainAnswer() { let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); if(validAnswers.includes(input)) { fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); } else { fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; fb.className = 'feedback-box fb-wrong'; mistakes++; } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
     function nextTrainWord() { currentIdx++; if(currentIdx < testQueue.length) loadTrainWord(); else endTraining(); }
-    function endTraining() { document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); if (currentTestType === 'unlock') { if (perc >= 90) { msg.innerHTML = "🎉 Odomkol si novú úroveň!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); saveState(); } else { msg.innerHTML = "❌ Potrebuješ 90%. Skús znova."; msg.style.color = "var(--danger)"; } } else msg.innerHTML = "Tréning dokončený."; }
+    
+    // ZMENA 3: Nová logika bodovania na konci testu
+    function endTraining() { 
+        document.getElementById('trainRun').classList.add('hidden'); 
+        document.getElementById('trainResult').classList.remove('hidden'); 
+        
+        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); 
+        document.getElementById('trScore').innerText = `${perc}%`; 
+        let msg = document.getElementById('trMessage'); 
+        
+        if (currentTestType === 'unlock') { 
+            if (perc >= 90) { 
+                msg.innerHTML = "🎉 Odomkol si novú úroveň!"; 
+                msg.style.color = "var(--success)"; 
+                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; 
+                addXP(isBossTest ? 500 : 100); 
+            } else { 
+                msg.innerHTML = "❌ Potrebuješ úspešnosť aspoň 90%. Skús znova."; 
+                msg.style.color = "var(--danger)"; 
+            } 
+        } else {
+            // Režim Kvíz a Voľný tréning
+            if (perc >= 90) {
+                let earnedPoints = testQueue.length;
+                msg.innerHTML = `🎉 Skvelá práca! Získavaš +${earnedPoints} XP!`;
+                msg.style.color = "var(--success)";
+                addXP(earnedPoints);
+            } else {
+                msg.innerHTML = "Tréning dokončený. Na získanie bodov musíš mať úspešnosť aspoň 90%.";
+                msg.style.color = "var(--text-main)";
+            }
+        }
+    }
+    
     function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); }
 
     function playAudioText(text) { let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85; let voices = window.speechSynthesis.getVoices(); let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP'); if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech); }
