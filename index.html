@@ -185,7 +185,7 @@
             <div id="twFeedback" class="feedback-box"></div>
             
             <div id="classicInputArea">
-                <input type="text" id="twInput" placeholder="Zadaj Rómadži..." autocomplete="off">
+               <input type="text" id="twInput" placeholder="Zadaj Rómadži, Kanu alebo Kandži..." autocomplete="off">
                 <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť (Enter)</button>
             </div>
 
@@ -468,11 +468,24 @@
 
     // --- LOGIKA KLASICKÉHO PÍSANIA ---
     function checkTrainAnswer() {
-        let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback');
+        let input = document.getElementById('twInput').value.trim().toLowerCase(); 
+        let w = testQueue[currentIdx]; 
+        let fb = document.getElementById('twFeedback');
         if(input === '') return;
-        if(w.romaji.toLowerCase().split('/').map(s=>s.trim()).includes(input)) {
+
+        // Vytvoríme zoznam VŠETKÝCH akceptovaných odpovedí
+        let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim());
+        if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim()));
+        if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim()));
+
+        // Kontrola, či tvoj input sedí na niektorú z možností
+        if(validAnswers.includes(input)) {
             fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; addXP(10); playCurrentAudio();
-        } else { fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span>`; fb.className = 'feedback-box fb-wrong'; mistakes++; }
+        } else { 
+            fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; 
+            fb.className = 'feedback-box fb-wrong'; mistakes++; 
+        }
+        
         document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden');
     }
 
@@ -521,3 +534,4 @@
 </script>
 </body>
 </html>
+
