@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.6 (Bilingual)</title>
+    <title>Japonský Tréning - Finále 1.7 (Master Dictionary)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -46,10 +46,10 @@
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         
         /* Tabuľka Zoznamu */
-        .vocab-table-wrapper { overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid var(--border); }
+        .vocab-table-wrapper { max-height: 60vh; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
         .vocab-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
         .vocab-table th, .vocab-table td { border-bottom: 1px solid var(--border); padding: 12px; text-align: left; }
-        .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; }
+        .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; position: sticky; top: 0; z-index: 1; }
         .vocab-table tr:hover { background: rgba(255,255,255,0.05); }
         
         /* Kartičky */
@@ -122,11 +122,17 @@
 
     <div id="tab-learn" class="tab">
         <div id="learnSetup">
-            <h2 data-sk="Vyber si lekciu na učenie" data-en="Select a lesson to learn">Vyber si lekciu na učenie</h2>
-            <select id="learnLessonSelect"></select>
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Kartičky" data-en="🎴 Flashcards">🎴 Kartičky</button>
-                <button class="btn btn-outline" onclick="startLearn('list')" data-sk="📄 Zoznam slov" data-en="📄 Word List">📄 Zoznam slov</button>
+            <h2 data-sk="Tréning a Slovník" data-en="Training & Dictionary">Tréning a Slovník</h2>
+            
+            <div class="setup-section">
+                <label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label>
+                <select id="learnLessonSelect" style="margin-top:8px;"></select>
+                <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button>
+            </div>
+
+            <div class="setup-section" style="margin-top: 15px;">
+                <p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p>
+                <button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button>
             </div>
         </div>
 
@@ -156,7 +162,10 @@
         </div>
 
         <div id="learnListRun" class="hidden">
-            <button class="btn btn-outline" onclick="closeLearn()" data-sk="⬅️ Späť na výber" data-en="⬅️ Back to selection">⬅️ Späť na výber</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0;" data-sk="Tvoja slovná zásoba" data-en="Your Vocabulary">Tvoja slovná zásoba</h3>
+                <button class="btn btn-outline" style="width:auto; padding:8px 15px; margin:0;" onclick="closeLearn()" data-sk="Zatvoriť" data-en="Close">Zatvoriť</button>
+            </div>
             <div class="vocab-table-wrapper">
                 <table class="vocab-table">
                     <thead>
@@ -263,24 +272,18 @@
     let currentUnlockTarget = 0; let isBossTest = false;
     let quizOptions = []; let quizTimer; let timeLeft = 7.0;
     
-    // --- JAZYKOVÝ SYSTÉM ---
     let currentLang = localStorage.getItem('finale_lang') || 'sk';
 
     function setLang(lang) {
         currentLang = lang;
         localStorage.setItem('finale_lang', lang);
-        
-        // Vizuál vlajok
         document.getElementById('flag-sk').className = lang === 'sk' ? '' : 'inactive';
         document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
 
-        // Preklad UI elementov
-        document.querySelectorAll('[data-sk]').forEach(el => {
-            el.innerHTML = el.getAttribute(`data-${lang}`);
-        });
+        document.querySelectorAll('[data-sk]').forEach(el => { el.innerHTML = el.getAttribute(`data-${lang}`); });
+        populateSelects(); // Preklad slova Lekcia/Lesson v selectoch
 
-        // Živý preklad otvorených okien
-        if(!document.getElementById('learnListRun').classList.contains('hidden')) renderVocabList(parseInt(document.getElementById('learnLessonSelect').value));
+        if(!document.getElementById('learnListRun').classList.contains('hidden')) showUnlockedList();
         if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
         if(!document.getElementById('trainRun').classList.contains('hidden') && testQueue.length > 0) document.getElementById('twWord').innerText = currentLang === 'sk' ? testQueue[currentIdx].sk : testQueue[currentIdx].en;
     }
@@ -314,14 +317,13 @@
             const arrayBuffer = await response.arrayBuffer(); const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
             
-            // Mapovanie (pridané ID pre poradie a anglický preklad)
             db = rows.map((r, i) => ({ 
                 id: parseInt(r['#']) || i + 1,
                 lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, 
                 jlpt: r['JLPT']||'N5', 
                 kategoria: r['Kategória']||'', 
                 sk: r['Slovenský']||'', 
-                en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', // Fallback na SK ak EN chýba
+                en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', 
                 romaji: String(r['Rómadži']||'').trim(), 
                 kana: r['Hiragana / Katakana']||'-', 
                 kanji: r['Kandži']||'-', 
@@ -358,40 +360,26 @@
         if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; }
     }
 
-    // --- UČENIE (Nové rozdelenie Kartičky / Zoznam) ---
-    let fcQueue = []; let fcIdx = 0;
-    
     function startLearn(mode) { 
-        let lessonId = parseInt(document.getElementById('learnLessonSelect').value);
-        fcQueue = db.filter(w => w.lekcia === lessonId); 
-        if(fcQueue.length === 0) return; 
-        
+        if(db.length === 0) return;
         document.getElementById('learnSetup').classList.add('hidden'); 
         if (mode === 'cards') {
+            fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value));
+            if(fcQueue.length === 0) return alert('No words here.');
             fcIdx = 0; document.getElementById('learnCardsRun').classList.remove('hidden'); loadFc(); 
-        } else if (mode === 'list') {
-            document.getElementById('learnListRun').classList.remove('hidden'); renderVocabList(lessonId);
-        }
+        } 
     }
 
-    function loadFc() { 
-        document.getElementById('fcElement').classList.remove('is-flipped'); 
-        setTimeout(() => { 
-            let w = fcQueue[fcIdx]; 
-            document.getElementById('fcProgress').innerText = currentLang === 'sk' ? `Karta ${fcIdx + 1}/${fcQueue.length}` : `Card ${fcIdx + 1}/${fcQueue.length}`; 
-            document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en; 
-            let imgDiv = document.getElementById('fcImg'); 
-            if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); 
-            document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; 
-            document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; 
-            document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; 
-        }, 150); 
-    }
-
-    function renderVocabList(lessonId) {
-        let pool = db.filter(w => w.lekcia === lessonId);
+    // NOVÁ FUNKCIA PRE CELÝ ZOZNAM
+    function showUnlockedList() {
+        document.getElementById('learnSetup').classList.add('hidden');
+        document.getElementById('learnCardsRun').classList.add('hidden');
+        document.getElementById('learnListRun').classList.remove('hidden');
+        
+        let pool = db.filter(w => w.lekcia <= state.unlockedLesson);
         let tbody = document.getElementById('vocabListBody');
         tbody.innerHTML = '';
+        
         pool.forEach(w => {
             let tr = document.createElement('tr');
             let meaning = currentLang === 'sk' ? w.sk : w.en;
@@ -400,12 +388,12 @@
         });
     }
 
+    function loadFc() { document.getElementById('fcElement').classList.remove('is-flipped'); setTimeout(() => { let w = fcQueue[fcIdx]; document.getElementById('fcProgress').innerText = currentLang === 'sk' ? `Karta ${fcIdx + 1}/${fcQueue.length}` : `Card ${fcIdx + 1}/${fcQueue.length}`; document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en; let imgDiv = document.getElementById('fcImg'); if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; }, 150); }
     function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
     function nextFc() { if(fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } else closeLearn(); }
     function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
     function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
 
-    // --- TRÉNING ---
     function selectTestModeUI(mode) { document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } document.querySelectorAll('.setup-section').forEach(el => el.classList.add('hidden')); document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); }
 
     function startTraining(type) {
@@ -419,67 +407,18 @@
         loadTrainWord();
     }
 
-    function loadTrainWord() { 
-        let w = testQueue[currentIdx]; 
-        document.getElementById('twWord').innerText = currentLang === 'sk' ? w.sk : w.en; 
-        document.getElementById('testProgress').innerText = currentLang === 'sk' ? `Slovo ${currentIdx + 1}/${testQueue.length}` : `Word ${currentIdx + 1}/${testQueue.length}`; 
-        document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes; 
-        document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden'); 
-        
-        if(currentTestType === 'quiz') { 
-            let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); 
-            quizOptions = [w, ...others].sort(()=>0.5-Math.random()); 
-            for(let i=0; i<4; i++) { 
-                let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; 
-            } startQuizTimer(); 
-        } else { 
-            document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden'); 
-        } 
-    }
+    function loadTrainWord() { let w = testQueue[currentIdx]; document.getElementById('twWord').innerText = currentLang === 'sk' ? w.sk : w.en; document.getElementById('testProgress').innerText = currentLang === 'sk' ? `Slovo ${currentIdx + 1}/${testQueue.length}` : `Word ${currentIdx + 1}/${testQueue.length}`; document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes; document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden'); if(currentTestType === 'quiz') { let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); quizOptions = [w, ...others].sort(()=>0.5-Math.random()); for(let i=0; i<4; i++) { let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; } startQuizTimer(); } else { document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden'); } }
 
     function startQuizTimer() { timeLeft = 7.0; let bar = document.getElementById('quizTimerBar'); bar.style.width = '100%'; bar.style.backgroundColor = 'var(--warning)'; clearInterval(quizTimer); quizTimer = setInterval(() => { timeLeft -= 0.1; bar.style.width = (timeLeft / 7.0) * 100 + '%'; if(timeLeft < 2.5) bar.style.backgroundColor = 'var(--danger)'; if(timeLeft <= 0) { clearInterval(quizTimer); processQuizResult(null); } }, 100); }
     function checkQuizAnswer(optIdx) { clearInterval(quizTimer); processQuizResult(quizOptions[optIdx]); }
-    
-    function processQuizResult(selectedWord) { 
-        let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; 
-        if(selectedWord && selectedWord.sk === w.sk) { 
-            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; 
-            fb.className = 'feedback-box fb-correct'; playCurrentAudio(); 
-            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } 
-        } else { 
-            fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba.</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong.</strong> Correct: ${w.romaji}`; 
-            fb.className = 'feedback-box fb-wrong'; mistakes++; 
-            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } 
-        } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); 
-    }
+    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba alebo vypršal čas.</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong.</strong> Correct: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
-    function checkTrainAnswer() { 
-        let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; 
-        let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); 
-        if(validAnswers.includes(input)) { 
-            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); 
-        } else { 
-            fb.innerHTML = currentLang === 'sk' ? `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; 
-            fb.className = 'feedback-box fb-wrong'; mistakes++; 
-        } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); 
-    }
+    function checkTrainAnswer() { let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); if(validAnswers.includes(input)) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); } else { fb.innerHTML = currentLang === 'sk' ? `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; fb.className = 'feedback-box fb-wrong'; mistakes++; } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
     function nextTrainWord() { currentIdx++; if(currentIdx < testQueue.length) loadTrainWord(); else endTraining(); }
-    
-    function endTraining() { 
-        document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); 
-        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); 
-        
-        if (currentTestType === 'unlock') { 
-            if (perc >= 90) { msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); 
-            } else { msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; msg.style.color = "var(--danger)"; } 
-        } else {
-            if (perc >= 90) { let earnedPoints = testQueue.length; msg.innerHTML = currentLang === 'sk' ? `🎉 Skvelá práca! +${earnedPoints} XP!` : `🎉 Great job! +${earnedPoints} XP!`; msg.style.color = "var(--success)"; addXP(earnedPoints);
-            } else { msg.innerHTML = currentLang === 'sk' ? "Na získanie bodov potrebuješ aspoň 90%." : "You need 90% to earn points."; msg.style.color = "var(--text-main)"; }
-        }
-    }
-    
+    function endTraining() { document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); if (currentTestType === 'unlock') { if (perc >= 90) { msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); } else { msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; msg.style.color = "var(--danger)"; } } else { if (perc >= 90) { let earnedPoints = testQueue.length; msg.innerHTML = currentLang === 'sk' ? `🎉 Skvelá práca! +${earnedPoints} XP!` : `🎉 Great job! +${earnedPoints} XP!`; msg.style.color = "var(--success)"; addXP(earnedPoints); } else { msg.innerHTML = currentLang === 'sk' ? "Na získanie bodov potrebuješ aspoň 90%." : "You need 90% to earn points."; msg.style.color = "var(--text-main)"; } } }
     function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); }
+
     function playAudioText(text) { let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85; let voices = window.speechSynthesis.getVoices(); let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP'); if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech); }
     function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji); }
 
