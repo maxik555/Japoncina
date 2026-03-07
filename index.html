@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Finále 1.0</title>
+    <title>Japonský Tréning - Finále 1.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
             --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --locked: #334155; --border: #334155;
+            --locked: #334155; --border: #334155; --card-back: #1e3a8a;
         }
         body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
         .app-container { background: var(--bg-card); width: 100%; max-width: 700px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -22,7 +22,7 @@
         
         /* Navigácia */
         .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .btn-nav { flex: 1; min-width: 90px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; }
         .btn-nav.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         /* Map (Odomykanie) */
@@ -37,7 +37,7 @@
         .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
         
-        input[type="text"] { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; }
+        input[type="text"], select { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: white; font-size: 18px; margin-bottom: 15px; box-sizing: border-box; }
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin-bottom: 10px; }
         .btn-primary { background: var(--primary); box-shadow: 0 4px 0 #1e40af; }
         .btn-primary:active { transform: translateY(4px); box-shadow: none; }
@@ -45,13 +45,28 @@
         .btn-warning { background: var(--warning); color: #000; }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         
+        /* Kartičky (Učenie) */
+        .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
+        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flashcard.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; box-shadow: 0 10px 20px rgba(0,0,0,0.3); border: 2px solid var(--border); }
+        .card-front { background: var(--bg-dark); }
+        .card-back { background: var(--card-back); transform: rotateY(180deg); border-color: var(--primary); }
+        
+        .fc-img { font-size: 60px; margin-bottom: 15px; max-height: 100px; border-radius: 10px; }
+        .fc-sk { font-size: 32px; font-weight: 800; text-align: center; }
+        .fc-romaji { font-size: 28px; font-weight: bold; color: #93c5fd; margin-bottom: 10px; }
+        .fc-kana { font-size: 24px; margin-bottom: 5px; }
+        .fc-kanji { font-size: 32px; color: #60a5fa; }
+        .fc-hint { font-size: 12px; color: var(--text-muted); position: absolute; bottom: 15px; }
+        .fc-controls { display: flex; gap: 10px; }
+
         /* Testovanie */
         .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
         .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
         .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
         .fb-correct { background: rgba(16, 185, 129, 0.2); color: #34d399; display: block; }
         .fb-wrong { background: rgba(239, 68, 68, 0.2); color: #f87171; display: block; }
-        .dojo-analysis { font-size: 14px; text-align: left; margin-top: 10px; color: var(--text-muted); }
         
         .hidden { display: none !important; }
     </style>
@@ -67,22 +82,63 @@
 
     <div class="nav">
         <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap">🗺️ Cesta</button>
-        <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain">🏋️ Tréning</button>
+        <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn">🎴 Učenie</button>
+        <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain">🏋️ Test</button>
         <button class="btn-nav" onclick="switchTab('dojo')" id="btnTabDojo">🏯 Dódžó</button>
         <button class="btn-nav" onclick="switchTab('db')" id="btnTabDb">⚙️ Dáta</button>
     </div>
 
     <div id="tab-map" class="tab active">
         <h2 style="margin-top:0;">Tvoja cesta k plynulosti</h2>
-        <p style="color:var(--text-muted); font-size:14px;">Odomkni ďalšiu lekciu testom s 90% úspešnosťou.</p>
+        <p style="color:var(--text-muted); font-size:14px;">Klikni na odomknutú lekciu pre možnosti.</p>
         <div id="lessonMap" class="map-grid"></div>
+    </div>
+
+    <div id="tab-learn" class="tab">
+        <div id="learnSetup">
+            <h2>Vyber si lekciu na učenie</h2>
+            <select id="learnLessonSelect"></select>
+            <button class="btn btn-primary" onclick="startLearn()">Začať listovať kartičky</button>
+        </div>
+
+        <div id="learnRun" class="hidden">
+            <div class="test-header">
+                <span id="fcProgress">Karta 1/20</span>
+            </div>
+            
+            <div class="flashcard-container" onclick="flipCard()">
+                <div class="flashcard" id="fcElement">
+                    <div class="card-face card-front">
+                        <div id="fcImg" class="fc-img"></div>
+                        <div id="fcFrontSk" class="fc-sk">Slovensky</div>
+                        <div class="fc-hint">Klikni alebo stlač Enter pre otočenie</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div id="fcBackRomaji" class="fc-romaji">romaji</div>
+                        <div id="fcBackKana" class="fc-kana">hiragana</div>
+                        <div id="fcBackKanji" class="fc-kanji">kanji</div>
+                        <div class="fc-hint">Klikni pre otočenie späť</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)">🔊 Prehrať zvuk</button>
+            </div>
+
+            <div class="fc-controls">
+                <button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()">⬅️ Späť</button>
+                <button class="btn btn-success" onclick="nextFc()">Ďalšia ➡️</button>
+            </div>
+            <button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()">Ukončiť učenie</button>
+        </div>
     </div>
 
     <div id="tab-train" class="tab">
         <div id="trainSetup">
-            <h2>Vyber si lekciu na bežný tréning</h2>
-            <select id="trainLessonSelect" style="width:100%; padding:15px; border-radius:12px; background:var(--bg-dark); color:white; border:1px solid var(--border); margin-bottom:15px;"></select>
-            <button class="btn btn-primary" onclick="startTraining('normal')">Spustiť tréning (Mód A)</button>
+            <h2>Testovanie a Odomykanie</h2>
+            <select id="trainLessonSelect"></select>
+            <button class="btn btn-primary" onclick="startTraining('normal')">Spustiť Test Lekcie</button>
         </div>
 
         <div id="trainRun" class="hidden">
@@ -99,8 +155,8 @@
             <div id="twFeedback" class="feedback-box"></div>
             
             <input type="text" id="twInput" placeholder="Zadaj Rómadži..." autocomplete="off">
-            <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť</button>
-            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Ďalšie slovo ➡️</button>
+            <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť (Enter)</button>
+            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Ďalšie slovo (Enter) ➡️</button>
         </div>
 
         <div id="trainResult" class="hidden text-center">
@@ -112,18 +168,13 @@
 
     <div id="tab-dojo" class="tab">
         <h2>Gramatické Dódžó</h2>
-        <p style="color:var(--text-muted); font-size:14px;">Skladaj vety zo slovíčok, ktoré už ovládaš.</p>
-        
-        <div id="dojoSetup">
-            <button class="btn btn-primary" onclick="startDojo()">Spustiť Dódžó (5 viet)</button>
-        </div>
-
+        <div id="dojoSetup"><button class="btn btn-primary" onclick="startDojo()">Spustiť Dódžó</button></div>
         <div id="dojoRun" class="hidden">
             <div class="word-display" style="font-size: 24px;" id="djPrompt">Slovenská veta</div>
             <div id="djFeedback" class="feedback-box"></div>
             <input type="text" id="djInput" placeholder="Napíš japonskú vetu (rómadži)..." autocomplete="off">
-            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()">Skontrolovať rozbor</button>
-            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()">Ďalšia veta</button>
+            <button class="btn btn-primary" id="djSubmitBtn" onclick="checkDojoAnswer()">Skontrolovať (Enter)</button>
+            <button class="btn btn-success hidden" id="djNextBtn" onclick="nextDojoSentence()">Ďalšia veta (Enter)</button>
         </div>
     </div>
 
@@ -132,94 +183,67 @@
         <p style="color:var(--text-muted); font-size:14px;">Nahraj súbor Kompletna_Databaza_3000_Slov.xlsx</p>
         <input type="file" id="excelFile" accept=".xlsx" style="background:var(--bg-dark); color:white; padding:10px; width:100%; border-radius:10px;" onchange="handleFileUpload(event)">
         <div id="dbMsg" style="margin-top:15px; font-weight:bold;"></div>
-        
-        <hr style="border-color:var(--border); margin:30px 0;">
-        <button class="btn btn-warning" onclick="hardReset()">⚠️ Vymazať celý postup (Hard Reset)</button>
     </div>
 </div>
 
 <script>
-    // --- STAV APLIKÁCIE (State) ---
     let db = [];
-    let state = {
-        unlockedLesson: 1,
-        xp: 0,
-        streak: 0,
-        lastDate: null
-    };
+    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null };
     
-    // Aktuálny test
-    let testQueue = [];
-    let currentIdx = 0;
-    let mistakes = 0;
-    let testMode = 'normal'; // 'normal', 'unlock', 'boss'
-    let currentUnlockTarget = 0;
+    // Globálne premenné pre test a učenie
+    let testQueue = []; let currentIdx = 0; let mistakes = 0; let testMode = 'normal'; let currentUnlockTarget = 0;
+    let fcQueue = []; let fcIdx = 0;
 
-    // --- INICIALIZÁCIA ---
     window.onload = () => {
         const savedDb = localStorage.getItem('finale_db');
         const savedState = localStorage.getItem('finale_state');
         if (savedDb) db = JSON.parse(savedDb);
         if (savedState) state = JSON.parse(savedState);
         
-        checkStreak();
-        updateUI();
-        if(db.length > 0) renderMap();
-        else switchTab('db');
+        checkStreak(); updateUI();
+        if(db.length > 0) renderMap(); else switchTab('db');
 
-        // Globálne ovládanie cez Enter (funguje bez myši)
+        // GLOBÁLNE OVLÁDANIE CEZ ENTER
         document.addEventListener('keypress', e => {
             if(e.key === 'Enter') {
-                // Ovládanie pre Tréning
+                // Testovanie
                 if (!document.getElementById('trainRun').classList.contains('hidden')) {
-                    if(document.getElementById('twNextBtn').classList.contains('hidden')) {
-                        checkTrainAnswer();
-                    } else {
-                        nextTrainWord();
-                    }
+                    if(document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer();
+                    else nextTrainWord();
                 }
-                // Ovládanie pre Gramatické Dódžó
+                // Dódžó
                 else if (!document.getElementById('dojoRun').classList.contains('hidden')) {
-                    if(document.getElementById('djNextBtn').classList.contains('hidden')) {
-                        checkDojoAnswer();
+                    if(document.getElementById('djNextBtn').classList.contains('hidden')) checkDojoAnswer();
+                    else nextDojoSentence();
+                }
+                // Kartičky (Učenie)
+                else if (!document.getElementById('learnRun').classList.contains('hidden')) {
+                    if(!document.getElementById('fcElement').classList.contains('is-flipped')) {
+                        flipCard(); // Najprv otočí
                     } else {
-                        nextDojoSentence();
+                        nextFc(); // Druhý enter dá ďalšiu kartu
                     }
                 }
             }
         });
     };
 
-    function saveState() {
-        localStorage.setItem('finale_state', JSON.stringify(state));
-        updateUI();
-    }
-
-    function addXP(amount) {
-        state.xp += amount;
-        saveState();
-    }
-
+    function saveState() { localStorage.setItem('finale_state', JSON.stringify(state)); updateUI(); }
+    function addXP(amount) { state.xp += amount; saveState(); }
+    
     function checkStreak() {
         const today = new Date().toDateString();
         if (state.lastDate !== today) {
-            let yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            if (state.lastDate === yesterday.toDateString()) {
-                state.streak++;
-            } else if (state.lastDate !== null) {
-                state.streak = 1; // Reset if missed a day
-            } else {
-                state.streak = 1; // First time
-            }
-            state.lastDate = today;
-            saveState();
+            let yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+            if (state.lastDate === yesterday.toDateString()) state.streak++;
+            else if (state.lastDate !== null) state.streak = 1;
+            else state.streak = 1;
+            state.lastDate = today; saveState();
         }
     }
 
     function updateUI() {
-        let level = Math.floor(state.xp / 500) + 1;
-        document.getElementById('uiLevel').innerText = level;
+        document.getElementById('uiLevel').innerText = Math.floor(state.xp / 500) + 1;
         document.getElementById('uiXp').innerText = state.xp;
         document.getElementById('uiStreak').innerText = state.streak + " 🔥";
     }
@@ -230,302 +254,193 @@
         document.getElementById('tab-' + t).classList.add('active');
         document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
         if(t === 'map' && db.length > 0) renderMap();
-        if(t === 'train') populateTrainSelect();
+        if(t === 'train' || t === 'learn') populateSelects();
     }
 
-    // --- SPRACOVANIE EXCELU ---
+    // EXCEL
     function handleFileUpload(e) {
         let file = e.target.files[0]; if(!file) return;
         let reader = new FileReader();
         reader.onload = function(evt) {
             try {
-                let data = new Uint8Array(evt.target.result);
-                let workbook = XLSX.read(data, {type: 'array'});
+                let workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
                 let rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-                
                 db = rows.map(r => ({
                     lekcia: parseInt(r['Lekcia'] || r['lekcia']) || 0,
-                    jlpt: r['JLPT'] || r['jlpt'] || 'N5',
-                    kategoria: r['Kategória'] || r['Kategoria'] || r['kategoria'] || '',
-                    sk: r['Slovenský'] || r['Slovensky'] || r['slovensky'] || '',
-                    romaji: String(r['Rómadži'] || r['Romaji'] || r['romaji']).trim(),
+                    jlpt: r['JLPT'] || 'N5',
+                    kategoria: r['Kategória'] || '',
+                    sk: r['Slovenský'] || '',
+                    romaji: String(r['Rómadži'] || '').trim(),
                     kana: r['Hiragana / Katakana'] || '-',
-                    kanji: r['Kandži'] || r['Kanji'] || '-'
+                    kanji: r['Kandži'] || '-',
+                    obrazok: r['Obrázok'] || r['Obrazok'] || '' // NOVÉ: Podpora obrázkov
                 })).filter(w => w.sk && w.romaji && w.lekcia > 0);
-
                 if (db.length > 0) {
                     localStorage.setItem('finale_db', JSON.stringify(db));
-                    document.getElementById('dbMsg').innerHTML = `<span style="color:var(--success)">✅ Úspech: ${db.length} slov načítaných!</span>`;
+                    document.getElementById('dbMsg').innerHTML = `<span style="color:var(--success)">✅ Načítaných ${db.length} slov.</span>`;
                     renderMap();
                 }
-            } catch (err) {
-                document.getElementById('dbMsg').innerHTML = `<span style="color:var(--danger)">❌ Chyba pri čítaní súboru.</span>`;
-            }
+            } catch (err) { document.getElementById('dbMsg').innerHTML = `<span style="color:var(--danger)">❌ Chyba súboru.</span>`; }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // --- MAPA A GATING ---
+    // MAPA
     function renderMap() {
-        const map = document.getElementById('lessonMap');
-        map.innerHTML = '';
+        const map = document.getElementById('lessonMap'); map.innerHTML = '';
         const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b);
-        
         totalLessons.forEach(l => {
-            let div = document.createElement('div');
             let isUnlocked = l <= state.unlockedLesson;
-            
-            // Boss Fight Check (Každá 40. lekcia je Boss)
             let isBoss = (l === 40 || l === 115); 
-            
+            let div = document.createElement('div');
             div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`;
             if(isBoss && isUnlocked) div.classList.add('boss-node');
+            div.innerHTML = `L${l}` + (isBoss ? '<br><small>BOSS</small>' : '');
             
-            div.innerHTML = `L${l}`;
-            if (isBoss) div.innerHTML += '<br><small>BOSS</small>';
-
             if (isUnlocked) {
-                div.onclick = () => showLessonOptions(l, isBoss);
+                div.onclick = () => {
+                    if(l === state.unlockedLesson) {
+                        if(confirm(`Chceš odomknúť ďalšiu lekciu? Test z Lekcie ${l}`)) startUnlockTest(l, isBoss);
+                    } else {
+                        document.getElementById('learnLessonSelect').value = l;
+                        switchTab('learn');
+                    }
+                };
             }
             map.appendChild(div);
         });
     }
 
-    function showLessonOptions(l, isBoss) {
-        if (l === state.unlockedLesson) {
-            if (confirm(`Chceš spustiť postupový test z Lekcie ${l} pre odomknutie ďalšej?`)) {
-                startUnlockTest(l, isBoss);
-            }
-        } else {
-            alert(`Lekciu ${l} už máš odomknutú. Môžeš si ju precvičiť v záložke Tréning.`);
-            switchTab('train');
-        }
+    function populateSelects() {
+        let opts = '';
+        for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">Lekcia ${i}</option>`;
+        document.getElementById('trainLessonSelect').innerHTML = opts;
+        document.getElementById('learnLessonSelect').innerHTML = opts;
     }
 
-    function populateTrainSelect() {
-        const sel = document.getElementById('trainLessonSelect');
-        sel.innerHTML = '';
-        for(let i = 1; i <= state.unlockedLesson; i++) {
-            sel.innerHTML += `<option value="${i}">Lekcia ${i}</option>`;
-        }
+    // --- NOVÉ: UČENIE (KARTIČKY) ---
+    function startLearn() {
+        let l = parseInt(document.getElementById('learnLessonSelect').value);
+        fcQueue = db.filter(w => w.lekcia === l);
+        if(fcQueue.length === 0) return alert('Žiadne slová v lekcii.');
+        fcIdx = 0;
+        document.getElementById('learnSetup').classList.add('hidden');
+        document.getElementById('learnRun').classList.remove('hidden');
+        loadFc();
     }
 
-    // --- TRÉNINGOVÁ LOGIKA ---
-    function startTraining(mode) {
-        let pool = [];
-        testMode = mode;
-        mistakes = 0; currentIdx = 0;
-
-        if (mode === 'normal') {
-            let l = parseInt(document.getElementById('trainLessonSelect').value);
-            pool = db.filter(w => w.lekcia === l);
-        } else if (mode === 'unlock') {
-            pool = db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
-        } else if (mode === 'boss') {
-            pool = db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50);
-        }
-
-        testQueue = pool.sort(() => 0.5 - Math.random());
-        if(testQueue.length === 0) return alert('Žiadne slová v lekcii.');
-
-        document.getElementById('trainSetup').classList.add('hidden');
-        document.getElementById('trainResult').classList.add('hidden');
-        document.getElementById('trainRun').classList.remove('hidden');
+    function loadFc() {
+        document.getElementById('fcElement').classList.remove('is-flipped');
+        let w = fcQueue[fcIdx];
         
+        setTimeout(() => {
+            document.getElementById('fcProgress').innerText = `Karta ${fcIdx + 1}/${fcQueue.length}`;
+            document.getElementById('fcFrontSk').innerText = w.sk;
+            
+            // Logika pre obrázok alebo emoji
+            let imgDiv = document.getElementById('fcImg');
+            if(w.obrazok) {
+                if(w.obrazok.startsWith('http')) imgDiv.innerHTML = `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">`;
+                else imgDiv.innerHTML = w.obrazok; // Ak je to Emoji
+                imgDiv.classList.remove('hidden');
+            } else {
+                imgDiv.classList.add('hidden');
+            }
+
+            document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; // Zoberie prvý tvar ak je ich viac
+            document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : '';
+            document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : '';
+        }, 150); // Mierne oneskorenie pre plynulú animáciu
+    }
+
+    function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
+    function nextFc() { if(fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } else closeLearn(); }
+    function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
+    
+    function closeLearn() {
+        document.getElementById('learnRun').classList.add('hidden');
+        document.getElementById('learnSetup').classList.remove('hidden');
+    }
+
+    // --- TRÉNING ---
+    function startUnlockTest(lesson, isBoss) { currentUnlockTarget = lesson; switchTab('train'); startTraining(isBoss ? 'boss' : 'unlock'); }
+    function startTraining(mode) {
+        let pool = []; testMode = mode; mistakes = 0; currentIdx = 0;
+        if (mode === 'normal') pool = db.filter(w => w.lekcia === parseInt(document.getElementById('trainLessonSelect').value));
+        else if (mode === 'unlock') pool = db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
+        else if (mode === 'boss') pool = db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50);
+        testQueue = pool.sort(() => 0.5 - Math.random());
+        if(testQueue.length === 0) return;
+        document.getElementById('trainSetup').classList.add('hidden'); document.getElementById('trainResult').classList.add('hidden'); document.getElementById('trainRun').classList.remove('hidden');
         loadTrainWord();
     }
 
-    function startUnlockTest(lesson, isBoss) {
-        currentUnlockTarget = lesson;
-        switchTab('train');
-        startTraining(isBoss ? 'boss' : 'unlock');
-    }
-
     function loadTrainWord() {
-        document.getElementById('twInput').value = '';
-        document.getElementById('twInput').disabled = false;
-        document.getElementById('twInput').focus();
-        document.getElementById('twFeedback').className = 'feedback-box hidden';
-        document.getElementById('twSubmitBtn').classList.remove('hidden');
-        document.getElementById('twNextBtn').classList.add('hidden');
-        document.getElementById('twAudioBtn').classList.add('hidden'); // Skryjeme kým neuhádne
-
+        document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus();
+        document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twSubmitBtn').classList.remove('hidden');
+        document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden');
         let w = testQueue[currentIdx];
         document.getElementById('twWord').innerText = w.sk;
         document.getElementById('testProgress').innerText = `Slovo ${currentIdx + 1}/${testQueue.length}`;
-        document.getElementById('testCorrect').innerText = currentIdx - mistakes;
-        document.getElementById('testWrong').innerText = mistakes;
+        document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes;
     }
 
     function checkTrainAnswer() {
-        let input = document.getElementById('twInput').value.trim().toLowerCase();
-        let w = testQueue[currentIdx];
-        let fb = document.getElementById('twFeedback');
-        
+        let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback');
         if(input === '') return;
-
-        let answers = w.romaji.toLowerCase().split('/').map(s=>s.trim());
-        let isCorrect = answers.includes(input);
-
-        if(isCorrect) {
-            fb.innerHTML = `✅ <strong>Správne!</strong> (${w.romaji})`;
-            fb.className = 'feedback-box fb-correct';
-            addXP(10);
-            playCurrentAudio(); // Automaticky prehrá ak je dobre
+        if(w.romaji.toLowerCase().split('/').map(s=>s.trim()).includes(input)) {
+            fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; addXP(10); playCurrentAudio();
         } else {
-            fb.innerHTML = `❌ <strong>Chyba.</strong> Správne je:<br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small>${w.kana !== '-' ? w.kana : ''}</small>`;
-            fb.className = 'feedback-box fb-wrong';
-            mistakes++;
+            fb.innerHTML = `❌ <strong>Chyba.</strong> Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span>`; fb.className = 'feedback-box fb-wrong'; mistakes++;
         }
-
-        document.getElementById('twInput').disabled = true;
-        document.getElementById('twSubmitBtn').classList.add('hidden');
-        document.getElementById('twNextBtn').classList.remove('hidden');
-        document.getElementById('twAudioBtn').classList.remove('hidden');
+        document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden');
     }
 
-    function nextTrainWord() {
-        currentIdx++;
-        if(currentIdx < testQueue.length) loadTrainWord();
-        else endTraining();
-    }
-
+    function nextTrainWord() { currentIdx++; if(currentIdx < testQueue.length) loadTrainWord(); else endTraining(); }
+    
     function endTraining() {
-        document.getElementById('trainRun').classList.add('hidden');
-        document.getElementById('trainResult').classList.remove('hidden');
-        
-        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100);
-        document.getElementById('trScore').innerText = `${perc}%`;
-        
+        document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden');
+        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`;
         let msg = document.getElementById('trMessage');
         if (testMode === 'unlock' || testMode === 'boss') {
-            if (perc >= 90) {
-                msg.innerHTML = "🎉 <strong>Gratulujem!</strong> Odomkol si novú úroveň.";
-                msg.style.color = "var(--success)";
-                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
-                addXP(testMode === 'boss' ? 500 : 100);
-                saveState();
-            } else {
-                msg.innerHTML = "❌ Na odomknutie potrebuješ aspoň 90%. Skús to znova.";
-                msg.style.color = "var(--danger)";
-            }
-        } else {
-            msg.innerHTML = "Tréning dokončený. Dobrá práca!";
-            msg.style.color = "var(--text-main)";
-        }
+            if (perc >= 90) { msg.innerHTML = "🎉 Odomkol si novú úroveň!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(testMode === 'boss' ? 500 : 100); saveState(); } 
+            else { msg.innerHTML = "❌ Potrebuješ 90%. Skús znova."; msg.style.color = "var(--danger)"; }
+        } else msg.innerHTML = "Tréning dokončený.";
     }
+    function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); switchTab('map'); }
 
-    function closeTraining() {
-        document.getElementById('trainSetup').classList.remove('hidden');
-        document.getElementById('trainResult').classList.add('hidden');
-        switchTab('map');
-    }
-
-    // --- AUDIO (Ženský hlas) ---
-    function playCurrentAudio() {
-        let w = testQueue[currentIdx];
-        let textToRead = (w.kana && w.kana !== '-') ? w.kana : w.romaji; // Ideálne čítať kanu pre prízvuk
-        let speech = new SpeechSynthesisUtterance(textToRead);
-        speech.lang = 'ja-JP';
-        speech.rate = 0.85; // Mierne spomalené
-        
-        // Pokus o výber ženského hlasu
+    // AUDIO
+    function playAudioText(text) {
+        let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85;
         let voices = window.speechSynthesis.getVoices();
-        let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female'));
-        if(!jpVoice) jpVoice = voices.find(v => v.lang === 'ja-JP');
-        if(jpVoice) speech.voice = jpVoice;
-
-        window.speechSynthesis.speak(speech);
+        let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP');
+        if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech);
+    }
+    function playCurrentAudio() {
+        let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji);
     }
 
-    // --- GRAMATICKÉ DÓDŽÓ ---
-    // Simulátor rozboru vety na základe náhodne odomknutých slovíčok
-    let dojoQueue = [];
-    let dojoIdx = 0;
-
+    // DÓDŽÓ
+    let dojoQueue = []; let dojoIdx = 0;
     function startDojo() {
-        if(db.length === 0) return;
-        dojoQueue = [];
-        
-        // Získame slová len z odomknutých lekcií
+        if(db.length === 0) return; dojoQueue = [];
         let pool = db.filter(w => w.lekcia <= state.unlockedLesson);
-        let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst'));
-        let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves'));
-
-        if(nouns.length < 2 || verbs.length < 1) {
-            return alert("Na dódžó potrebuješ odomknúť viac lekcií (podstatné mená a slovesá).");
-        }
-
-        // Vygenerujeme 5 "šablónových" viet
+        let nouns = pool.filter(w => w.kategoria.toLowerCase().includes('podst')); let verbs = pool.filter(w => w.kategoria.toLowerCase().includes('sloves'));
+        if(nouns.length < 2 || verbs.length < 1) return alert("Potrebuješ odomknúť viac lekcií.");
         for(let i=0; i<5; i++) {
-            let n = nouns[Math.floor(Math.random()*nouns.length)];
-            let v = verbs[Math.floor(Math.random()*verbs.length)];
-            
-            dojoQueue.push({
-                sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, // Zjednodušený preklad
-                correct: `watashi wa ${n.romaji} o ${v.romaji}`,
-                analysis: `
-                    <strong>Watashi wa</strong> - Téma (Ja)<br>
-                    <strong>${n.romaji} o</strong> - Predmet (${n.sk}) + častica O<br>
-                    <strong>${v.romaji}</strong> - Prísudok (${v.sk})
-                `
-            });
+            let n = nouns[Math.floor(Math.random()*nouns.length)]; let v = verbs[Math.floor(Math.random()*verbs.length)];
+            dojoQueue.push({ sk: `Ja a ${n.sk.toLowerCase()} - ${v.sk.toLowerCase()}`, correct: `watashi wa ${n.romaji.split('/')[0]} o ${v.romaji.split('/')[0]}` });
         }
-
-        dojoIdx = 0;
-        document.getElementById('dojoSetup').classList.add('hidden');
-        document.getElementById('dojoRun').classList.remove('hidden');
-        loadDojoSentence();
+        dojoIdx = 0; document.getElementById('dojoSetup').classList.add('hidden'); document.getElementById('dojoRun').classList.remove('hidden'); loadDojoSentence();
     }
-
-    function loadDojoSentence() {
-        document.getElementById('djInput').value = '';
-        document.getElementById('djInput').disabled = false;
-        document.getElementById('djFeedback').className = 'feedback-box hidden';
-        document.getElementById('djSubmitBtn').classList.remove('hidden');
-        document.getElementById('djNextBtn').classList.add('hidden');
-        
-        document.getElementById('djPrompt').innerText = dojoQueue[dojoIdx].sk;
-    }
-
+    function loadDojoSentence() { document.getElementById('djInput').value = ''; document.getElementById('djInput').disabled = false; document.getElementById('djFeedback').className = 'feedback-box hidden'; document.getElementById('djSubmitBtn').classList.remove('hidden'); document.getElementById('djNextBtn').classList.add('hidden'); document.getElementById('djPrompt').innerText = dojoQueue[dojoIdx].sk; }
     function checkDojoAnswer() {
-        let input = document.getElementById('djInput').value.trim().toLowerCase().replace(/\s+/g, ' ');
-        let s = dojoQueue[dojoIdx];
-        let fb = document.getElementById('djFeedback');
-
-        if(input === s.correct) {
-            fb.innerHTML = `✅ <strong>Brilantné! +50 XP</strong><div class="dojo-analysis">${s.analysis}</div>`;
-            fb.className = 'feedback-box fb-correct';
-            addXP(50);
-        } else {
-            fb.innerHTML = `❌ <strong>Chyba v štruktúre.</strong><br>Vzor: ${s.correct}<div class="dojo-analysis">${s.analysis}</div>`;
-            fb.className = 'feedback-box fb-wrong';
-        }
-
-        document.getElementById('djInput').disabled = true;
-        document.getElementById('djSubmitBtn').classList.add('hidden');
-        document.getElementById('djNextBtn').classList.remove('hidden');
+        let input = document.getElementById('djInput').value.trim().toLowerCase().replace(/\s+/g, ' '); let s = dojoQueue[dojoIdx]; let fb = document.getElementById('djFeedback');
+        if(input === s.correct) { fb.innerHTML = `✅ <strong>Brilantné! +50 XP</strong>`; fb.className = 'feedback-box fb-correct'; addXP(50); } 
+        else { fb.innerHTML = `❌ Chyba. Vzor: ${s.correct}`; fb.className = 'feedback-box fb-wrong'; }
+        document.getElementById('djInput').disabled = true; document.getElementById('djSubmitBtn').classList.add('hidden'); document.getElementById('djNextBtn').classList.remove('hidden');
     }
-
-    function nextDojoSentence() {
-        dojoIdx++;
-        if(dojoIdx < dojoQueue.length) {
-            loadDojoSentence();
-        } else {
-            document.getElementById('dojoRun').classList.add('hidden');
-            document.getElementById('dojoSetup').classList.remove('hidden');
-            alert("Dódžó tréning dokončený! Získal si cenné skúsenosti.");
-        }
-    }
-
-    function hardReset() {
-        if(confirm("Si si istý? Toto vymaže všetky tvoje XP, Streak aj odomknuté lekcie!")) {
-            localStorage.removeItem('finale_state');
-            localStorage.removeItem('finale_db');
-            location.reload();
-        }
-    }
+    function nextDojoSentence() { dojoIdx++; if(dojoIdx < dojoQueue.length) loadDojoSentence(); else { document.getElementById('dojoRun').classList.add('hidden'); document.getElementById('dojoSetup').classList.remove('hidden'); } }
 </script>
 </body>
 </html>
-
