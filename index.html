@@ -167,11 +167,25 @@
         if(db.length > 0) renderMap();
         else switchTab('db');
 
-        // Enter key bindings
-        document.getElementById('twInput').addEventListener('keypress', e => {
+        // Globálne ovládanie cez Enter (funguje bez myši)
+        document.addEventListener('keypress', e => {
             if(e.key === 'Enter') {
-                if(document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer();
-                else nextTrainWord();
+                // Ovládanie pre Tréning
+                if (!document.getElementById('trainRun').classList.contains('hidden')) {
+                    if(document.getElementById('twNextBtn').classList.contains('hidden')) {
+                        checkTrainAnswer();
+                    } else {
+                        nextTrainWord();
+                    }
+                }
+                // Ovládanie pre Gramatické Dódžó
+                else if (!document.getElementById('dojoRun').classList.contains('hidden')) {
+                    if(document.getElementById('djNextBtn').classList.contains('hidden')) {
+                        checkDojoAnswer();
+                    } else {
+                        nextDojoSentence();
+                    }
+                }
             }
         });
     };
@@ -514,3 +528,4 @@
 </script>
 </body>
 </html>
+
