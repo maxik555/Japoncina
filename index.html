@@ -2,8 +2,14 @@
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Verzia 2.1.1 (Safe Sync)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Japonský Tréning - Verzia 2.2</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -23,7 +29,7 @@
         [data-theme="uzumaki"] { --bg-dark: #7c2d12; --bg-card: #9a3412; --text-main: #fff7ed; --text-muted: #fdba74; --primary: #f97316; --border: #c2410c; --card-back: #ea580c; }
         [data-theme="nara"] { --bg-dark: #171717; --bg-card: #262626; --text-main: #e5e5e5; --text-muted: #a3a3a3; --primary: #525252; --border: #404040; --card-back: #404040; }
 
-        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s; }
+        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s; -webkit-user-select: none; }
         .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; transition: background 0.3s; }
         
         .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.3s; }
@@ -33,8 +39,9 @@
         .lang-flags span { cursor: pointer; font-size: 24px; transition: 0.2s; padding: 0 5px; }
         .lang-flags span.inactive { opacity: 0.3; filter: grayscale(100%); }
         
-        .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .btn-nav { flex: 1; min-width: 75px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; text-align: center; }
+        .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .nav::-webkit-scrollbar { display: none; }
+        .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; text-align: center; white-space: nowrap; }
         .btn-nav.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
@@ -47,7 +54,7 @@
         .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
         
-        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 16px; margin-bottom: 15px; box-sizing: border-box; transition: 0.3s; }
+        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 16px; margin-bottom: 15px; box-sizing: border-box; transition: 0.3s; font-family: 'Nunito', sans-serif; }
         .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin-bottom: 10px; }
         .btn-primary { background: var(--primary); box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
         .btn-primary:active { transform: translateY(4px); box-shadow: none; }
@@ -58,14 +65,12 @@
         .btn-outline:hover { border-color: var(--primary); }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
         .btn-google { background: white; color: #757575; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
-        .btn-google:hover { background: #f8f9fa; }
         
         .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; transition: 0.3s; }
         .vocab-table-wrapper { max-height: 60vh; overflow-y: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
         .vocab-table { width: 100%; border-collapse: collapse; min-width: 600px; font-size: 15px; }
         .vocab-table th, .vocab-table td { border-bottom: 1px solid var(--border); padding: 12px; text-align: left; }
         .vocab-table th { background: var(--bg-dark); color: var(--text-muted); font-weight: bold; position: sticky; top: 0; z-index: 1; transition: 0.3s; }
-        .vocab-table tr:hover { background: rgba(255,255,255,0.05); }
         
         .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
         .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
@@ -113,10 +118,7 @@
 </head>
 <body data-theme="dark">
 
-<div id="loadingOverlay">
-    <div class="spinner"></div>
-    <h2 id="loadingText" data-sk="Spúšťam appku..." data-en="Starting app...">Spúšťam appku...</h2>
-</div>
+<div id="loadingOverlay"><div class="spinner"></div><h2 id="loadingText" data-sk="Spúšťam appku..." data-en="Starting app...">Spúšťam appku...</h2></div>
 
 <div id="auth-container" class="app-container" style="display: none; max-width: 400px; text-align: center;">
     <h2 style="font-size:32px; margin-bottom:10px;">🏯 Dódžó</h2>
@@ -137,7 +139,7 @@
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        <span data-sk="Prihlásiť sa cez Google" data-en="Sign in with Google">Prihlásiť sa cez Google</span>
+        <span data-sk="Cez Google" data-en="With Google">Cez Google</span>
     </button>
     <p id="authError" style="color:var(--danger); font-size:14px; margin-top:15px; font-weight:bold;"></p>
 </div>
@@ -157,6 +159,7 @@
         <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap" data-sk="🗺️ Cesta" data-en="🗺️ Path">🗺️ Cesta</button>
         <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
         <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
+        <button class="btn-nav" onclick="switchTab('translate')" id="btnTabTranslate" data-sk="🈯 Prekladač" data-en="🈯 Translate">🈯 Prekladač</button>
         <button class="btn-nav" onclick="switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
     </div>
 
@@ -183,126 +186,114 @@
         <div id="trainResult" class="hidden text-center"><h1 style="font-size: 50px; color:var(--primary); margin-bottom: 5px;" id="trScore">0%</h1><p id="trMessage" style="color:var(--text-muted);"></p><button class="btn btn-primary" onclick="closeTraining()" data-sk="Späť na výber" data-en="Back">Späť na výber</button></div>
     </div>
 
+    <div id="tab-translate" class="tab">
+        <h2 style="margin-top:0;" data-sk="Rýchly Prekladač" data-en="Quick Translator">Rýchly Prekladač</h2>
+        <div class="info-box">
+            <select id="transDirection" style="margin-bottom: 10px;">
+                <option value="sk|ja" data-sk="Slovenčina ➡️ Japončina" data-en="Slovak ➡️ Japanese">Slovenčina ➡️ Japončina</option>
+                <option value="ja|sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ Slovak">Japončina ➡️ Slovenčina</option>
+                <option value="en|ja" data-sk="Angličtina ➡️ Japončina" data-en="English ➡️ Japanese">Angličtina ➡️ Japončina</option>
+                <option value="ja|en" data-sk="Japončina ➡️ Angličtina" data-en="Japanese ➡️ English">Japončina ➡️ Angličtina</option>
+            </select>
+            <textarea id="transInput" rows="4" placeholder="Sem napíš text na preklad..." data-sk="Sem napíš text na preklad..." data-en="Type text to translate here..."></textarea>
+            <button class="btn btn-primary" onclick="translateText()" data-sk="Preložiť" data-en="Translate">Preložiť</button>
+            <div id="transOutput" style="min-height: 80px; padding:15px; border-radius:12px; background:rgba(0,0,0,0.2); font-size:18px; margin-top:10px; border: 1px dashed var(--border);">
+                <span style="color:var(--text-muted); font-size:14px;" data-sk="Tu sa zobrazí preklad." data-en="Translation will appear here.">Tu sa zobrazí preklad.</span>
+            </div>
+        </div>
+    </div>
+
     <div id="tab-profile" class="tab">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h2 style="margin:0;" data-sk="Tvoj Shinobi Profil" data-en="Your Shinobi Profile">Tvoj Shinobi Profil</h2><button class="btn btn-danger" style="width:auto; margin:0; padding:8px 15px;" onclick="logoutUser()" data-sk="🚪 Odhlásiť" data-en="🚪 Logout">🚪 Odhlásiť</button></div>
-        <div class="info-box" style="display:flex; justify-content:space-between; align-items:center;"><div><h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3><span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span></div><div style="font-size:45px;" id="profileRankIcon">🥷</div></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h2 style="margin:0;" data-sk="Tvoj Profil" data-en="Your Profile">Tvoj Profil</h2><button class="btn btn-danger" style="width:auto; margin:0; padding:8px 15px;" onclick="logoutUser()" data-sk="🚪 Odhlásiť" data-en="🚪 Logout">🚪 Odhlásiť</button></div>
+        
+        <div class="info-box" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3>
+                    <span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span>
+                </div>
+                <div style="font-size:45px;" id="profileRankIcon">🥷</div>
+            </div>
+            <hr style="border-color:var(--border); width:100%;">
+            <label style="font-size:14px; color:var(--text-muted);" data-sk="Tvoja prezývka:" data-en="Your Nickname:">Tvoja prezývka:</label>
+            <input type="text" id="profileNickname" placeholder="Zadaj meno..." onblur="updateNickname()" style="margin-bottom:0;">
+        </div>
+
         <h3 data-sk="Odomknuté Motívy" data-en="Unlocked Themes">Odomknuté Motívy</h3><div id="themeList" class="info-box" style="padding:10px;"></div>
-        <h3 data-sk="Archív Skúšok (Odomykanie)" data-en="Exam Archive (Unlocks)">Archív Skúšok (Odomykanie)</h3><p style="font-size:14px; color:var(--text-muted); margin-top:-10px;" data-sk="Tu sa ukladajú výsledky tvojich testov." data-en="Results of your tests are saved here.">Tu sa ukladajú výsledky tvojich testov.</p><div id="historyList" style="max-height: 400px; overflow-y: auto; padding-right:5px;"></div>
+        <h3 data-sk="Archív Skúšok" data-en="Exam Archive">Archív Skúšok</h3><div id="historyList" style="max-height: 400px; overflow-y: auto; padding-right:5px;"></div>
     </div>
 </div>
 
 <script>
-    // --- FIREBASE CONFIG & INIT ---
     const firebaseConfig = {
-        apiKey: "AIzaSyDEJcyJE7H9rlqWYPPit8r83sIgLG3w1OI",
-        authDomain: "learning-japanase.firebaseapp.com",
-        projectId: "learning-japanase",
-        storageBucket: "learning-japanase.firebasestorage.app",
-        messagingSenderId: "555713188608",
-        appId: "1:555713188608:web:d8375f9ef216321d2319e5"
+        apiKey: "AIzaSyDEJcyJE7H9rlqWYPPit8r83sIgLG3w1OI", authDomain: "learning-japanase.firebaseapp.com",
+        projectId: "learning-japanase", storageBucket: "learning-japanase.firebasestorage.app",
+        messagingSenderId: "555713188608", appId: "1:555713188608:web:d8375f9ef216321d2319e5"
     };
+    firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const dbFirestore = firebase.firestore(); const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const dbFirestore = firebase.firestore();
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-    // --- APP STATE ---
     let db = []; 
-    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [] }; 
-    let currentUser = null;
-    let currentLang = localStorage.getItem('finale_lang') || 'sk';
-    let cloudDataLoaded = false; // BEZPEČNOSTNÁ POISTKA PROTI PREPÍSANIU DÁT!
+    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' }; 
+    let currentUser = null; let currentLang = localStorage.getItem('finale_lang') || 'sk'; let cloudDataLoaded = false;
     
-    // --- AUTHENTICATION OBSERVER ---
     auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('main-app').style.display = 'flex';
-            await loadAppForUser();
-        } else {
-            currentUser = null;
-            cloudDataLoaded = false;
-            document.getElementById('auth-container').style.display = 'block';
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
+        if (user) { currentUser = user; document.getElementById('auth-container').style.display = 'none'; document.getElementById('main-app').style.display = 'flex'; await loadAppForUser(); } 
+        else { currentUser = null; cloudDataLoaded = false; document.getElementById('auth-container').style.display = 'block'; document.getElementById('main-app').style.display = 'none'; document.getElementById('loadingOverlay').style.display = 'none'; }
     });
 
-    // --- AUTH FUNKCIE ---
-    async function loginUser() {
-        let e = document.getElementById('authEmail').value; let p = document.getElementById('authPass').value;
-        document.getElementById('authError').innerText = ""; document.getElementById('loadingOverlay').style.display = 'flex';
-        try { await auth.signInWithEmailAndPassword(e, p); } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('authError').innerText = currentLang === 'sk' ? "Zlý e-mail alebo heslo." : err.message; }
-    }
-    
-    async function registerUser() {
-        let e = document.getElementById('authEmail').value; let p = document.getElementById('authPass').value;
-        document.getElementById('authError').innerText = ""; document.getElementById('loadingOverlay').style.display = 'flex';
-        try { await auth.createUserWithEmailAndPassword(e, p); } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('authError').innerText = currentLang === 'sk' ? "Chyba registrácie (heslo musí mať min. 6 znakov)." : err.message; }
-    }
-
-    async function loginWithGoogle() {
-        document.getElementById('authError').innerText = "";
-        try { await auth.signInWithPopup(googleProvider); } catch (err) { document.getElementById('authError').innerText = err.message; }
-    }
-
+    async function loginUser() { let e = document.getElementById('authEmail').value; let p = document.getElementById('authPass').value; document.getElementById('authError').innerText = ""; document.getElementById('loadingOverlay').style.display = 'flex'; try { await auth.signInWithEmailAndPassword(e, p); } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('authError').innerText = currentLang === 'sk' ? "Zlý e-mail alebo heslo." : err.message; } }
+    async function registerUser() { let e = document.getElementById('authEmail').value; let p = document.getElementById('authPass').value; document.getElementById('authError').innerText = ""; document.getElementById('loadingOverlay').style.display = 'flex'; try { await auth.createUserWithEmailAndPassword(e, p); } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('authError').innerText = currentLang === 'sk' ? "Chyba (heslo min. 6 znakov)." : err.message; } }
+    async function loginWithGoogle() { document.getElementById('authError').innerText = ""; try { await auth.signInWithPopup(googleProvider); } catch (err) { document.getElementById('authError').innerText = err.message; } }
     function logoutUser() { auth.signOut(); }
 
-    // --- CLOUD SYNC LOGIKA ---
     async function loadAppForUser() {
-        document.getElementById('loadingOverlay').style.display = 'flex';
-        document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Načítavam profil z cloudu..." : "Loading profile...";
-        
+        document.getElementById('loadingOverlay').style.display = 'flex'; document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Načítavam profil z cloudu..." : "Loading profile...";
         try {
-            const docRef = dbFirestore.collection('users').doc(currentUser.uid);
-            const docSnap = await docRef.get();
-            
-            if (docSnap.exists) {
-                state = { ...state, ...docSnap.data() };
-                cloudDataLoaded = true; // Zabezpečenie úspešného čítania
-            } else {
-                if (localStorage.getItem('finale_state')) {
-                    let localState = JSON.parse(localStorage.getItem('finale_state'));
-                    state = { ...state, ...localState }; 
-                }
-                await docRef.set(state);
-                cloudDataLoaded = true;
-            }
-        } catch(e) { 
-            console.error("Firestore read error:", e); 
-            // Ak zlyhá internet pri štarte, načítame aspoň lokálnu zálohu, ale ZAKÁŽEME PREPISOVANIE CLOUDU
-            if (localStorage.getItem('finale_state')) { state = JSON.parse(localStorage.getItem('finale_state')); }
-            cloudDataLoaded = false;
-        }
+            const docRef = dbFirestore.collection('users').doc(currentUser.uid); const docSnap = await docRef.get();
+            if (docSnap.exists) { state = { ...state, ...docSnap.data() }; cloudDataLoaded = true; } 
+            else { if (localStorage.getItem('finale_state')) { state = { ...state, ...JSON.parse(localStorage.getItem('finale_state')) }; } await docRef.set(state); cloudDataLoaded = true; }
+        } catch(e) { if (localStorage.getItem('finale_state')) { state = JSON.parse(localStorage.getItem('finale_state')); } cloudDataLoaded = false; }
 
+        if(document.getElementById('profileNickname')) document.getElementById('profileNickname').value = state.nickname || '';
         checkStreak(); setLang(currentLang); applyTheme(state.theme); 
-        
         document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Sťahujem databázu..." : "Downloading database...";
-        await fetchDatabaseFromCloud();
-        
-        renderHistory();
-        document.getElementById('loadingOverlay').style.opacity = '0';
-        setTimeout(() => document.getElementById('loadingOverlay').style.display = 'none', 500);
+        await fetchDatabaseFromCloud(); renderHistory();
+        document.getElementById('loadingOverlay').style.opacity = '0'; setTimeout(() => document.getElementById('loadingOverlay').style.display = 'none', 500);
     }
 
     async function saveState() { 
-        updateUI(); 
-        
-        // Lokálna záloha VŽDY (pre istotu)
-        localStorage.setItem('finale_state', JSON.stringify(state));
+        updateUI(); localStorage.setItem('finale_state', JSON.stringify(state));
+        if (currentUser && cloudDataLoaded) { try { await dbFirestore.collection('users').doc(currentUser.uid).set(state); } catch(e) { console.error("Firestore save error:", e); } }
+    }
 
-        // Cloud zápis IBA ak sme bezpečne stiahli dáta (zamedzenie race condition)
-        if (currentUser && cloudDataLoaded) {
-            try { await dbFirestore.collection('users').doc(currentUser.uid).set(state); } 
-            catch(e) { console.error("Firestore save error:", e); }
+    // NICKNAME UPDATE LOGIKA
+    function updateNickname() {
+        let nick = document.getElementById('profileNickname').value.trim();
+        state.nickname = nick;
+        saveState();
+    }
+
+    // PREKLADAČ (API)
+    async function translateText() {
+        let text = document.getElementById('transInput').value.trim();
+        let output = document.getElementById('transOutput');
+        if(!text) return;
+        
+        let pair = document.getElementById('transDirection').value;
+        output.innerHTML = `<span style="color:var(--primary); font-style:italic;">${currentLang === 'sk' ? 'Prekladám...' : 'Translating...'}</span>`;
+        
+        try {
+            let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`);
+            let data = await res.json();
+            if(data.responseData && data.responseData.translatedText) {
+                output.innerText = data.responseData.translatedText;
+            } else { throw new Error(); }
+        } catch(e) {
+            output.innerHTML = `<span style="color:var(--danger);">${currentLang === 'sk' ? 'Chyba spojenia s prekladačom.' : 'Translation error.'}</span>`;
         }
     }
 
-    // --- ZVYŠOK APLIKÁCIE ---
     let testQueue = []; let currentIdx = 0; let mistakes = 0; let currentTestType = ''; let currentUnlockTarget = 0; let isBossTest = false; let quizOptions = []; let quizTimer; let timeLeft = 7.0; let currentTestMistakes = [];
-    
     const RANKS = [ { maxLvl: 10, sk: "Genin", en: "Genin", icon: "🥷" }, { maxLvl: 20, sk: "Chuunin", en: "Chunin", icon: "📜" }, { maxLvl: 30, sk: "Jounin", en: "Jonin", icon: "🦅" }, { maxLvl: 999, sk: "Kage", en: "Kage", icon: "👑" } ];
     const THEMES = [ { id: 'dark', sk: 'Základná (Tmavá)', en: 'Default (Dark)', req: 1, icon: '🌙' }, { id: 'light', sk: 'Základná (Svetlá)', en: 'Default (Light)', req: 1, icon: '☀️' }, { id: 'sharingan', sk: 'Sharingan', en: 'Sharingan', req: 10, icon: '👁️' }, { id: 'konoha', sk: 'Konoha', en: 'Konoha', req: 10, icon: '🍃' }, { id: 'uzumaki', sk: 'Uzumaki Clan', en: 'Uzumaki Clan', req: 15, icon: '🌀' }, { id: 'nara', sk: 'Nara Clan', en: 'Nara Clan', req: 15, icon: '🦌' } ];
 
@@ -313,18 +304,17 @@
         }
     });
 
-    window.onload = () => {
-        // Inicializačné ošetrenie: na začiatku načítame len lokál, čakáme na Firebase Auth
-        if (localStorage.getItem('finale_state') && !currentUser) {
-            state = { ...state, ...JSON.parse(localStorage.getItem('finale_state')) };
-            applyTheme(state.theme);
-        }
-    };
+    window.onload = () => { if (localStorage.getItem('finale_state') && !currentUser) { state = { ...state, ...JSON.parse(localStorage.getItem('finale_state')) }; applyTheme(state.theme); } };
 
     function setLang(lang) {
         currentLang = lang; localStorage.setItem('finale_lang', lang);
         document.getElementById('flag-sk').className = lang === 'sk' ? '' : 'inactive'; document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
-        document.querySelectorAll('[data-sk]').forEach(el => { el.innerHTML = el.getAttribute(`data-${lang}`); });
+        document.querySelectorAll('[data-sk], [placeholder]').forEach(el => { 
+            if(el.hasAttribute('data-' + lang)) {
+                if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.setAttribute('placeholder', el.getAttribute(`data-${lang}`));
+                else el.innerHTML = el.getAttribute(`data-${lang}`); 
+            }
+        });
         populateSelects(); updateUI(); renderThemes(); renderHistory();
         if(!document.getElementById('learnListRun').classList.contains('hidden')) showUnlockedList();
         if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
@@ -346,7 +336,7 @@
 
     function renderHistory() {
         const container = document.getElementById('historyList'); container.innerHTML = '';
-        if (!state.history || state.history.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">${currentLang === 'sk' ? 'Zatiaľ si neabsolvoval žiadny odomykací test.' : 'No unlock tests completed yet.'}</p>`; return; }
+        if (!state.history || state.history.length === 0) { container.innerHTML = `<p style="color:var(--text-muted); text-align:center;">${currentLang === 'sk' ? 'Zatiaľ žiadny test.' : 'No tests yet.'}</p>`; return; }
         state.history.forEach(h => {
             let dateStr = new Date(h.date).toLocaleString(currentLang === 'sk' ? 'sk-SK' : 'en-US', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
             let isBoss = (h.lesson === 40 || h.lesson === 115); let lessonTitle = isBoss ? `BOSS L${h.lesson}` : (currentLang === 'sk' ? `Lekcia ${h.lesson}` : `Lesson ${h.lesson}`);
@@ -354,9 +344,9 @@
             let div = document.createElement('div'); div.className = `history-item ${h.passed ? 'passed' : 'failed'}`;
             let html = `<div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold;"><span>${lessonTitle}</span><span>${statusBadge}</span></div><div style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">${dateStr}</div>`;
             if (h.mistakes && h.mistakes.length > 0) {
-                html += `<div style="margin-top:10px; font-size:13px;"><strong>${currentLang === 'sk' ? 'Chyby v slovách:' : 'Mistakes made in:'}</strong></div>`;
+                html += `<div style="margin-top:10px; font-size:13px;"><strong>${currentLang === 'sk' ? 'Chyby:' : 'Mistakes:'}</strong></div>`;
                 h.mistakes.forEach(m => { let meaning = currentLang === 'sk' ? m.sk : m.en; html += `<div class="history-mistake"><span class="mistake-target">${meaning}</span> ➡️ <span class="mistake-correct">${m.romaji}</span> <span style="color:var(--text-muted)">(${m.kana !== '-' ? m.kana : ''} ${m.kanji !== '-' ? m.kanji : ''})</span></div>`; });
-            } else if (h.passed) { html += `<div style="margin-top:5px; font-size:13px; color:var(--success);">🏆 ${currentLang === 'sk' ? 'Perfektné! Bez jedinej chyby.' : 'Perfect! Not a single mistake.'}</div>`; }
+            } else if (h.passed) { html += `<div style="margin-top:5px; font-size:13px; color:var(--success);">🏆 ${currentLang === 'sk' ? 'Perfektné!' : 'Perfect!'}</div>`; }
             div.innerHTML = html; container.appendChild(div);
         });
     }
@@ -378,9 +368,17 @@
     function updateUI() { 
         let level = Math.floor(state.xp / 500) + 1;
         document.getElementById('uiLevel').innerText = level; document.getElementById('uiXp').innerText = state.xp; document.getElementById('uiStreak').innerText = state.streak + " 🔥"; 
-        let currentRank = RANKS.find(r => level <= r.maxLvl) || RANKS[RANKS.length - 1]; let rankName = currentLang === 'sk' ? currentRank.sk : currentRank.en;
-        document.getElementById('uiRank').innerText = `${currentRank.icon} ${rankName}`;
-        if(document.getElementById('profileRankName')) { document.getElementById('profileRankName').innerText = `${rankName}`; document.getElementById('profileRankIcon').innerText = currentRank.icon; }
+        
+        let currentRank = RANKS.find(r => level <= r.maxLvl) || RANKS[RANKS.length - 1]; 
+        let rankName = currentLang === 'sk' ? currentRank.sk : currentRank.en;
+        let displayName = state.nickname ? `${rankName} | ${state.nickname}` : rankName;
+        
+        document.getElementById('uiRank').innerText = `${currentRank.icon} ${displayName}`;
+        
+        if(document.getElementById('profileRankName')) { 
+            document.getElementById('profileRankName').innerText = displayName; 
+            document.getElementById('profileRankIcon').innerText = currentRank.icon; 
+        }
         renderThemes();
     }
 
@@ -411,7 +409,7 @@
 
     function startQuizTimer() { timeLeft = 7.0; let bar = document.getElementById('quizTimerBar'); bar.style.width = '100%'; bar.style.backgroundColor = 'var(--warning)'; clearInterval(quizTimer); quizTimer = setInterval(() => { timeLeft -= 0.1; bar.style.width = (timeLeft / 7.0) * 100 + '%'; if(timeLeft < 2.5) bar.style.backgroundColor = 'var(--danger)'; if(timeLeft <= 0) { clearInterval(quizTimer); processQuizResult(null); } }, 100); }
     function checkQuizAnswer(optIdx) { clearInterval(quizTimer); processQuizResult(quizOptions[optIdx]); }
-    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba alebo vypršal čas.</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong.</strong> Correct: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; currentTestMistakes.push(w); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
+    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba!</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong!</strong> Correct: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; currentTestMistakes.push(w); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
     function checkTrainAnswer() { let input = document.getElementById('twInput').value.trim().toLowerCase(); let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); if(input === '') return; let validAnswers = w.romaji.toLowerCase().split('/').map(s=>s.trim()); if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>s.trim())); if(w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s=>s.trim())); if(validAnswers.includes(input)) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); } else { fb.innerHTML = currentLang === 'sk' ? `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`; fb.className = 'feedback-box fb-wrong'; mistakes++; currentTestMistakes.push(w); } document.getElementById('twInput').disabled = true; document.getElementById('twSubmitBtn').classList.add('hidden'); document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
 
