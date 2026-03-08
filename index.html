@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Japonský Tréning - Verzia 2.1 (Google Auth)</title>
+    <title>Japonský Tréning - Verzia 2.1.1 (Safe Sync)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <style>
-        /* CSS Premenné */
         :root {
             --bg-dark: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
             --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
             --locked: #334155; --border: #334155; --card-back: #1e3a8a;
         }
 
-        /* Témy */
         [data-theme="light"] { --bg-dark: #f1f5f9; --bg-card: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --primary: #2563eb; --border: #cbd5e1; --card-back: #e2e8f0; }
         [data-theme="sharingan"] { --bg-dark: #1a0505; --bg-card: #2b0a0a; --text-main: #fca5a5; --text-muted: #ef4444; --primary: #dc2626; --border: #7f1d1d; --card-back: #450a0a; }
         [data-theme="konoha"] { --bg-dark: #064e3b; --bg-card: #14532d; --text-main: #d1fae5; --text-muted: #6ee7b7; --primary: #10b981; --border: #065f46; --card-back: #065f46; }
@@ -60,8 +57,6 @@
         .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--primary); }
         .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
-        
-        /* Špeciálne tlačidlo pre Google */
         .btn-google { background: white; color: #757575; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
         .btn-google:hover { background: #f8f9fa; }
         
@@ -144,7 +139,6 @@
         </svg>
         <span data-sk="Prihlásiť sa cez Google" data-en="Sign in with Google">Prihlásiť sa cez Google</span>
     </button>
-    
     <p id="authError" style="color:var(--danger); font-size:14px; margin-top:15px; font-weight:bold;"></p>
 </div>
 
@@ -156,10 +150,7 @@
             <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label" data-sk="XP" data-en="XP">XP</div></div>
             <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label" data-sk="Streak" data-en="Streak">Streak</div></div>
         </div>
-        <div class="lang-flags">
-            <span id="flag-sk" onclick="setLang('sk')">🇸🇰</span>
-            <span id="flag-en" onclick="setLang('en')">🇬🇧</span>
-        </div>
+        <div class="lang-flags"><span id="flag-sk" onclick="setLang('sk')">🇸🇰</span><span id="flag-en" onclick="setLang('en')">🇬🇧</span></div>
     </div>
 
     <div class="nav">
@@ -169,130 +160,34 @@
         <button class="btn-nav" onclick="switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
     </div>
 
-    <div id="tab-map" class="tab active">
-        <h2 style="margin-top:0;" data-sk="Tvoja cesta k plynulosti" data-en="Your path to fluency">Tvoja cesta k plynulosti</h2>
-        <div id="lessonMap" class="map-grid"></div>
-    </div>
+    <div id="tab-map" class="tab active"><h2 style="margin-top:0;" data-sk="Tvoja cesta k plynulosti" data-en="Your path to fluency">Tvoja cesta k plynulosti</h2><div id="lessonMap" class="map-grid"></div></div>
 
     <div id="tab-learn" class="tab">
         <div id="learnSetup">
             <h2 data-sk="Tréning a Slovník" data-en="Training & Dictionary">Tréning a Slovník</h2>
-            <div class="info-box">
-                <label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label>
-                <select id="learnLessonSelect" style="margin-top:8px;"></select>
-                <button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button>
-            </div>
-            <div class="info-box">
-                <p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p>
-                <button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button>
-            </div>
+            <div class="info-box"><label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label><select id="learnLessonSelect" style="margin-top:8px;"></select><button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button></div>
+            <div class="info-box"><p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p><button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button></div>
         </div>
-
-        <div id="learnCardsRun" class="hidden">
-            <div class="test-header"><span id="fcProgress">Karta 1/20</span></div>
-            <div class="flashcard-container" onclick="flipCard()">
-                <div class="flashcard" id="fcElement">
-                    <div class="card-face card-front"><div id="fcImg" class="fc-img"></div><div id="fcFrontSk" class="fc-sk">Význam</div></div>
-                    <div class="card-face card-back"><div id="fcBackRomaji" class="fc-romaji">romaji</div><div id="fcBackKana" class="fc-kana">hiragana</div><div id="fcBackKanji" class="fc-kanji">kanji</div></div>
-                </div>
-            </div>
-            <div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button></div>
-            <div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button><button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button></div>
-            <button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button>
-        </div>
-
-        <div id="learnListRun" class="hidden">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0;" data-sk="Tvoja slovná zásoba" data-en="Your Vocabulary">Tvoja slovná zásoba</h3>
-                <button class="btn btn-outline" style="width:auto; padding:8px 15px; margin:0;" onclick="closeLearn()" data-sk="Zatvoriť" data-en="Close">Zatvoriť</button>
-            </div>
-            <div class="vocab-table-wrapper">
-                <table class="vocab-table">
-                    <thead><tr><th data-sk="Lekcia" data-en="Lesson">Lekcia</th><th data-sk="Úroveň" data-en="Level">Úroveň</th><th>#</th><th data-sk="Význam" data-en="Meaning">Význam</th><th>Romaji</th><th>Kana</th><th>Kanji</th></tr></thead>
-                    <tbody id="vocabListBody"></tbody>
-                </table>
-            </div>
-        </div>
+        <div id="learnCardsRun" class="hidden"><div class="test-header"><span id="fcProgress">Karta 1/20</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard" id="fcElement"><div class="card-face card-front"><div id="fcImg" class="fc-img"></div><div id="fcFrontSk" class="fc-sk">Význam</div></div><div class="card-face card-back"><div id="fcBackRomaji" class="fc-romaji">romaji</div><div id="fcBackKana" class="fc-kana">hiragana</div><div id="fcBackKanji" class="fc-kanji">kanji</div></div></div></div><div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button></div><div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button><button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button></div><button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button></div>
+        <div id="learnListRun" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h3 style="margin:0;" data-sk="Tvoja slovná zásoba" data-en="Your Vocabulary">Tvoja slovná zásoba</h3><button class="btn btn-outline" style="width:auto; padding:8px 15px; margin:0;" onclick="closeLearn()" data-sk="Zatvoriť" data-en="Close">Zatvoriť</button></div><div class="vocab-table-wrapper"><table class="vocab-table"><thead><tr><th data-sk="Lekcia" data-en="Lesson">Lekcia</th><th data-sk="Úroveň" data-en="Level">Úroveň</th><th>#</th><th data-sk="Význam" data-en="Meaning">Význam</th><th>Romaji</th><th>Kana</th><th>Kanji</th></tr></thead><tbody id="vocabListBody"></tbody></table></div></div>
     </div>
 
     <div id="tab-train" class="tab">
         <div id="trainSetup">
-            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                <button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')" data-sk="🔓 Odomknutie" data-en="🔓 Unlock">🔓 Odomknutie</button>
-                <button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')" data-sk="⏱️ Kvíz" data-en="⏱️ Quiz">⏱️ Kvíz</button>
-                <button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')" data-sk="🏋️ Voľný" data-en="🏋️ Free">🏋️ Voľný</button>
-            </div>
-
-            <div id="setupUnlock" class="setup-section hidden">
-                <button class="btn btn-primary" onclick="startTraining('unlock')" data-sk="Spustiť test (90% úspešnosť)" data-en="Start test (90% required)">Spustiť test (90% úspešnosť)</button>
-            </div>
-
-            <div id="setupQuiz" class="setup-section hidden">
-                <div style="display:flex; gap:10px; margin-bottom: 10px;">
-                    <div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="quizFrom"></select></div>
-                    <div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="quizTo"></select></div>
-                </div>
-                <label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label>
-                <input type="number" id="quizCount" value="20" min="0">
-                <button class="btn btn-warning" onclick="startTraining('quiz')" data-sk="Spustiť Kvíz" data-en="Start Quiz">Spustiť Kvíz</button>
-            </div>
-
-            <div id="setupFree" class="setup-section hidden">
-                <div style="display:flex; gap:10px; margin-bottom: 10px;">
-                    <div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="freeFrom"></select></div>
-                    <div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="freeTo"></select></div>
-                </div>
-                <label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label>
-                <input type="number" id="freeCount" value="20" min="0">
-                <button class="btn btn-success" onclick="startTraining('free')" data-sk="Spustiť Voľný tréning" data-en="Start Free Training">Spustiť Voľný tréning</button>
-            </div>
+            <div style="display: flex; gap: 5px; margin-bottom: 15px;"><button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')" data-sk="🔓 Odomknutie" data-en="🔓 Unlock">🔓 Odomknutie</button><button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')" data-sk="⏱️ Kvíz" data-en="⏱️ Quiz">⏱️ Kvíz</button><button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')" data-sk="🏋️ Voľný" data-en="🏋️ Free">🏋️ Voľný</button></div>
+            <div id="setupUnlock" class="setup-section hidden"><button class="btn btn-primary" onclick="startTraining('unlock')" data-sk="Spustiť test (90% úspešnosť)" data-en="Start test (90% required)">Spustiť test (90% úspešnosť)</button></div>
+            <div id="setupQuiz" class="setup-section hidden"><div style="display:flex; gap:10px; margin-bottom: 10px;"><div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="quizFrom"></select></div><div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="quizTo"></select></div></div><label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label><input type="number" id="quizCount" value="20" min="0"><button class="btn btn-warning" onclick="startTraining('quiz')" data-sk="Spustiť Kvíz" data-en="Start Quiz">Spustiť Kvíz</button></div>
+            <div id="setupFree" class="setup-section hidden"><div style="display:flex; gap:10px; margin-bottom: 10px;"><div style="flex:1"><label style="font-size:14px;" data-sk="Od:" data-en="From:">Od:</label><select id="freeFrom"></select></div><div style="flex:1"><label style="font-size:14px;" data-sk="Do:" data-en="To:">Do:</label><select id="freeTo"></select></div></div><label style="font-size:14px;" data-sk="Počet slov (0 = Všetky):" data-en="Word count (0 = All):">Počet slov (0 = Všetky):</label><input type="number" id="freeCount" value="20" min="0"><button class="btn btn-success" onclick="startTraining('free')" data-sk="Spustiť Voľný tréning" data-en="Start Free Training">Spustiť Voľný tréning</button></div>
         </div>
-
-        <div id="trainRun" class="hidden">
-            <div class="test-header"><span id="testProgress">Slovo 1/20</span><span>✅ <span id="testCorrect">0</span> | ❌ <span id="testWrong">0</span></span></div>
-            <div id="quizTimerContainer" class="timer-container hidden"><div id="quizTimerBar" class="timer-bar"></div></div>
-            <div class="word-display" id="twWord">Slovo</div>
-            <div style="text-align: center; margin-bottom: 20px;"><button class="btn btn-audio hidden" id="twAudioBtn" onclick="playCurrentAudio()" data-sk="🔊 Prehrať" data-en="🔊 Play">🔊 Prehrať</button></div>
-            <div id="twFeedback" class="feedback-box"></div>
-            
-            <div id="classicInputArea">
-                <input type="text" id="twInput" placeholder="Rómadži / Kana / Kandži..." autocomplete="off">
-                <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()" data-sk="Potvrdiť (Enter)" data-en="Submit (Enter)">Potvrdiť (Enter)</button>
-            </div>
-            <div id="quizInputArea" class="quiz-grid hidden">
-                <button class="btn-quiz" id="qb0" onclick="checkQuizAnswer(0)">A</button><button class="btn-quiz" id="qb1" onclick="checkQuizAnswer(1)">B</button>
-                <button class="btn-quiz" id="qb2" onclick="checkQuizAnswer(2)">C</button><button class="btn-quiz" id="qb3" onclick="checkQuizAnswer(3)">D</button>
-            </div>
-            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()" data-sk="Ďalšie ➡️" data-en="Next ➡️">Ďalšie ➡️</button>
-        </div>
-
-        <div id="trainResult" class="hidden text-center">
-            <h1 style="font-size: 50px; color:var(--primary); margin-bottom: 5px;" id="trScore">0%</h1>
-            <p id="trMessage" style="color:var(--text-muted);"></p>
-            <button class="btn btn-primary" onclick="closeTraining()" data-sk="Späť na výber" data-en="Back">Späť na výber</button>
-        </div>
+        <div id="trainRun" class="hidden"><div class="test-header"><span id="testProgress">Slovo 1/20</span><span>✅ <span id="testCorrect">0</span> | ❌ <span id="testWrong">0</span></span></div><div id="quizTimerContainer" class="timer-container hidden"><div id="quizTimerBar" class="timer-bar"></div></div><div class="word-display" id="twWord">Slovo</div><div style="text-align: center; margin-bottom: 20px;"><button class="btn btn-audio hidden" id="twAudioBtn" onclick="playCurrentAudio()" data-sk="🔊 Prehrať" data-en="🔊 Play">🔊 Prehrať</button></div><div id="twFeedback" class="feedback-box"></div><div id="classicInputArea"><input type="text" id="twInput" placeholder="Rómadži / Kana / Kandži..." autocomplete="off"><button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()" data-sk="Potvrdiť (Enter)" data-en="Submit (Enter)">Potvrdiť (Enter)</button></div><div id="quizInputArea" class="quiz-grid hidden"><button class="btn-quiz" id="qb0" onclick="checkQuizAnswer(0)">A</button><button class="btn-quiz" id="qb1" onclick="checkQuizAnswer(1)">B</button><button class="btn-quiz" id="qb2" onclick="checkQuizAnswer(2)">C</button><button class="btn-quiz" id="qb3" onclick="checkQuizAnswer(3)">D</button></div><button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()" data-sk="Ďalšie ➡️" data-en="Next ➡️">Ďalšie ➡️</button></div>
+        <div id="trainResult" class="hidden text-center"><h1 style="font-size: 50px; color:var(--primary); margin-bottom: 5px;" id="trScore">0%</h1><p id="trMessage" style="color:var(--text-muted);"></p><button class="btn btn-primary" onclick="closeTraining()" data-sk="Späť na výber" data-en="Back">Späť na výber</button></div>
     </div>
 
     <div id="tab-profile" class="tab">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="margin:0;" data-sk="Tvoj Shinobi Profil" data-en="Your Shinobi Profile">Tvoj Shinobi Profil</h2>
-            <button class="btn btn-danger" style="width:auto; margin:0; padding:8px 15px;" onclick="logoutUser()" data-sk="🚪 Odhlásiť" data-en="🚪 Logout">🚪 Odhlásiť</button>
-        </div>
-        
-        <div class="info-box" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3>
-                <span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span>
-            </div>
-            <div style="font-size:45px;" id="profileRankIcon">🥷</div>
-        </div>
-
-        <h3 data-sk="Odomknuté Motívy" data-en="Unlocked Themes">Odomknuté Motívy</h3>
-        <div id="themeList" class="info-box" style="padding:10px;"></div>
-
-        <h3 data-sk="Archív Skúšok (Odomykanie)" data-en="Exam Archive (Unlocks)">Archív Skúšok (Odomykanie)</h3>
-        <p style="font-size:14px; color:var(--text-muted); margin-top:-10px;" data-sk="Tu sa ukladajú výsledky tvojich testov." data-en="Results of your tests are saved here.">Tu sa ukladajú výsledky tvojich testov.</p>
-        <div id="historyList" style="max-height: 400px; overflow-y: auto; padding-right:5px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h2 style="margin:0;" data-sk="Tvoj Shinobi Profil" data-en="Your Shinobi Profile">Tvoj Shinobi Profil</h2><button class="btn btn-danger" style="width:auto; margin:0; padding:8px 15px;" onclick="logoutUser()" data-sk="🚪 Odhlásiť" data-en="🚪 Logout">🚪 Odhlásiť</button></div>
+        <div class="info-box" style="display:flex; justify-content:space-between; align-items:center;"><div><h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3><span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span></div><div style="font-size:45px;" id="profileRankIcon">🥷</div></div>
+        <h3 data-sk="Odomknuté Motívy" data-en="Unlocked Themes">Odomknuté Motívy</h3><div id="themeList" class="info-box" style="padding:10px;"></div>
+        <h3 data-sk="Archív Skúšok (Odomykanie)" data-en="Exam Archive (Unlocks)">Archív Skúšok (Odomykanie)</h3><p style="font-size:14px; color:var(--text-muted); margin-top:-10px;" data-sk="Tu sa ukladajú výsledky tvojich testov." data-en="Results of your tests are saved here.">Tu sa ukladajú výsledky tvojich testov.</p><div id="historyList" style="max-height: 400px; overflow-y: auto; padding-right:5px;"></div>
     </div>
 </div>
 
@@ -317,6 +212,7 @@
     let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [] }; 
     let currentUser = null;
     let currentLang = localStorage.getItem('finale_lang') || 'sk';
+    let cloudDataLoaded = false; // BEZPEČNOSTNÁ POISTKA PROTI PREPÍSANIU DÁT!
     
     // --- AUTHENTICATION OBSERVER ---
     auth.onAuthStateChanged(async (user) => {
@@ -327,6 +223,7 @@
             await loadAppForUser();
         } else {
             currentUser = null;
+            cloudDataLoaded = false;
             document.getElementById('auth-container').style.display = 'block';
             document.getElementById('main-app').style.display = 'none';
             document.getElementById('loadingOverlay').style.display = 'none';
@@ -346,14 +243,9 @@
         try { await auth.createUserWithEmailAndPassword(e, p); } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; document.getElementById('authError').innerText = currentLang === 'sk' ? "Chyba registrácie (heslo musí mať min. 6 znakov)." : err.message; }
     }
 
-    // NOVÁ FUNKCIA: Prihlásenie cez Google
     async function loginWithGoogle() {
         document.getElementById('authError').innerText = "";
-        try {
-            await auth.signInWithPopup(googleProvider);
-        } catch (err) {
-            document.getElementById('authError').innerText = err.message;
-        }
+        try { await auth.signInWithPopup(googleProvider); } catch (err) { document.getElementById('authError').innerText = err.message; }
     }
 
     function logoutUser() { auth.signOut(); }
@@ -361,7 +253,7 @@
     // --- CLOUD SYNC LOGIKA ---
     async function loadAppForUser() {
         document.getElementById('loadingOverlay').style.display = 'flex';
-        document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Načítavam tvoj profil z cloudu..." : "Loading your profile...";
+        document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Načítavam profil z cloudu..." : "Loading profile...";
         
         try {
             const docRef = dbFirestore.collection('users').doc(currentUser.uid);
@@ -369,18 +261,25 @@
             
             if (docSnap.exists) {
                 state = { ...state, ...docSnap.data() };
+                cloudDataLoaded = true; // Zabezpečenie úspešného čítania
             } else {
                 if (localStorage.getItem('finale_state')) {
                     let localState = JSON.parse(localStorage.getItem('finale_state'));
                     state = { ...state, ...localState }; 
                 }
                 await docRef.set(state);
+                cloudDataLoaded = true;
             }
-        } catch(e) { console.error("Firestore read error:", e); }
+        } catch(e) { 
+            console.error("Firestore read error:", e); 
+            // Ak zlyhá internet pri štarte, načítame aspoň lokálnu zálohu, ale ZAKÁŽEME PREPISOVANIE CLOUDU
+            if (localStorage.getItem('finale_state')) { state = JSON.parse(localStorage.getItem('finale_state')); }
+            cloudDataLoaded = false;
+        }
 
         checkStreak(); setLang(currentLang); applyTheme(state.theme); 
         
-        document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Sťahujem databázu slovíčok..." : "Downloading vocabulary...";
+        document.getElementById('loadingText').innerText = currentLang === 'sk' ? "Sťahujem databázu..." : "Downloading database...";
         await fetchDatabaseFromCloud();
         
         renderHistory();
@@ -390,7 +289,12 @@
 
     async function saveState() { 
         updateUI(); 
-        if (currentUser) {
+        
+        // Lokálna záloha VŽDY (pre istotu)
+        localStorage.setItem('finale_state', JSON.stringify(state));
+
+        // Cloud zápis IBA ak sme bezpečne stiahli dáta (zamedzenie race condition)
+        if (currentUser && cloudDataLoaded) {
             try { await dbFirestore.collection('users').doc(currentUser.uid).set(state); } 
             catch(e) { console.error("Firestore save error:", e); }
         }
@@ -408,6 +312,14 @@
             else if (!document.getElementById('learnCardsRun').classList.contains('hidden')) { if(!document.getElementById('fcElement').classList.contains('is-flipped')) flipCard(); else nextFc(); }
         }
     });
+
+    window.onload = () => {
+        // Inicializačné ošetrenie: na začiatku načítame len lokál, čakáme na Firebase Auth
+        if (localStorage.getItem('finale_state') && !currentUser) {
+            state = { ...state, ...JSON.parse(localStorage.getItem('finale_state')) };
+            applyTheme(state.theme);
+        }
+    };
 
     function setLang(lang) {
         currentLang = lang; localStorage.setItem('finale_lang', lang);
@@ -474,29 +386,7 @@
 
     function switchTab(t) { document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + t).classList.add('active'); document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); if(t === 'map' && db.length > 0) renderMap(); if(t === 'train' || t === 'learn') populateSelects(); }
 
-function renderMap() { 
-        const map = document.getElementById('lessonMap'); 
-        map.innerHTML = ''; 
-        const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b); 
-        
-        totalLessons.forEach(l => { 
-            let isUnlocked = l <= state.unlockedLesson; 
-            let div = document.createElement('div'); 
-            div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`; 
-            
-            if((l === 40 || l === 115) && isUnlocked) div.classList.add('boss-node'); 
-            div.innerHTML = `L${l}` + ((l === 40 || l === 115) ? '<br><small>BOSS</small>' : ''); 
-            
-            if (isUnlocked) {
-                div.onclick = () => { 
-                    switchTab('learn'); // 1. Najprv prepneme okno (vygeneruje roletku)
-                    document.getElementById('learnLessonSelect').value = l; // 2. Až teraz donútime roletku vybrať tvoju lekciu
-                    startLearn('cards'); // 3. A spustíme kartičky
-                }; 
-            }
-            map.appendChild(div); 
-        }); 
-    }
+    function renderMap() { const map = document.getElementById('lessonMap'); map.innerHTML = ''; const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b); totalLessons.forEach(l => { let isUnlocked = l <= state.unlockedLesson; let div = document.createElement('div'); div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`; if((l === 40 || l === 115) && isUnlocked) div.classList.add('boss-node'); div.innerHTML = `L${l}` + ((l === 40 || l === 115) ? '<br><small>BOSS</small>' : ''); if (isUnlocked) { div.onclick = () => { switchTab('learn'); document.getElementById('learnLessonSelect').value = l; startLearn('cards'); }; } map.appendChild(div); }); }
     function populateSelects() { let opts = ''; for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">${currentLang==='sk'?'Lekcia':'Lesson'} ${i}</option>`; if(document.getElementById('learnLessonSelect')) document.getElementById('learnLessonSelect').innerHTML = opts; if(document.getElementById('quizFrom')) { document.getElementById('quizFrom').innerHTML = opts; document.getElementById('quizTo').innerHTML = opts; document.getElementById('quizTo').value = state.unlockedLesson; } if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; } }
 
     let fcQueue = []; let fcIdx = 0;
@@ -534,5 +424,3 @@ function renderMap() {
 </script>
 </body>
 </html>
-
-
