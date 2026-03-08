@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Japonský Tréning - Verzia 2.2</title>
+    <title>Japonský Tréning - Verzia 2.3.1</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -63,7 +63,7 @@
         .btn-warning { background: var(--warning); color: #000; }
         .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
         .btn-outline:hover { border-color: var(--primary); }
-        .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
         .btn-google { background: white; color: #757575; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
         
         .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; transition: 0.3s; }
@@ -133,12 +133,7 @@
     <div style="margin: 20px 0; color: var(--text-muted); font-size: 14px;" data-sk="alebo" data-en="or">alebo</div>
     
     <button class="btn btn-google" onclick="loginWithGoogle()">
-        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         <span data-sk="Cez Google" data-en="With Google">Cez Google</span>
     </button>
     <p id="authError" style="color:var(--danger); font-size:14px; margin-top:15px; font-weight:bold;"></p>
@@ -171,7 +166,7 @@
             <div class="info-box"><label style="font-size:14px; color:var(--text-muted);" data-sk="Zvoľ lekciu pre vizuálne kartičky:" data-en="Select lesson for flashcards:">Zvoľ lekciu pre vizuálne kartičky:</label><select id="learnLessonSelect" style="margin-top:8px;"></select><button class="btn btn-primary" onclick="startLearn('cards')" data-sk="🎴 Spustiť Kartičky" data-en="🎴 Start Flashcards">🎴 Spustiť Kartičky</button></div>
             <div class="info-box"><p style="font-size:14px; color:var(--text-muted); margin-top:0;" data-sk="Pozri si všetky doteraz odomknuté slovíčka pokope." data-en="View all your unlocked words in one place.">Pozri si všetky doteraz odomknuté slovíčka pokope.</p><button class="btn btn-outline" style="margin-bottom:0;" onclick="showUnlockedList()" data-sk="📄 Môj Odomknutý Slovník" data-en="📄 My Unlocked Dictionary">📄 Môj Odomknutý Slovník</button></div>
         </div>
-        <div id="learnCardsRun" class="hidden"><div class="test-header"><span id="fcProgress">Karta 1/20</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard" id="fcElement"><div class="card-face card-front"><div id="fcImg" class="fc-img"></div><div id="fcFrontSk" class="fc-sk">Význam</div></div><div class="card-face card-back"><div id="fcBackRomaji" class="fc-romaji">romaji</div><div id="fcBackKana" class="fc-kana">hiragana</div><div id="fcBackKanji" class="fc-kanji">kanji</div></div></div></div><div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button></div><div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button><button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button></div><button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button></div>
+        <div id="learnCardsRun" class="hidden"><div class="test-header"><span id="fcProgress">Karta 1/20</span></div><div class="flashcard-container" onclick="flipCard()"><div class="flashcard" id="fcElement"><div class="card-face card-front"><div id="fcImg" class="fc-img"></div><div id="fcFrontSk" class="fc-sk">Význam</div></div><div class="card-face card-back"><div id="fcBackRomaji" class="fc-romaji">romaji</div><div id="fcBackKana" class="fc-kana">hiragana</div><div id="fcBackKanji" class="fc-kanji">kanji</div></div></div></div><div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText, 'ja-JP')" data-sk="🔊 Prehrať zvuk" data-en="🔊 Play Audio">🔊 Prehrať zvuk</button></div><div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark); border:1px solid var(--border);" onclick="prevFc()" data-sk="⬅️ Späť" data-en="⬅️ Back">⬅️ Späť</button><button class="btn btn-success" onclick="nextFc()" data-sk="Ďalšia ➡️" data-en="Next ➡️">Ďalšia ➡️</button></div><button class="btn" style="background:transparent; color:var(--text-muted); margin-top:10px;" onclick="closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button></div>
         <div id="learnListRun" class="hidden"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><h3 style="margin:0;" data-sk="Tvoja slovná zásoba" data-en="Your Vocabulary">Tvoja slovná zásoba</h3><button class="btn btn-outline" style="width:auto; padding:8px 15px; margin:0;" onclick="closeLearn()" data-sk="Zatvoriť" data-en="Close">Zatvoriť</button></div><div class="vocab-table-wrapper"><table class="vocab-table"><thead><tr><th data-sk="Lekcia" data-en="Lesson">Lekcia</th><th data-sk="Úroveň" data-en="Level">Úroveň</th><th>#</th><th data-sk="Význam" data-en="Meaning">Význam</th><th>Romaji</th><th>Kana</th><th>Kanji</th></tr></thead><tbody id="vocabListBody"></tbody></table></div></div>
     </div>
 
@@ -195,30 +190,30 @@
                 <option value="en|ja" data-sk="Angličtina ➡️ Japončina" data-en="English ➡️ Japanese">Angličtina ➡️ Japončina</option>
                 <option value="ja|en" data-sk="Japončina ➡️ Angličtina" data-en="Japanese ➡️ English">Japončina ➡️ Angličtina</option>
             </select>
-            <textarea id="transInput" rows="4" placeholder="Sem napíš text na preklad..." data-sk="Sem napíš text na preklad..." data-en="Type text to translate here..."></textarea>
-            <button class="btn btn-primary" onclick="translateText()" data-sk="Preložiť" data-en="Translate">Preložiť</button>
+            
+            <textarea id="transInput" rows="3" placeholder="Sem napíš text na preklad..." data-sk="Sem napíš text na preklad..." data-en="Type text to translate here..." style="margin-bottom: 5px;"></textarea>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn btn-primary" onclick="translateText()" data-sk="Preložiť" data-en="Translate">Preložiť</button>
+                <button class="btn btn-audio" onclick="playInputAudio()" style="margin-bottom: 10px;" data-sk="🔊 Vstup" data-en="🔊 Input">🔊 Vstup</button>
+            </div>
+            
             <div id="transOutput" style="min-height: 80px; padding:15px; border-radius:12px; background:rgba(0,0,0,0.2); font-size:18px; margin-top:10px; border: 1px dashed var(--border);">
                 <span style="color:var(--text-muted); font-size:14px;" data-sk="Tu sa zobrazí preklad." data-en="Translation will appear here.">Tu sa zobrazí preklad.</span>
             </div>
+            
+            <button id="btnTransAudio" class="btn btn-audio hidden" onclick="playTransAudio()" style="margin-top:10px; width:100%; border-color:var(--success); color:var(--success);" data-sk="🔊 Prehrať preklad" data-en="🔊 Play Translation">🔊 Prehrať preklad</button>
         </div>
     </div>
 
     <div id="tab-profile" class="tab">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;"><h2 style="margin:0;" data-sk="Tvoj Profil" data-en="Your Profile">Tvoj Profil</h2><button class="btn btn-danger" style="width:auto; margin:0; padding:8px 15px;" onclick="logoutUser()" data-sk="🚪 Odhlásiť" data-en="🚪 Logout">🚪 Odhlásiť</button></div>
-        
         <div class="info-box" style="display:flex; flex-direction:column; gap:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3>
-                    <span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span>
-                </div>
-                <div style="font-size:45px;" id="profileRankIcon">🥷</div>
-            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><div><h3 style="margin:0 0 5px 0; font-size:22px;" id="profileRankName">🥷 Genin</h3><span style="color:var(--text-muted); font-size:14px;" data-sk="Aktuálna hodnosť" data-en="Current Rank">Aktuálna hodnosť</span></div><div style="font-size:45px;" id="profileRankIcon">🥷</div></div>
             <hr style="border-color:var(--border); width:100%;">
             <label style="font-size:14px; color:var(--text-muted);" data-sk="Tvoja prezývka:" data-en="Your Nickname:">Tvoja prezývka:</label>
             <input type="text" id="profileNickname" placeholder="Zadaj meno..." onblur="updateNickname()" style="margin-bottom:0;">
         </div>
-
         <h3 data-sk="Odomknuté Motívy" data-en="Unlocked Themes">Odomknuté Motívy</h3><div id="themeList" class="info-box" style="padding:10px;"></div>
         <h3 data-sk="Archív Skúšok" data-en="Exam Archive">Archív Skúšok</h3><div id="historyList" style="max-height: 400px; overflow-y: auto; padding-right:5px;"></div>
     </div>
@@ -232,8 +227,7 @@
     };
     firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const dbFirestore = firebase.firestore(); const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    let db = []; 
-    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' }; 
+    let db = []; let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' }; 
     let currentUser = null; let currentLang = localStorage.getItem('finale_lang') || 'sk'; let cloudDataLoaded = false;
     
     auth.onAuthStateChanged(async (user) => {
@@ -266,31 +260,61 @@
         if (currentUser && cloudDataLoaded) { try { await dbFirestore.collection('users').doc(currentUser.uid).set(state); } catch(e) { console.error("Firestore save error:", e); } }
     }
 
-    // NICKNAME UPDATE LOGIKA
-    function updateNickname() {
-        let nick = document.getElementById('profileNickname').value.trim();
-        state.nickname = nick;
-        saveState();
-    }
+    function updateNickname() { let nick = document.getElementById('profileNickname').value.trim(); state.nickname = nick; saveState(); }
 
-    // PREKLADAČ (API)
     async function translateText() {
         let text = document.getElementById('transInput').value.trim();
         let output = document.getElementById('transOutput');
+        let audioBtn = document.getElementById('btnTransAudio');
         if(!text) return;
         
         let pair = document.getElementById('transDirection').value;
         output.innerHTML = `<span style="color:var(--primary); font-style:italic;">${currentLang === 'sk' ? 'Prekladám...' : 'Translating...'}</span>`;
+        audioBtn.classList.add('hidden');
         
         try {
             let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`);
             let data = await res.json();
             if(data.responseData && data.responseData.translatedText) {
                 output.innerText = data.responseData.translatedText;
+                output.setAttribute('data-translated-text', data.responseData.translatedText);
+                output.setAttribute('data-target-lang', pair.split('|')[1]);
+                audioBtn.classList.remove('hidden');
             } else { throw new Error(); }
-        } catch(e) {
-            output.innerHTML = `<span style="color:var(--danger);">${currentLang === 'sk' ? 'Chyba spojenia s prekladačom.' : 'Translation error.'}</span>`;
-        }
+        } catch(e) { output.innerHTML = `<span style="color:var(--danger);">${currentLang === 'sk' ? 'Chyba spojenia s prekladačom.' : 'Translation error.'}</span>`; }
+    }
+
+    // Získanie správneho kódu jazyka na základe skratky (ja, sk, en)
+    function getLangCode(shortLang) {
+        if (shortLang === 'sk') return 'sk-SK';
+        if (shortLang === 'en') return 'en-US';
+        return 'ja-JP'; // Predvolená japončina
+    }
+
+    function playInputAudio() {
+        let text = document.getElementById('transInput').value.trim();
+        if(!text) return;
+        let pair = document.getElementById('transDirection').value;
+        let sourceLang = pair.split('|')[0]; // Zoberie prvú časť z "sk|ja"
+        playAudioText(text, getLangCode(sourceLang));
+    }
+
+    function playTransAudio() {
+        let output = document.getElementById('transOutput');
+        let text = output.getAttribute('data-translated-text');
+        let targetLang = output.getAttribute('data-target-lang');
+        if(!text) return;
+        playAudioText(text, getLangCode(targetLang));
+    }
+
+    function playAudioText(text, targetLangCode = 'ja-JP') { 
+        let speech = new SpeechSynthesisUtterance(text); 
+        speech.lang = targetLangCode; 
+        speech.rate = targetLangCode === 'ja-JP' ? 0.85 : 1.0; 
+        let voices = window.speechSynthesis.getVoices(); 
+        let voice = voices.find(v => v.lang.includes(targetLangCode) && v.name.includes('Female')) || voices.find(v => v.lang.includes(targetLangCode)); 
+        if(voice) speech.voice = voice; 
+        window.speechSynthesis.speak(speech); 
     }
 
     let testQueue = []; let currentIdx = 0; let mistakes = 0; let currentTestType = ''; let currentUnlockTarget = 0; let isBossTest = false; let quizOptions = []; let quizTimer; let timeLeft = 7.0; let currentTestMistakes = [];
@@ -374,11 +398,7 @@
         let displayName = state.nickname ? `${rankName} | ${state.nickname}` : rankName;
         
         document.getElementById('uiRank').innerText = `${currentRank.icon} ${displayName}`;
-        
-        if(document.getElementById('profileRankName')) { 
-            document.getElementById('profileRankName').innerText = displayName; 
-            document.getElementById('profileRankIcon').innerText = currentRank.icon; 
-        }
+        if(document.getElementById('profileRankName')) { document.getElementById('profileRankName').innerText = displayName; document.getElementById('profileRankIcon').innerText = currentRank.icon; }
         renderThemes();
     }
 
@@ -417,8 +437,7 @@
     function endTraining() { document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); if (currentTestType === 'unlock') { if(!state.history) state.history = []; state.history.unshift({ date: new Date().getTime(), lesson: currentUnlockTarget, score: perc, passed: perc >= 90, mistakes: currentTestMistakes.map(m => ({ sk: m.sk, en: m.en, romaji: m.romaji, kana: m.kana, kanji: m.kanji })) }); if(state.history.length > 50) state.history.pop(); if (perc >= 90) { msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); } else { msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; msg.style.color = "var(--danger)"; saveState(); } renderHistory(); } else { if (perc >= 90) { let earnedPoints = testQueue.length; msg.innerHTML = currentLang === 'sk' ? `🎉 Skvelá práca! +${earnedPoints} XP!` : `🎉 Great job! +${earnedPoints} XP!`; msg.style.color = "var(--success)"; addXP(earnedPoints); } else { msg.innerHTML = currentLang === 'sk' ? "Na získanie bodov potrebuješ aspoň 90%." : "You need 90% to earn points."; msg.style.color = "var(--text-main)"; } } }
     function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); }
 
-    function playAudioText(text) { let speech = new SpeechSynthesisUtterance(text); speech.lang = 'ja-JP'; speech.rate = 0.85; let voices = window.speechSynthesis.getVoices(); let jpVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female')) || voices.find(v => v.lang === 'ja-JP'); if(jpVoice) speech.voice = jpVoice; window.speechSynthesis.speak(speech); }
-    function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji); }
+    function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji, 'ja-JP'); }
 </script>
 </body>
 </html>
