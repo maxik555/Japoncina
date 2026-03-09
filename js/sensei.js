@@ -3,32 +3,45 @@
 let currentSenseiTask = "";
 
 async function callGemini(promptText) {
-    // Skúsime vziať kľúč z okna (window) alebo priamo z premennej
     const key = window.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : "");
 
     if (!key || key === "" || key.includes("TVOJ_")) {
-        alert("Sensei nevidí API kľúč v config.js! Skús Ctrl+F5.");
+        alert("Sensei nevidí API kľúč!");
         return null;
     }
 
     try {
-const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {        
-    method: 'POST',
+        // ZMENA: Používame v1 a presný názov modelu bez ďalších prípon
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: promptText }]
+                }]
+            })
         });
 
         const data = await response.json();
         
-        if (data.error) {
-            console.error("Gemini Error:", data.error);
-            alert("Sensei API Error: " + data.error.message);
-            return null;
+        // Ak by v1 nefungovala, skúsime automaticky v1beta (univerzálna poistka)
+        if (data.error && data.error.message.includes("not found")) {
+            console.log("Prepínam na v1beta...");
+            const altRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+            });
+            const altData = await altRes.json();
+            if (altData.candidates) return altData.candidates[0].content.parts[0].text;
         }
 
         if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text;
+        } else if (data.error) {
+            alert("Sensei API Error: " + data.error.message);
         }
+        
         return null;
     } catch (error) {
         console.error("Network Error:", error);
