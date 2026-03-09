@@ -11,8 +11,8 @@ async function callGemini(promptText) {
     }
 
     try {
-        // ZMENA: Používame v1 a presný názov modelu bez ďalších prípon
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // Nekompromisne ideme len cez v1beta, žiadne poistky
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -23,23 +23,15 @@ async function callGemini(promptText) {
         });
 
         const data = await response.json();
-        
-        // Ak by v1 nefungovala, skúsime automaticky v1beta (univerzálna poistka)
-        if (data.error && data.error.message.includes("not found")) {
-            console.log("Prepínam na v1beta...");
-            const altRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-            });
-            const altData = await altRes.json();
-            if (altData.candidates) return altData.candidates[0].content.parts[0].text;
+
+        // Ak API vráti chybu, ukáže presne túto z v1beta
+        if (data.error) {
+            alert("Sensei API Error: " + data.error.message);
+            return null;
         }
 
         if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text;
-        } else if (data.error) {
-            alert("Sensei API Error: " + data.error.message);
         }
         
         return null;
