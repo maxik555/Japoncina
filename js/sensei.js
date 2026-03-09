@@ -3,15 +3,24 @@
 let currentSenseiTask = "";
 
 async function callGemini(promptText) {
-    const key = window.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : "");
-
-    if (!key || key === "" || key.includes("TVOJ_")) {
-        alert("Sensei nevidí API kľúč!");
-        return null;
+    // 1. Skontrolujeme, či už máme kľúč v profile (v cloude)
+    if (!state.geminiKey) {
+        const userInput = prompt("Zadaj svoj nový Gemini API kľúč (bezpečne sa uloží len do tvojho profilu):");
+        
+        if (!userInput || userInput.trim() === "") {
+            alert("Bez API kľúča Sensei nemôže fungovať.");
+            return null;
+        }
+        
+        // Uložíme kľúč do stavu a odošleme do tvojej Firebase databázy
+        state.geminiKey = userInput.trim();
+        saveState();
     }
 
+    const key = state.geminiKey;
+
     try {
-        // Nekompromisne ideme len cez v1beta, žiadne poistky
+        // Použijeme štandardnú adresu, problém bol v zablokovanom kľúči, nie v modeli
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -24,9 +33,14 @@ async function callGemini(promptText) {
 
         const data = await response.json();
 
-        // Ak API vráti chybu, ukáže presne túto z v1beta
+        // Ak API vráti chybu (napr. zlý alebo zablokovaný kľúč)
         if (data.error) {
             alert("Sensei API Error: " + data.error.message);
+            // Ak je kľúč neplatný (400) alebo zakázaný (403), vymažeme ho z profilu
+            if (data.error.code === 400 || data.error.code === 403) {
+                state.geminiKey = null;
+                saveState();
+            }
             return null;
         }
 
