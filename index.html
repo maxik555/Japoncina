@@ -166,10 +166,10 @@
     <div class="nav">
         <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap" data-sk="🗺️ Mapa" data-en="🗺️ Map">🗺️ Mapa</button>
         <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
+        <button class="btn-nav" onclick="switchTab('sensei')" id="btnTabSensei" data-sk="🧙‍♂️ Sensei" data-en="🧙‍♂️ Sensei">🧙‍♂️ Sensei</button>
         <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
         <button class="btn-nav" onclick="switchTab('translate')" id="btnTabTranslate" data-sk="🈯 AI Preklad" data-en="🈯 AI Translate">🈯 AI Preklad</button>
         <button class="btn-nav" onclick="switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
-        <button class="btn-nav" onclick="switchTab('sensei')" id="btnTabSensei" data-sk="🧙‍♂️ Sensei" data-en="🧙‍♂️ Sensei">🧙‍♂️ Sensei</button>
     </div>
 
     <div id="tab-map" class="tab active">
@@ -536,12 +536,16 @@
             opts += `<option value="${i}">${langPrefix} ${i}</option>`;
         }
         
-        ['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo'].forEach(id => {
+        // Pridané IDčka pre Senseia do zoznamu na aktualizáciu
+        ['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo', 'senseiFrom', 'senseiTo'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = opts;
         });
+
+        // Nastavenie predvolenej hodnoty "DO" na tvoju najvyššiu odomknutú lekciu
         if (document.getElementById('quizTo')) document.getElementById('quizTo').value = state.unlockedLesson;
         if (document.getElementById('freeTo')) document.getElementById('freeTo').value = state.unlockedLesson;
+        if (document.getElementById('senseiTo')) document.getElementById('senseiTo').value = state.unlockedLesson;
     }
 
     // --- MAPA LEKCIÍ ---
@@ -1048,6 +1052,7 @@
 </script>
 </body>
 </html>
+
 
 
 
