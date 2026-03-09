@@ -20,6 +20,29 @@ async function loadUserData() {
             state = { ...state, ...snap.data() };
         }
         
+        const nickInput = document.getElementById('profileNickname');
+        if (nickInput) nickInput.value = state.nickname || '';
+        
+        // Zabezpečíme, aby sa najprv nastavil jazyk a UI
+        setLang(currentLang);
+        updateUI();
+        
+        // Pridáme malú poistku - načítame DB až keď sme si istí, že UI stojí
+        setTimeout(() => {
+            fetchDatabaseFromCloud();
+        }, 100);
+
+    } catch (e) {
+        console.error("Chyba pri načítaní dát používateľa:", e);
+    }
+    
+    const loader = document.getElementById('loadingOverlay');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
+    }
+}
+        
         // Nastavenie nicku v profile
         const nickInput = document.getElementById('profileNickname');
         if (nickInput) nickInput.value = state.nickname || '';
