@@ -940,7 +940,7 @@
         catch(e) { document.getElementById('authError').innerText = currentLang==='sk'?"Chyba pri registrácii.":e.message; } 
     }
 
-    // Klávesnica ENTER pre potvrdzovanie
+    // --- KLÁVESNICA ENTER PRE POTVRDZOVANIE ---
     document.addEventListener('keypress', e => {
         if(e.key === 'Enter') {
             if (!document.getElementById('trainRun').classList.contains('hidden') && currentTestType !== 'quiz') { 
@@ -952,16 +952,13 @@
             }
         }
     });
-['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo', 'senseiFrom', 'senseiTo'].forEach(id => {
-// ...
-if (document.getElementById('senseiTo')) document.getElementById('senseiTo').value = state.unlockedLesson;
 
     // --- AI SENSEI LOGIKA ---
-    const GEMINI_API_KEY = "AIzaSyCJ6xqewNPqlsZsI8E3B5mTZYPF4WdWFuo"; // <-- Získaj zadarmo na Google AI Studio
+    const GEMINI_API_KEY = "TU_VLOZ_SVOJ_API_KLUC"; // <-- Tu si znova vlož svoj dlhý kľúč začínajúci na AIza...
     let currentSenseiTask = "";
 
     async function callGemini(promptText) {
-        if (GEMINI_API_KEY === "TU_VLOZ_SVOJ_API_KLUC") {
+        if (GEMINI_API_KEY === "AIzaSyCJ6xqewNPqlsZsI8E3B5mTZYPF4WdWFuo") {
             alert(currentLang === 'sk' ? "Chýba API kľúč. Nastav GEMINI_API_KEY v kóde." : "Missing API Key.");
             return null;
         }
@@ -985,11 +982,9 @@ if (document.getElementById('senseiTo')) document.getElementById('senseiTo').val
         let count = parseInt(document.getElementById('senseiCount').value) || 3;
         if (from > to) [from, to] = [to, from];
 
-        // Extrahovanie povolených slovíčok pre AI
         let allowedWords = db.filter(w => w.lekcia >= from && w.lekcia <= to).map(w => `${w.sk} (${w.romaji})`).join(", ");
         if (!allowedWords) return;
 
-        // Príprava pamäte (anti-duplikát)
         if (!state.usedSenseiSentences) state.usedSenseiSentences = [];
         let avoidSentences = state.usedSenseiSentences.slice(-20).join(" | ");
 
@@ -1001,7 +996,6 @@ if (document.getElementById('senseiTo')) document.getElementById('senseiTo').val
         document.getElementById('btnSenseiSubmit').classList.remove('hidden');
         document.getElementById('senseiTaskText').innerHTML = `<span style="color:var(--primary);">${currentLang==='sk'?'Sensei premýšľa nad vetami...':'Sensei is thinking...'}</span>`;
 
-        // Prompt pre vytvorenie úloh
         let prompt = `Si učiteľ japončiny (Sensei). Tvojou úlohou je vygenerovať ${count} krátkych viet na preklad do japončiny.
         PRAVIDLÁ:
         1. Vety musia byť poskladané VÝHRADNE z týchto slov: ${allowedWords}
@@ -1013,7 +1007,6 @@ if (document.getElementById('senseiTo')) document.getElementById('senseiTo').val
             currentSenseiTask = aiResponse;
             document.getElementById('senseiTaskText').innerText = aiResponse;
             
-            // Uloženie do pamäte
             state.usedSenseiSentences.push(aiResponse.replace(/\n/g, ' '));
             if(state.usedSenseiSentences.length > 30) state.usedSenseiSentences.shift();
             saveState();
@@ -1051,9 +1044,10 @@ if (document.getElementById('senseiTo')) document.getElementById('senseiTo').val
         document.getElementById('senseiRun').classList.add('hidden');
         document.getElementById('senseiSetup').classList.remove('hidden');
     }
-    
+
 </script>
 </body>
 </html>
+
 
 
