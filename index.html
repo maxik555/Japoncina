@@ -641,6 +641,31 @@
         document.getElementById('overlayDetail').style.display = 'flex';
     }
 
+    // --- PREPÍNANIE JAZYKOV ---
+    function setLang(lang) {
+        currentLang = lang; 
+        localStorage.setItem('finale_lang', lang);
+        
+        // Zvýraznenie aktívnej vlajky
+        if(document.getElementById('flag-sk')) document.getElementById('flag-sk').className = lang === 'sk' ? '' : 'inactive'; 
+        if(document.getElementById('flag-en')) document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
+        
+        // Prepísanie textov a placeholderov podľa zvoleného jazyka
+        document.querySelectorAll('[data-sk], [placeholder]').forEach(el => { 
+            if(el.hasAttribute('data-' + lang)) {
+                if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    el.setAttribute('placeholder', el.getAttribute(`data-${lang}`));
+                } else {
+                    el.innerHTML = el.getAttribute(`data-${lang}`); 
+                }
+            }
+        });
+        
+        // Prekreslenie UI, aby sa zmeny prejavili
+        if (db.length > 0) populateSelects(); 
+        updateUI(); 
+    }
+    
     function updateNickname() { state.nickname = document.getElementById('profileNickname').value; saveState(); }
     function logoutUser() { auth.signOut(); }
     async function loginUser() { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => document.getElementById('authError').innerText = e.message); }
@@ -648,5 +673,6 @@
 </script>
 </body>
 </html>
+
 
 
