@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Japonský Tréning - Verzia 2.3.1</title>
+    <title>Japonský Tréning - Verzia 2.3.2</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -226,24 +226,48 @@
         messagingSenderId: "555713188608", appId: "1:555713188608:web:d8375f9ef216321d2319e5"
     };
     firebase.initializeApp(firebaseConfig); const auth = firebase.auth(); const dbFirestore = firebase.firestore(); const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    // --- GLOBÁLNE PREMENNÉ A STAV ---
+    let db = []; 
+    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' }; 
+    let currentUser = null; 
+    let currentLang = localStorage.getItem('finale_lang') || 'sk'; 
+    let cloudDataLoaded = false;
     let japaneseVoice = null;
 
-function loadVoices() {
-    const voices = window.speechSynthesis.getVoices();
-    // Priorita: Ženský japonský hlas -> Akýkoľvek japonský hlas
-    japaneseVoice = voices.find(v => v.lang.includes('ja-JP') && v.name.includes('Female')) || 
-                    voices.find(v => v.lang.includes('ja-JP'));
-}
+    // --- AUDIO ENGINE (FÁZA 1) ---
+    function loadVoices() {
+        const voices = window.speechSynthesis.getVoices();
+        japaneseVoice = voices.find(v => v.lang.includes('ja-JP') && v.name.includes('Female')) || 
+                        voices.find(v => v.lang.includes('ja-JP'));
+    }
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    loadVoices();
 
-// Chrome a Edge potrebujú tento event, Safari niekedy nie, preto voláme aj hneď
-if (window.speechSynthesis.onvoiceschanged !== undefined) {
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-}
-loadVoices();
+    function playAudioText(text, targetLangCode = 'ja-JP') { 
+        if (!text) return;
+        window.speechSynthesis.cancel();
+        let speech = new SpeechSynthesisUtterance(text); 
+        speech.lang = targetLangCode; 
+        speech.rate = targetLangCode === 'ja-JP' ? 0.8 : 1.0; 
+        if (targetLangCode === 'ja-JP' && japaneseVoice) {
+            speech.voice = japaneseVoice;
+        } else {
+            let voices = window.speechSynthesis.getVoices();
+            speech.voice = voices.find(v => v.lang.includes(targetLangCode));
+        }
+        window.speechSynthesis.speak(speech); 
+    }
 
-    let db = []; let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' }; 
-    let currentUser = null; let currentLang = localStorage.getItem('finale_lang') || 'sk'; let cloudDataLoaded = false;
-    
+    // --- FUZZY MATCHING LOGIKA (FÁZA 1) ---
+    function normalizeString(str) {
+        if (!str) return "";
+        return str.toLowerCase().replace(/[\s\-\!\?\,\.\"\']/g, "").trim();
+    }
+
+    // --- AUTH LOGIKA ---
     auth.onAuthStateChanged(async (user) => {
         if (user) { currentUser = user; document.getElementById('auth-container').style.display = 'none'; document.getElementById('main-app').style.display = 'flex'; await loadAppForUser(); } 
         else { currentUser = null; cloudDataLoaded = false; document.getElementById('auth-container').style.display = 'block'; document.getElementById('main-app').style.display = 'none'; document.getElementById('loadingOverlay').style.display = 'none'; }
@@ -276,16 +300,15 @@ loadVoices();
 
     function updateNickname() { let nick = document.getElementById('profileNickname').value.trim(); state.nickname = nick; saveState(); }
 
+    // --- PREKLADAČ ---
     async function translateText() {
         let text = document.getElementById('transInput').value.trim();
         let output = document.getElementById('transOutput');
         let audioBtn = document.getElementById('btnTransAudio');
         if(!text) return;
-        
         let pair = document.getElementById('transDirection').value;
         output.innerHTML = `<span style="color:var(--primary); font-style:italic;">${currentLang === 'sk' ? 'Prekladám...' : 'Translating...'}</span>`;
         audioBtn.classList.add('hidden');
-        
         try {
             let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`);
             let data = await res.json();
@@ -298,18 +321,17 @@ loadVoices();
         } catch(e) { output.innerHTML = `<span style="color:var(--danger);">${currentLang === 'sk' ? 'Chyba spojenia s prekladačom.' : 'Translation error.'}</span>`; }
     }
 
-    // Získanie správneho kódu jazyka na základe skratky (ja, sk, en)
     function getLangCode(shortLang) {
         if (shortLang === 'sk') return 'sk-SK';
         if (shortLang === 'en') return 'en-US';
-        return 'ja-JP'; // Predvolená japončina
+        return 'ja-JP';
     }
 
     function playInputAudio() {
         let text = document.getElementById('transInput').value.trim();
         if(!text) return;
         let pair = document.getElementById('transDirection').value;
-        let sourceLang = pair.split('|')[0]; // Zoberie prvú časť z "sk|ja"
+        let sourceLang = pair.split('|')[0];
         playAudioText(text, getLangCode(sourceLang));
     }
 
@@ -321,27 +343,7 @@ loadVoices();
         playAudioText(text, getLangCode(targetLang));
     }
 
-    // Opravený prehrávač zvuku
-function playAudioText(text, targetLangCode = 'ja-JP') { 
-    if (!text) return;
-    window.speechSynthesis.cancel(); // Zastaví prebiehajúcu reč pred novou
-
-    let speech = new SpeechSynthesisUtterance(text); 
-    speech.lang = targetLangCode; 
-    speech.rate = targetLangCode === 'ja-JP' ? 0.8 : 1.0; // Mierne pomalšie pre japončinu
-
-    if (targetLangCode === 'ja-JP' && japaneseVoice) {
-        speech.voice = japaneseVoice;
-    } else {
-        // Pre iné jazyky (sk/en) skúsime nájsť hlas dynamicky
-        let voices = window.speechSynthesis.getVoices();
-        speech.voice = voices.find(v => v.lang.includes(targetLangCode));
-    }
-
-    window.speechSynthesis.speak(speech); 
-}
-    }
-
+    // --- KONŠTANTY A MAPA ---
     let testQueue = []; let currentIdx = 0; let mistakes = 0; let currentTestType = ''; let currentUnlockTarget = 0; let isBossTest = false; let quizOptions = []; let quizTimer; let timeLeft = 7.0; let currentTestMistakes = [];
     const RANKS = [ { maxLvl: 10, sk: "Genin", en: "Genin", icon: "🥷" }, { maxLvl: 20, sk: "Chuunin", en: "Chunin", icon: "📜" }, { maxLvl: 30, sk: "Jounin", en: "Jonin", icon: "🦅" }, { maxLvl: 999, sk: "Kage", en: "Kage", icon: "👑" } ];
     const THEMES = [ { id: 'dark', sk: 'Základná (Tmavá)', en: 'Default (Dark)', req: 1, icon: '🌙' }, { id: 'light', sk: 'Základná (Svetlá)', en: 'Default (Light)', req: 1, icon: '☀️' }, { id: 'sharingan', sk: 'Sharingan', en: 'Sharingan', req: 10, icon: '👁️' }, { id: 'konoha', sk: 'Konoha', en: 'Konoha', req: 10, icon: '🍃' }, { id: 'uzumaki', sk: 'Uzumaki Clan', en: 'Uzumaki Clan', req: 15, icon: '🌀' }, { id: 'nara', sk: 'Nara Clan', en: 'Nara Clan', req: 15, icon: '🦌' } ];
@@ -365,9 +367,6 @@ function playAudioText(text, targetLangCode = 'ja-JP') {
             }
         });
         populateSelects(); updateUI(); renderThemes(); renderHistory();
-        if(!document.getElementById('learnListRun').classList.contains('hidden')) showUnlockedList();
-        if(!document.getElementById('learnCardsRun').classList.contains('hidden')) document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? fcQueue[fcIdx].sk : fcQueue[fcIdx].en;
-        if(!document.getElementById('trainRun').classList.contains('hidden') && testQueue.length > 0) document.getElementById('twWord').innerText = currentLang === 'sk' ? testQueue[currentIdx].sk : testQueue[currentIdx].en;
     }
 
     function applyTheme(themeId) { state.theme = themeId; document.body.setAttribute('data-theme', themeId); saveState(); renderThemes(); }
@@ -395,7 +394,7 @@ function playAudioText(text, targetLangCode = 'ja-JP') {
             if (h.mistakes && h.mistakes.length > 0) {
                 html += `<div style="margin-top:10px; font-size:13px;"><strong>${currentLang === 'sk' ? 'Chyby:' : 'Mistakes:'}</strong></div>`;
                 h.mistakes.forEach(m => { let meaning = currentLang === 'sk' ? m.sk : m.en; html += `<div class="history-mistake"><span class="mistake-target">${meaning}</span> ➡️ <span class="mistake-correct">${m.romaji}</span> <span style="color:var(--text-muted)">(${m.kana !== '-' ? m.kana : ''} ${m.kanji !== '-' ? m.kanji : ''})</span></div>`; });
-            } else if (h.passed) { html += `<div style="margin-top:5px; font-size:13px; color:var(--success);">🏆 ${currentLang === 'sk' ? 'Perfektné!' : 'Perfect!'}</div>`; }
+            }
             div.innerHTML = html; container.appendChild(div);
         });
     }
@@ -403,7 +402,6 @@ function playAudioText(text, targetLangCode = 'ja-JP') {
     async function fetchDatabaseFromCloud() {
         try {
             const cacheBuster = new Date().getTime(); const response = await fetch(`./Kompletna_Databaza_3000_Slov.xlsx?v=${cacheBuster}`);
-            if (!response.ok) throw new Error('Excel File missing');
             const arrayBuffer = await response.arrayBuffer(); const workbook = XLSX.read(new Uint8Array(arrayBuffer), {type: 'array'});
             const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
             db = rows.map((r, i) => ({ id: parseInt(r['#']) || i + 1, lekcia: parseInt(r['Lekcia']||r['lekcia'])||0, jlpt: r['JLPT']||'N5', kategoria: r['Kategória']||'', sk: r['Slovenský']||'', en: r['Anglický']||r['Anglicky']||r['English']||r['Slovenský']||'', romaji: String(r['Rómadži']||'').trim(), kana: r['Hiragana / Katakana']||'-', kanji: r['Kandži']||'-', obrazok: r['Obrázok']||r['Obrazok']||'' })).filter(w => w.sk && w.romaji && w.lekcia > 0);
@@ -417,14 +415,11 @@ function playAudioText(text, targetLangCode = 'ja-JP') {
     function updateUI() { 
         let level = Math.floor(state.xp / 500) + 1;
         document.getElementById('uiLevel').innerText = level; document.getElementById('uiXp').innerText = state.xp; document.getElementById('uiStreak').innerText = state.streak + " 🔥"; 
-        
         let currentRank = RANKS.find(r => level <= r.maxLvl) || RANKS[RANKS.length - 1]; 
         let rankName = currentLang === 'sk' ? currentRank.sk : currentRank.en;
         let displayName = state.nickname ? `${rankName} | ${state.nickname}` : rankName;
-        
         document.getElementById('uiRank').innerText = `${currentRank.icon} ${displayName}`;
         if(document.getElementById('profileRankName')) { document.getElementById('profileRankName').innerText = displayName; document.getElementById('profileRankIcon').innerText = currentRank.icon; }
-        renderThemes();
     }
 
     function switchTab(t) { document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + t).classList.add('active'); document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active'); if(t === 'map' && db.length > 0) renderMap(); if(t === 'train' || t === 'learn') populateSelects(); }
@@ -432,78 +427,133 @@ function playAudioText(text, targetLangCode = 'ja-JP') {
     function renderMap() { const map = document.getElementById('lessonMap'); map.innerHTML = ''; const totalLessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b); totalLessons.forEach(l => { let isUnlocked = l <= state.unlockedLesson; let div = document.createElement('div'); div.className = `lesson-node ${isUnlocked ? 'node-unlocked' : 'node-locked'}`; if((l === 40 || l === 115) && isUnlocked) div.classList.add('boss-node'); div.innerHTML = `L${l}` + ((l === 40 || l === 115) ? '<br><small>BOSS</small>' : ''); if (isUnlocked) { div.onclick = () => { switchTab('learn'); document.getElementById('learnLessonSelect').value = l; startLearn('cards'); }; } map.appendChild(div); }); }
     function populateSelects() { let opts = ''; for(let i = 1; i <= state.unlockedLesson; i++) opts += `<option value="${i}">${currentLang==='sk'?'Lekcia':'Lesson'} ${i}</option>`; if(document.getElementById('learnLessonSelect')) document.getElementById('learnLessonSelect').innerHTML = opts; if(document.getElementById('quizFrom')) { document.getElementById('quizFrom').innerHTML = opts; document.getElementById('quizTo').innerHTML = opts; document.getElementById('quizTo').value = state.unlockedLesson; } if(document.getElementById('freeFrom')) { document.getElementById('freeFrom').innerHTML = opts; document.getElementById('freeTo').innerHTML = opts; document.getElementById('freeTo').value = state.unlockedLesson; } }
 
+    // --- UČENIE A KARTIČKY ---
     let fcQueue = []; let fcIdx = 0;
     function startLearn(mode) { if(db.length === 0) return; document.getElementById('learnSetup').classList.add('hidden'); if (mode === 'cards') { fcQueue = db.filter(w => w.lekcia === parseInt(document.getElementById('learnLessonSelect').value)); if(fcQueue.length === 0) return; fcIdx = 0; document.getElementById('learnCardsRun').classList.remove('hidden'); loadFc(); } }
     function showUnlockedList() { document.getElementById('learnSetup').classList.add('hidden'); document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.remove('hidden'); let pool = db.filter(w => w.lekcia <= state.unlockedLesson); let tbody = document.getElementById('vocabListBody'); tbody.innerHTML = ''; pool.forEach(w => { let tr = document.createElement('tr'); let meaning = currentLang === 'sk' ? w.sk : w.en; tr.innerHTML = `<td>${w.lekcia}</td><td>${w.jlpt}</td><td>${w.id}</td><td style="font-weight:bold;">${meaning}</td><td>${w.romaji}</td><td>${w.kana !== '-' ? w.kana : ''}</td><td style="font-size:20px;">${w.kanji !== '-' ? w.kanji : ''}</td>`; tbody.appendChild(tr); }); }
     function loadFc() { document.getElementById('fcElement').classList.remove('is-flipped'); setTimeout(() => { let w = fcQueue[fcIdx]; document.getElementById('fcProgress').innerText = currentLang === 'sk' ? `Karta ${fcIdx + 1}/${fcQueue.length}` : `Card ${fcIdx + 1}/${fcQueue.length}`; document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en; let imgDiv = document.getElementById('fcImg'); if(w.obrazok) { imgDiv.innerHTML = w.obrazok.startsWith('http') ? `<img src="${w.obrazok}" style="max-height:100px; border-radius:10px;">` : w.obrazok; imgDiv.classList.remove('hidden'); } else imgDiv.classList.add('hidden'); document.getElementById('fcBackRomaji').innerText = w.romaji.split('/')[0]; document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : ''; document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : ''; }, 150); }
     function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); } function nextFc() { if(fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } else closeLearn(); } function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } } function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnListRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
 
+    // --- TRÉNING A TESTY (OPRAVENÁ FÁZA 1) ---
     function selectTestModeUI(mode) { document.querySelectorAll('#trainSetup .btn-nav').forEach(el => { el.style.backgroundColor = 'var(--bg-dark)'; el.style.color = 'var(--text-muted)'; }); let btn = document.getElementById('btnMode' + mode.charAt(0).toUpperCase() + mode.slice(1)); if(btn) { btn.style.backgroundColor = 'var(--primary)'; btn.style.color = 'white'; } document.querySelectorAll('#trainSetup .setup-section').forEach(el => el.classList.add('hidden')); document.getElementById('setup' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.remove('hidden'); }
 
     function startTraining(type) {
         currentTestType = type; mistakes = 0; currentIdx = 0; currentTestMistakes = []; let pool = [];
         if (type === 'unlock') { currentUnlockTarget = state.unlockedLesson; isBossTest = (currentUnlockTarget === 40 || currentUnlockTarget === 115); pool = isBossTest ? db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50) : db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10); testQueue = pool; } 
-        else if (type === 'quiz') { let from = parseInt(document.getElementById('quizFrom').value); let to = parseInt(document.getElementById('quizTo').value); let count = parseInt(document.getElementById('quizCount').value) || 0; if(from > to) { let temp = from; from = to; to = temp; } pool = db.filter(w => w.lekcia >= from && w.lekcia <= to); testQueue = pool.sort(()=>0.5-Math.random()); if (count > 0 && count < testQueue.length) testQueue = testQueue.slice(0, count); } 
-        else if (type === 'free') { let from = parseInt(document.getElementById('freeFrom').value); let to = parseInt(document.getElementById('freeTo').value); let count = parseInt(document.getElementById('freeCount').value) || 0; if(from > to) { let temp = from; from = to; to = temp; } pool = db.filter(w => w.lekcia >= from && w.lekcia <= to); testQueue = pool.sort(()=>0.5-Math.random()); if (count > 0 && count < testQueue.length) testQueue = testQueue.slice(0, count); }
+        else if (type === 'quiz' || type === 'free') { 
+            let from = parseInt(document.getElementById(type + 'From').value); 
+            let to = parseInt(document.getElementById(type + 'To').value); 
+            let count = parseInt(document.getElementById(type + 'Count').value) || 0; 
+            if(from > to) [from, to] = [to, from];
+            pool = db.filter(w => w.lekcia >= from && w.lekcia <= to); 
+            testQueue = pool.sort(()=>0.5-Math.random()); 
+            if (count > 0 && count < testQueue.length) testQueue = testQueue.slice(0, count); 
+        }
         if(testQueue.length === 0) return; document.getElementById('trainSetup').classList.add('hidden'); document.getElementById('trainResult').classList.add('hidden'); document.getElementById('trainRun').classList.remove('hidden');
         if(type === 'quiz') { document.getElementById('classicInputArea').classList.add('hidden'); document.getElementById('quizInputArea').classList.remove('hidden'); document.getElementById('quizTimerContainer').classList.remove('hidden'); } else { document.getElementById('classicInputArea').classList.remove('hidden'); document.getElementById('quizInputArea').classList.add('hidden'); document.getElementById('quizTimerContainer').classList.add('hidden'); }
         loadTrainWord();
     }
 
-    function loadTrainWord() { let w = testQueue[currentIdx]; document.getElementById('twWord').innerText = currentLang === 'sk' ? w.sk : w.en; document.getElementById('testProgress').innerText = currentLang === 'sk' ? `Slovo ${currentIdx + 1}/${testQueue.length}` : `Word ${currentIdx + 1}/${testQueue.length}`; document.getElementById('testCorrect').innerText = currentIdx - mistakes; document.getElementById('testWrong').innerText = mistakes; document.getElementById('twFeedback').className = 'feedback-box hidden'; document.getElementById('twNextBtn').classList.add('hidden'); document.getElementById('twAudioBtn').classList.add('hidden'); if(currentTestType === 'quiz') { let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); quizOptions = [w, ...others].sort(()=>0.5-Math.random()); for(let i=0; i<4; i++) { let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; } startQuizTimer(); } else { document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false; document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden'); } }
+    function loadTrainWord() { 
+        let w = testQueue[currentIdx]; 
+        document.getElementById('twWord').innerText = currentLang === 'sk' ? w.sk : w.en; 
+        document.getElementById('testProgress').innerText = currentLang === 'sk' ? `Slovo ${currentIdx + 1}/${testQueue.length}` : `Word ${currentIdx + 1}/${testQueue.length}`; 
+        document.getElementById('testCorrect').innerText = currentIdx - mistakes; 
+        document.getElementById('testWrong').innerText = mistakes; 
+        document.getElementById('twFeedback').className = 'feedback-box hidden'; 
+        document.getElementById('twNextBtn').classList.add('hidden'); 
+        document.getElementById('twAudioBtn').classList.add('hidden'); 
+        if(currentTestType === 'quiz') { 
+            let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3); 
+            quizOptions = [w, ...others].sort(()=>0.5-Math.random()); 
+            for(let i=0; i<4; i++) { let btn = document.getElementById('qb'+i); btn.innerText = quizOptions[i].romaji.split('/')[0]; btn.className = 'btn-quiz'; btn.disabled = false; } 
+            startQuizTimer(); 
+        } else { 
+            document.getElementById('twInput').value = ''; 
+            document.getElementById('twInput').disabled = false; 
+            document.getElementById('twInput').focus(); 
+            document.getElementById('twSubmitBtn').classList.remove('hidden'); 
+        } 
+    }
 
     function startQuizTimer() { timeLeft = 7.0; let bar = document.getElementById('quizTimerBar'); bar.style.width = '100%'; bar.style.backgroundColor = 'var(--warning)'; clearInterval(quizTimer); quizTimer = setInterval(() => { timeLeft -= 0.1; bar.style.width = (timeLeft / 7.0) * 100 + '%'; if(timeLeft < 2.5) bar.style.backgroundColor = 'var(--danger)'; if(timeLeft <= 0) { clearInterval(quizTimer); processQuizResult(null); } }, 100); }
     function checkQuizAnswer(optIdx) { clearInterval(quizTimer); processQuizResult(quizOptions[optIdx]); }
-    function processQuizResult(selectedWord) { let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; if(selectedWord && selectedWord.sk === w.sk) { fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; fb.className = 'feedback-box fb-correct'; playCurrentAudio(); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } } else { fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba!</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong!</strong> Correct: ${w.romaji}`; fb.className = 'feedback-box fb-wrong'; mistakes++; currentTestMistakes.push(w); for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } } document.getElementById('twNextBtn').classList.remove('hidden'); document.getElementById('twAudioBtn').classList.remove('hidden'); }
-function normalizeString(str) {
-    if (!str) return "";
-    return str.toLowerCase()
-              .replace(/[\s\-\!\?\,\.\"\']/g, "") // Odstráni medzery, pomlčky a znamienka
-              .trim();
-}
-// Opravená kontrola odpovedí (Train Mode)
-function checkTrainAnswer() {
-    let rawInput = document.getElementById('twInput').value.trim();
-    let input = normalizeString(rawInput); // Normalizovaný vstup používateľa
-    let w = testQueue[currentIdx];
-    let fb = document.getElementById('twFeedback');
-
-    if (rawInput === '') return;
-
-    // Pripravíme zoznam všetkých správnych normalizovaných možností
-    let validAnswers = w.romaji.split('/').map(s => normalizeString(s));
-    if (w.kana && w.kana !== '-') {
-        validAnswers = validAnswers.concat(w.kana.split('/').map(s => normalizeString(s)));
-    }
-    if (w.kanji && w.kanji !== '-') {
-        validAnswers = validAnswers.concat(w.kanji.split('/').map(s => normalizeString(s)));
+    
+    function processQuizResult(selectedWord) { 
+        let w = testQueue[currentIdx]; let fb = document.getElementById('twFeedback'); 
+        for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true; 
+        if(selectedWord && selectedWord.sk === w.sk) { 
+            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`; 
+            fb.className = 'feedback-box fb-correct'; 
+            playCurrentAudio(); 
+            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); } 
+        } else { 
+            fb.innerHTML = currentLang === 'sk' ? `❌ <strong>Chyba!</strong> Správne: ${w.romaji}` : `❌ <strong>Wrong!</strong> Correct: ${w.romaji}`; 
+            fb.className = 'feedback-box fb-wrong'; 
+            mistakes++; currentTestMistakes.push(w); 
+            for(let i=0; i<4; i++) { if(quizOptions[i].sk === w.sk) document.getElementById('qb'+i).classList.add('correct'); if(selectedWord && quizOptions[i].sk === selectedWord.sk) document.getElementById('qb'+i).classList.add('wrong'); } 
+        } 
+        document.getElementById('twNextBtn').classList.remove('hidden'); 
+        document.getElementById('twAudioBtn').classList.remove('hidden'); 
     }
 
-    // Porovnanie
-    if (validAnswers.includes(input)) {
-        fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`;
-        fb.className = 'feedback-box fb-correct';
-        playCurrentAudio();
-    } else {
-        fb.innerHTML = currentLang === 'sk' ? 
-            `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : 
-            `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`;
-        fb.className = 'feedback-box fb-wrong';
-        mistakes++;
-        currentTestMistakes.push(w);
+    function checkTrainAnswer() {
+        let rawInput = document.getElementById('twInput').value.trim();
+        let input = normalizeString(rawInput);
+        let w = testQueue[currentIdx];
+        let fb = document.getElementById('twFeedback');
+        if (rawInput === '') return;
+
+        let validAnswers = w.romaji.split('/').map(s => normalizeString(s));
+        if (w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s => normalizeString(s)));
+        if (w.kanji && w.kanji !== '-') validAnswers = validAnswers.concat(w.kanji.split('/').map(s => normalizeString(s)));
+
+        if (validAnswers.includes(input)) {
+            fb.innerHTML = currentLang === 'sk' ? `✅ <strong>Správne!</strong>` : `✅ <strong>Correct!</strong>`;
+            fb.className = 'feedback-box fb-correct';
+            playCurrentAudio();
+        } else {
+            fb.innerHTML = currentLang === 'sk' ? 
+                `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>` : 
+                `❌ Correct: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span><br><small style="color:var(--text-muted);">${w.kana !== '-' ? w.kana : ''} | ${w.kanji !== '-' ? w.kanji : ''}</small>`;
+            fb.className = 'feedback-box fb-wrong';
+            mistakes++;
+            currentTestMistakes.push(w);
+        }
+        document.getElementById('twInput').disabled = true;
+        document.getElementById('twSubmitBtn').classList.add('hidden');
+        document.getElementById('twNextBtn').classList.remove('hidden');
+        document.getElementById('twAudioBtn').classList.remove('hidden');
     }
 
-    document.getElementById('twInput').disabled = true;
-    document.getElementById('twSubmitBtn').classList.add('hidden');
-    document.getElementById('twNextBtn').classList.remove('hidden');
-    document.getElementById('twAudioBtn').classList.remove('hidden');
-}
     function nextTrainWord() { currentIdx++; if(currentIdx < testQueue.length) loadTrainWord(); else endTraining(); }
-    function endTraining() { document.getElementById('trainRun').classList.add('hidden'); document.getElementById('trainResult').classList.remove('hidden'); let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); document.getElementById('trScore').innerText = `${perc}%`; let msg = document.getElementById('trMessage'); if (currentTestType === 'unlock') { if(!state.history) state.history = []; state.history.unshift({ date: new Date().getTime(), lesson: currentUnlockTarget, score: perc, passed: perc >= 90, mistakes: currentTestMistakes.map(m => ({ sk: m.sk, en: m.en, romaji: m.romaji, kana: m.kana, kanji: m.kanji })) }); if(state.history.length > 50) state.history.pop(); if (perc >= 90) { msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; msg.style.color = "var(--success)"; if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; addXP(isBossTest ? 500 : 100); } else { msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; msg.style.color = "var(--danger)"; saveState(); } renderHistory(); } else { if (perc >= 90) { let earnedPoints = testQueue.length; msg.innerHTML = currentLang === 'sk' ? `🎉 Skvelá práca! +${earnedPoints} XP!` : `🎉 Great job! +${earnedPoints} XP!`; msg.style.color = "var(--success)"; addXP(earnedPoints); } else { msg.innerHTML = currentLang === 'sk' ? "Na získanie bodov potrebuješ aspoň 90%." : "You need 90% to earn points."; msg.style.color = "var(--text-main)"; } } }
+    
+    function endTraining() { 
+        document.getElementById('trainRun').classList.add('hidden'); 
+        document.getElementById('trainResult').classList.remove('hidden'); 
+        let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100); 
+        document.getElementById('trScore').innerText = `${perc}%`; 
+        let msg = document.getElementById('trMessage'); 
+        if (currentTestType === 'unlock') { 
+            if(!state.history) state.history = []; 
+            state.history.unshift({ date: new Date().getTime(), lesson: currentUnlockTarget, score: perc, passed: perc >= 90, mistakes: currentTestMistakes.map(m => ({ sk: m.sk, en: m.en, romaji: m.romaji, kana: m.kana, kanji: m.kanji })) }); 
+            if(state.history.length > 50) state.history.pop(); 
+            if (perc >= 90) { 
+                msg.innerHTML = currentLang === 'sk' ? "🎉 Odomkol si novú úroveň!" : "🎉 New level unlocked!"; 
+                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; 
+                addXP(isBossTest ? 500 : 100); 
+            } else { 
+                msg.innerHTML = currentLang === 'sk' ? "❌ Potrebuješ úspešnosť aspoň 90%." : "❌ You need at least 90%."; 
+            } 
+            saveState(); renderHistory(); 
+        } else { 
+            if (perc >= 90) { let earned = testQueue.length; msg.innerHTML = `🎉 +${earned} XP!`; addXP(earned); } 
+            else { msg.innerHTML = currentLang === 'sk' ? "Potrebuješ 90% na body." : "You need 90% for points."; } 
+        } 
+    }
+    
     function closeTraining() { document.getElementById('trainSetup').classList.remove('hidden'); document.getElementById('trainResult').classList.add('hidden'); }
-
     function playCurrentAudio() { let w = testQueue[currentIdx]; playAudioText((w.kana && w.kana !== '-') ? w.kana : w.romaji, 'ja-JP'); }
 </script>
 </body>
 </html>
-
