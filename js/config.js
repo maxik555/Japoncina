@@ -9,7 +9,6 @@ const firebaseConfig = {
 };
 
 // !!! SEM VLOŽ SVOJ GEMINI KĽÚČ (ten dlhý začínajúci AIza...) !!!
-window.GEMINI_API_KEY = "AIzaSyCJ6xqewNPqlsZsI8E3B5mTZYPF4WdWFuo";
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth(); 
