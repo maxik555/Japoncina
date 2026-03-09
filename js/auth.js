@@ -1,6 +1,12 @@
 // --- PRIHLASOVANIE A SYNCHRONIZÁCIA ---
 
 auth.onAuthStateChanged(async (user) => {
+    // POISTKA: Ak sa Firebase spustí príliš rýchlo, počkáme na načítanie funkcií
+    if (typeof fetchDatabaseFromCloud !== 'function') {
+        setTimeout(() => { location.reload(); }, 200); 
+        return;
+    }
+
     if (user) {
         currentUser = user;
         document.getElementById('auth-container').style.display = 'none';
@@ -9,7 +15,8 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         document.getElementById('auth-container').style.display = 'block';
         document.getElementById('main-app').style.display = 'none';
-        document.getElementById('loadingOverlay').style.display = 'none';
+        const loader = document.getElementById('loadingOverlay');
+        if (loader) loader.style.display = 'none';
     }
 });
 
@@ -23,39 +30,17 @@ async function loadUserData() {
         const nickInput = document.getElementById('profileNickname');
         if (nickInput) nickInput.value = state.nickname || '';
         
-        // Zabezpečíme, aby sa najprv nastavil jazyk a UI
         setLang(currentLang);
         updateUI();
         
-        // Pridáme malú poistku - načítame DB až keď sme si istí, že UI stojí
-        setTimeout(() => {
-            fetchDatabaseFromCloud();
-        }, 100);
+        // Načítame databázu
+        await fetchDatabaseFromCloud();
 
     } catch (e) {
         console.error("Chyba pri načítaní dát používateľa:", e);
     }
     
-    const loader = document.getElementById('loadingOverlay');
-    if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.style.display = 'none', 500);
-    }
-}
-        
-        // Nastavenie nicku v profile
-        const nickInput = document.getElementById('profileNickname');
-        if (nickInput) nickInput.value = state.nickname || '';
-        
-        // Spustenie základných funkcií po načítaní dát
-        setLang(currentLang);
-        updateUI();
-        await fetchDatabaseFromCloud();
-    } catch (e) {
-        console.error("Chyba pri načítaní dát používateľa:", e);
-    }
-    
-    // SKRYTIE NAČÍTAVACEJ OBRAZOVKY (Dôležité!)
+    // SKRYTIE NAČÍTAVACEJ OBRAZOVKY
     const loader = document.getElementById('loadingOverlay');
     if (loader) {
         loader.style.opacity = '0';
@@ -86,7 +71,7 @@ function updateUI() {
     
     if (lvlEl) lvlEl.innerText = level;
     if (xpEl) xpEl.style.width = Math.max(0, Math.min(100, progress)) + "%";
-    if (strEl) strEl.innerText = state.streak + " 🔥";
+    if (strEl) strEl.innerText = (state.streak || 0) + " 🔥";
     
     if (typeof renderHistory === 'function') renderHistory();
     if (typeof renderMap === 'function') renderMap();
@@ -94,38 +79,23 @@ function updateUI() {
 
 async function loginUser() { 
     const errEl = document.getElementById('authError');
-    if (errEl) errEl.innerText = "";
     const email = document.getElementById('authEmail').value;
     const pass = document.getElementById('authPass').value;
-    
-    try { 
-        await auth.signInWithEmailAndPassword(email, pass); 
-    } catch(e) { 
-        if (errEl) errEl.innerText = currentLang === 'sk' ? "Zlé meno alebo heslo." : e.message; 
-    } 
+    try { await auth.signInWithEmailAndPassword(email, pass); } 
+    catch(e) { if (errEl) errEl.innerText = "Chyba prihlásenia."; } 
 }
 
 async function registerUser() { 
     const errEl = document.getElementById('authError');
-    if (errEl) errEl.innerText = "";
     const email = document.getElementById('authEmail').value;
     const pass = document.getElementById('authPass').value;
-    
-    try { 
-        await auth.createUserWithEmailAndPassword(email, pass); 
-    } catch(e) { 
-        if (errEl) errEl.innerText = currentLang === 'sk' ? "Chyba pri registrácii." : e.message; 
-    } 
+    try { await auth.createUserWithEmailAndPassword(email, pass); } 
+    catch(e) { if (errEl) errEl.innerText = "Chyba registrácie."; } 
 }
 
 function updateNickname() { 
     const nickInput = document.getElementById('profileNickname');
-    if (nickInput) {
-        state.nickname = nickInput.value.trim(); 
-        saveState(); 
-    }
+    if (nickInput) { state.nickname = nickInput.value.trim(); saveState(); }
 }
 
-function logoutUser() { 
-    auth.signOut(); 
-}
+function logoutUser() { auth.signOut(); }
