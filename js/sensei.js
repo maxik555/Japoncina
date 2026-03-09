@@ -3,12 +3,11 @@
 let currentSenseiTask = "";
 
 async function callGemini(promptText) {
-    // Skúsime vziať kľúč z okna, alebo z premennej
+    // Skúsime vziať kľúč z okna (window) alebo priamo z premennej
     const key = window.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : "");
 
     if (!key || key === "" || key.includes("TVOJ_")) {
-        console.error("DEBUG: Kľúč nenájdený v okne ani v premennej.");
-        alert(currentLang === 'sk' ? "Sensei stále nevidí kľúč. Skús Ctrl+F5!" : "Sensei still can't see the key.");
+        alert("Sensei nevidí API kľúč v config.js! Skús Ctrl+F5.");
         return null;
     }
 
@@ -22,7 +21,7 @@ async function callGemini(promptText) {
         const data = await response.json();
         
         if (data.error) {
-            console.error("Gemini API Error:", data.error);
+            console.error("Gemini Error:", data.error);
             alert("Sensei API Error: " + data.error.message);
             return null;
         }
@@ -37,33 +36,7 @@ async function callGemini(promptText) {
     }
 }
 
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-        });
-
-        const data = await response.json();
-        
-        // Ak API vráti chybu (napr. zlý kľúč)
-        if (data.error) {
-            console.error("Gemini API Error Detail:", data.error);
-            alert("Sensei Error: " + data.error.message);
-            return null;
-        }
-
-        if (data.candidates && data.candidates[0].content) {
-            return data.candidates[0].content.parts[0].text;
-        }
-        
-        return null;
-    } catch (error) {
-        console.error("Network/Fetch Error:", error);
-        return null;
-    }
-}
-// --- SEKCIA SENSEI (ZADANIA) ---
+// --- SEKCIA SENSEI ---
 async function startSenseiSession() {
     let from = parseInt(document.getElementById('senseiFrom').value);
     let to = parseInt(document.getElementById('senseiTo').value);
@@ -73,7 +46,10 @@ async function startSenseiSession() {
     let allowedWords = db.filter(w => w.lekcia >= from && w.lekcia <= to)
                          .map(w => `${w.sk} (${w.romaji})`).join(", ");
     
-    if (!allowedWords) return;
+    if (!allowedWords) {
+        alert("Žiadne slová v tomto rozsahu lekcií!");
+        return;
+    }
 
     document.getElementById('senseiSetup').classList.add('hidden');
     document.getElementById('senseiRun').classList.remove('hidden');
@@ -81,17 +57,16 @@ async function startSenseiSession() {
     document.getElementById('senseiUserInput').disabled = false;
     document.getElementById('senseiUserInput').value = "";
     document.getElementById('btnSenseiSubmit').classList.remove('hidden');
-    document.getElementById('senseiTaskText').innerHTML = `<span style="color:var(--primary);">${currentLang==='sk'?'Sensei premýšľa nad vetami...':'Sensei is thinking...'}</span>`;
+    document.getElementById('senseiTaskText').innerHTML = `<span style="color:var(--primary);">Sensei premýšľa nad vetami...</span>`;
 
     let avoidSentences = (state.usedSenseiSentences || []).slice(-10).join(" | ");
 
-    let prompt = `Si učiteľ japončiny (Sensei). Vygeneruj ${count} krátkych viet na preklad do japončiny.
-    PRAVIDLÁ:
-    1. Vety musia byť poskladané VÝHRADNE z týchto slov a ich logických variácií: ${allowedWords}
-    2. Nepoužívaj tieto vety: ${avoidSentences}
-    3. Odpovedaj LEN slovenskými vetami, očíslovanými 1., 2... Žiadne kecy okolo.`;
+    let prompt = `Si učiteľ japončiny. Vygeneruj ${count} krátkych viet na preklad do japončiny. 
+    Používaj len slová: ${allowedWords}. Nepoužívaj: ${avoidSentences}. Odpovedaj LEN očíslovanými vetami v slovenčine.`;
 
+    // TU BOL PROBLÉM - await musí byť vo vnútri async funkcie (čo tu je)
     let aiResponse = await callGemini(prompt);
+    
     if (aiResponse) {
         currentSenseiTask = aiResponse;
         document.getElementById('senseiTaskText').innerText = aiResponse;
@@ -108,12 +83,9 @@ async function submitToSensei() {
     document.getElementById('senseiUserInput').disabled = true;
     document.getElementById('btnSenseiSubmit').classList.add('hidden');
     document.getElementById('senseiEvaluation').classList.remove('hidden');
-    document.getElementById('senseiEvalText').innerHTML = `<span style="color:var(--primary);">${currentLang==='sk'?'Sensei hodnotí...':'Evaluating...'}</span>`;
+    document.getElementById('senseiEvalText').innerHTML = `<span style="color:var(--primary);">Sensei hodnotí...</span>`;
 
-    let prompt = `Si učiteľ japončiny. Študent preložil tieto vety:
-    Zadanie: ${currentSenseiTask}
-    Odpovede: ${userAnswers}
-    Zhodnoť presnosť (gramatika, slovosled, častice). Oprav chyby a vysvetli prečo. Odpovedaj v jazyku: ${currentLang === 'sk' ? 'Slovenčina' : 'English'}.`;
+    let prompt = `Študent preložil: ${userAnswers}. Zadanie bolo: ${currentSenseiTask}. Zhodnoť to ako učiteľ japončiny v slovenčine.`;
 
     let aiResponse = await callGemini(prompt);
     if (aiResponse) {
@@ -126,16 +98,15 @@ function closeSenseiSession() {
     document.getElementById('senseiSetup').classList.remove('hidden');
 }
 
-// --- SEKCIA PREKLADAČ ---
+// --- AI PREKLADAČ ---
 async function translateText() {
     let text = document.getElementById('transInput').value.trim();
     if(!text) return;
     let dir = document.getElementById('transDirection').value;
     let out = document.getElementById('transOutput');
-    out.innerText = currentLang === 'sk' ? "Prekladám..." : "Translating...";
+    out.innerText = "Prekladám...";
 
-    let prompt = `Prelož text "${text}" z ${dir.split('|')[0]} do ${dir.split('|')[1]}. 
-    Ak ide o japončinu, uveď zápis v kandži/kana aj v rómadži. Odpovedaj len prekladom.`;
+    let prompt = `Prelož "${text}" z ${dir.split('|')[0]} do ${dir.split('|')[1]}. Uveď aj rómadži.`;
 
     let res = await callGemini(prompt);
     if(res) {
@@ -151,9 +122,7 @@ async function analyzeWithAI() {
     document.getElementById('aiResponse').innerHTML = "⏳ AI Sensei analyzuje...";
     document.getElementById('overlayAI').style.display = 'flex';
 
-    let prompt = `Analyzuj túto japonskú vetu alebo výraz: "${text}". 
-    Vysvetli gramatiku, použité častice a význam jednotlivých slov. 
-    Odpovedaj v jazyku: ${currentLang === 'sk' ? 'Slovenčina' : 'English'}.`;
+    let prompt = `Analyzuj japonskú vetu: "${text}". Vysvetli gramatiku a častice v slovenčine.`;
 
     let res = await callGemini(prompt);
     if(res) document.getElementById('aiResponse').innerText = res;
@@ -162,7 +131,6 @@ async function analyzeWithAI() {
 function playTransAudio() {
     let text = document.getElementById('transOutput').innerText;
     if(!text) return;
-    // Skúsime extrahovať japonskú časť (pred zátvorkou s romaji)
     let jaPart = text.split('(')[0].trim();
     playAudioText(jaPart, 'ja-JP');
 }
