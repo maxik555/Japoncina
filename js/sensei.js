@@ -3,11 +3,39 @@
 let currentSenseiTask = "";
 
 async function callGemini(promptText) {
-    // Kontrola kľúča
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "AIzaSyCJ6xqewNPqlsZsI8E3B5mTZYPF4WdWFuo" || GEMINI_API_KEY === "") {
-        alert(currentLang === 'sk' ? "Chýba API kľúč v js/config.js!" : "Missing API Key in js/config.js!");
+    // Skúsime vziať kľúč z okna, alebo z premennej
+    const key = window.GEMINI_API_KEY || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : "");
+
+    if (!key || key === "" || key.includes("TVOJ_")) {
+        console.error("DEBUG: Kľúč nenájdený v okne ani v premennej.");
+        alert(currentLang === 'sk' ? "Sensei stále nevidí kľúč. Skús Ctrl+F5!" : "Sensei still can't see the key.");
         return null;
     }
+
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error("Gemini API Error:", data.error);
+            alert("Sensei API Error: " + data.error.message);
+            return null;
+        }
+
+        if (data.candidates && data.candidates[0].content) {
+            return data.candidates[0].content.parts[0].text;
+        }
+        return null;
+    } catch (error) {
+        console.error("Network Error:", error);
+        return null;
+    }
+}
 
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
