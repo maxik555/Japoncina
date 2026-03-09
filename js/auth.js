@@ -1,12 +1,6 @@
 // --- PRIHLASOVANIE A SYNCHRONIZÁCIA ---
 
 auth.onAuthStateChanged(async (user) => {
-    // POISTKA: Ak sa Firebase spustí príliš rýchlo, počkáme na načítanie funkcií
-    if (typeof fetchDatabaseFromCloud !== 'function') {
-        setTimeout(() => { location.reload(); }, 200); 
-        return;
-    }
-
     if (user) {
         currentUser = user;
         document.getElementById('auth-container').style.display = 'none';
@@ -15,8 +9,9 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         document.getElementById('auth-container').style.display = 'block';
         document.getElementById('main-app').style.display = 'none';
-        const loader = document.getElementById('loadingOverlay');
-        if (loader) loader.style.display = 'none';
+        if (document.getElementById('loadingOverlay')) {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
     }
 });
 
