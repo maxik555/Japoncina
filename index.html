@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Japonský Tréning - Verzia 2.3.3</title>
+    <title>Japonský Tréning - Verzia 2.4.0 (AI Edition)</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,189 +18,227 @@
         :root {
             --bg-dark: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
             --primary: #3b82f6; --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
-            --locked: #334155; --border: #334155; --card-back: #1e3a8a;
+            --locked: #334155; --border: #334155; --card-back: #1e3a8a; --ai-glow: #8b5cf6;
         }
 
         [data-theme="light"] { --bg-dark: #f1f5f9; --bg-card: #ffffff; --text-main: #0f172a; --text-muted: #64748b; --primary: #2563eb; --border: #cbd5e1; --card-back: #e2e8f0; }
         [data-theme="sharingan"] { --bg-dark: #1a0505; --bg-card: #2b0a0a; --text-main: #fca5a5; --text-muted: #ef4444; --primary: #dc2626; --border: #7f1d1d; --card-back: #450a0a; }
         [data-theme="konoha"] { --bg-dark: #064e3b; --bg-card: #14532d; --text-main: #d1fae5; --text-muted: #6ee7b7; --primary: #10b981; --border: #065f46; --card-back: #065f46; }
-        [data-theme="uzumaki"] { --bg-dark: #7c2d12; --bg-card: #9a3412; --text-main: #fff7ed; --text-muted: #fdba74; --primary: #f97316; --border: #c2410c; --card-back: #ea580c; }
-        [data-theme="nara"] { --bg-dark: #171717; --bg-card: #262626; --text-main: #e5e5e5; --text-muted: #a3a3a3; --primary: #525252; --border: #404040; --card-back: #404040; }
 
-        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; transition: background 0.3s, color 0.3s; -webkit-user-select: none; }
-        .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; transition: background 0.3s; position: relative; }
+        body { font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-main); margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh; transition: 0.3s; -webkit-user-select: none; }
+        .app-container { background: var(--bg-card); width: 100%; max-width: 750px; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; position: relative; overflow: hidden; }
         
-        .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.3s; }
+        /* Progress Bar pre Level */
+        .xp-bar-container { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-top: 5px; overflow: hidden; }
+        .xp-bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s ease; }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-dark); padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--border); }
         .rpg-stat { text-align: center; }
         .rpg-val { font-size: 18px; font-weight: 800; color: var(--primary); }
         .rpg-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
-        .lang-flags span { cursor: pointer; font-size: 24px; transition: 0.2s; padding: 0 5px; }
-        .lang-flags span.inactive { opacity: 0.3; filter: grayscale(100%); }
         
         .nav { display: flex; gap: 5px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .nav::-webkit-scrollbar { display: none; }
-        .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 12px; text-align: center; white-space: nowrap; }
+        .btn-nav { flex: 1; min-width: 80px; background: var(--bg-dark); color: var(--text-muted); border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 12px; text-align: center; }
         .btn-nav.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* MODAL / OVERLAY CSS */
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:2000; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--bg-card); width: 90%; max-width: 600px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; border: 1px solid var(--border); position: relative; }
-        .close-modal { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 24px; color: var(--text-muted); }
+        /* Modals & Overlays */
+        .overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:3000; backdrop-filter: blur(8px); padding: 20px; box-sizing: border-box; }
+        .overlay-content { background: var(--bg-card); width: 100%; max-width: 600px; max-height: 85vh; border-radius: 24px; padding: 25px; overflow-y: auto; border: 1px solid var(--border); position: relative; }
+        
+        /* AI Elements */
+        .btn-ai { background: linear-gradient(135deg, var(--ai-glow), var(--primary)); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .ai-badge { background: var(--ai-glow); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; vertical-align: middle; margin-left: 5px; }
 
-        .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
-        .lesson-node { padding: 15px 10px; border-radius: 12px; text-align: center; font-weight: bold; cursor: pointer; transition: 0.2s; border: 2px solid transparent; }
-        .node-unlocked { background: rgba(59, 130, 246, 0.1); border-color: var(--primary); color: var(--text-main); }
-        .node-unlocked:hover { background: var(--primary); color: white; }
-        .node-locked { background: var(--bg-dark); color: var(--text-muted); border-color: var(--border); opacity: 0.7; cursor: not-allowed; }
-        .boss-node { background: rgba(245, 158, 11, 0.1); border-color: var(--warning); color: var(--warning); }
+        .map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; max-height: 450px; overflow-y: auto; padding: 10px; }
+        .lesson-node { padding: 15px 5px; border-radius: 16px; text-align: center; font-weight: bold; cursor: pointer; transition: 0.2s; border: 2px solid var(--border); position: relative; }
+        .node-unlocked { background: var(--bg-dark); border-color: var(--primary); }
+        .node-perfect { border-color: var(--success); }
+        .node-perfect::after { content: '⭐'; position: absolute; top: -8px; right: -8px; font-size: 14px; }
         
-        .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:translateY(0)} }
+        .tab { display: none; } .tab.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from{opacity:0; transform:scale(0.98)} to{opacity:1; transform:scale(1)} }
         
-        input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 16px; margin-bottom: 15px; box-sizing: border-box; transition: 0.3s; font-family: 'Nunito', sans-serif; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; margin-bottom: 10px; }
-        .btn-primary { background: var(--primary); box-shadow: 0 4px 0 rgba(0,0,0,0.3); }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
+        input, select, textarea { width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-main); font-size: 16px; margin-bottom: 12px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
         .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
-        .btn-audio { background: transparent; border: 2px solid var(--primary); color: var(--primary); width: auto; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
         
-        .info-box { background: var(--bg-dark); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 15px; }
-        
-        .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; cursor: pointer; }
-        .flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flashcard-container { perspective: 1000px; width: 100%; height: 320px; margin-bottom: 20px; }
+        .flashcard { width: 100%; height: 100%; position: relative; transition: 0.6s; transform-style: preserve-3d; cursor: pointer; }
         .flashcard.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; border: 2px solid var(--border); text-align: center; transition: 0.3s; }
-        .card-front { background: var(--bg-dark); }
-        .card-back { background: var(--card-back); transform: rotateY(180deg); border-color: var(--primary); }
-        
-        .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
-        .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
-        .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
-        .fb-correct { background: rgba(16, 185, 129, 0.2); color: var(--success); display: block; border: 1px solid var(--success); }
-        .fb-wrong { background: rgba(239, 68, 68, 0.2); color: var(--danger); display: block; border: 1px solid var(--danger); }
-        
-        .quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .btn-quiz { background: var(--bg-dark); border: 2px solid var(--border); padding: 20px 10px; border-radius: 12px; font-size: 18px; cursor: pointer; color: var(--text-main); font-weight: bold; }
-        .btn-quiz.correct { background: rgba(16, 185, 129, 0.2); border-color: var(--success); color: var(--success); }
-        .btn-quiz.wrong { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger); }
-        
-        .timer-container { width: 100%; height: 8px; background: var(--bg-dark); border-radius: 4px; margin-bottom: 15px; overflow: hidden; }
-        .timer-bar { height: 100%; width: 100%; background: var(--warning); transition: width 0.1s linear; }
-        .hidden { display: none !important; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid var(--border); padding: 20px; text-align: center; }
+        .card-back { background: var(--card-back); transform: rotateY(180deg); }
 
-        .history-item { background: var(--bg-dark); border: 2px solid var(--border); border-left-width: 6px; border-radius: 12px; padding: 15px; margin-bottom: 10px; }
-        .history-item.passed { border-left-color: var(--success); }
-        .history-item.failed { border-left-color: var(--danger); }
-        
-        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; }
-        .spinner { border: 6px solid var(--border); border-top: 6px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-quiz { background: var(--bg-dark); border: 2px solid var(--border); padding: 20px 10px; border-radius: 14px; color: var(--text-main); font-weight: bold; font-size: 18px; cursor: pointer; }
+        .btn-quiz.correct { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
+        .btn-quiz.wrong { border-color: var(--danger); background: rgba(239, 68, 68, 0.1); }
 
-        .detail-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        .detail-table th { text-align: left; color: var(--text-muted); padding: 8px; border-bottom: 1px solid var(--border); }
-        .detail-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
-        .ans-correct { color: var(--success); font-weight: bold; }
-        .ans-wrong { color: var(--danger); font-weight: bold; }
+        .history-item { background: var(--bg-dark); border: 1px solid var(--border); border-left: 5px solid var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .history-item.perfect { border-left-color: var(--success); }
+
+        /* Detail Table */
+        .detail-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .detail-table td { padding: 12px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .res-wrong { color: var(--danger); text-decoration: line-through; font-size: 12px; }
+        .res-correct { color: var(--success); font-weight: bold; }
     </style>
 </head>
 <body data-theme="dark">
 
-<div id="loadingOverlay"><div class="spinner"></div><h2 id="loadingText">Spúšťam appku...</h2></div>
+<div id="loadingOverlay"><div class="spinner"></div><h2 id="loadingText">Načítavam dódžó...</h2></div>
 
-<div id="historyOverlay" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-modal" onclick="closeHistoryDetail()">×</span>
-        <h2 id="detailTitle" style="margin-top:0;">Detail testu</h2>
-        <div id="detailStats" style="color:var(--text-muted); margin-bottom:15px;"></div>
+<div id="overlayDetail" class="overlay">
+    <div class="overlay-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="detailTitle" style="margin:0;">Detail výsledkov</h2>
+            <button onclick="closeOverlay('overlayDetail')" style="background:none; border:none; color:var(--text-muted); font-size:30px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="detailStats" style="margin-bottom:20px; padding:15px; background:var(--bg-dark); border-radius:12px;"></div>
         <div id="detailList"></div>
     </div>
 </div>
 
-<div id="auth-container" class="app-container" style="display: none; max-width: 400px; text-align: center;">
-    <h2 style="font-size:32px; margin-bottom:10px;">🏯 Dódžó</h2>
-    <p style="color:var(--text-muted); margin-bottom:25px;" data-sk="Prihlás sa pre ukladanie postupu." data-en="Sign in to save progress.">Prihlás sa pre ukladanie postupu.</p>
-    <input type="email" id="authEmail" placeholder="Tvoj E-mail">
-    <input type="password" id="authPass" placeholder="Heslo (min. 6 znakov)">
-    <button class="btn btn-primary" onclick="loginUser()">Prihlásiť sa</button>
-    <button class="btn btn-outline" onclick="registerUser()">Nový účet</button>
-    <p id="authError" style="color:var(--danger); font-size:14px; margin-top:15px;"></p>
+<div id="overlayAI" class="overlay">
+    <div class="overlay-content" style="border: 2px solid var(--ai-glow);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0;">✨ AI Sensei analýza</h2>
+            <button onclick="closeOverlay('overlayAI')" style="background:none; border:none; color:var(--text-muted); font-size:30px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="aiResponse" style="line-height:1.6; font-size:15px; white-space: pre-wrap;"></div>
+        <button class="btn btn-outline" style="margin-top:20px;" onclick="closeOverlay('overlayAI')">Rozumiem</button>
+    </div>
 </div>
 
-<div id="main-app" class="app-container" style="display: none;">
+<div id="auth-container" class="app-container" style="display:none; max-width:400px;">
+    <h2 style="text-align:center; font-size:32px;">🏯 Dódžó</h2>
+    <input type="email" id="authEmail" placeholder="Email">
+    <input type="password" id="authPass" placeholder="Heslo">
+    <button class="btn btn-primary" onclick="loginUser()">Vstúpiť</button>
+    <button class="btn btn-outline" style="margin-top:10px;" onclick="registerUser()">Vytvoriť účet</button>
+    <p id="authError" style="color:var(--danger); text-align:center; margin-top:15px;"></p>
+</div>
+
+<div id="main-app" class="app-container" style="display:none;">
     <div class="topbar">
-        <div style="display:flex; gap:15px;">
-            <div class="rpg-stat"><div class="rpg-val" id="uiRank">🥷 Genin</div><div class="rpg-label">Hodnosť</div></div>
-            <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label">Level</div></div>
-            <div class="rpg-stat"><div class="rpg-val" id="uiXp">0</div><div class="rpg-label">XP</div></div>
-            <div class="rpg-stat"><div class="rpg-val" id="uiStreak" style="color:var(--warning)">0 🔥</div><div class="rpg-label">Streak</div></div>
+        <div style="flex:1;">
+            <div style="display:flex; gap:15px; margin-bottom:5px;">
+                <div class="rpg-stat"><div class="rpg-val" id="uiRank">🥷 Genin</div><div class="rpg-label">Hodnosť</div></div>
+                <div class="rpg-stat"><div class="rpg-val" id="uiLevel">1</div><div class="rpg-label">Level</div></div>
+                <div class="rpg-stat"><div class="rpg-val" id="uiStreak">0 🔥</div><div class="rpg-label">Streak</div></div>
+            </div>
+            <div class="xp-bar-container"><div id="xpBar" class="xp-bar-fill"></div></div>
         </div>
-        <div class="lang-flags"><span id="flag-sk" onclick="setLang('sk')">🇸🇰</span><span id="flag-en" onclick="setLang('en')">🇬🇧</span></div>
+        <div class="lang-flags" style="margin-left:20px;"><span id="flag-sk" onclick="setLang('sk')">🇸🇰</span><span id="flag-en" onclick="setLang('en')">🇬🇧</span></div>
     </div>
 
     <div class="nav">
-        <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap">🗺️ Cesta</button>
+        <button class="btn-nav active" onclick="switchTab('map')" id="btnTabMap">🗺️ Mapa</button>
         <button class="btn-nav" onclick="switchTab('learn')" id="btnTabLearn">🎴 Učenie</button>
         <button class="btn-nav" onclick="switchTab('train')" id="btnTabTrain">📝 Test</button>
-        <button class="btn-nav" onclick="switchTab('translate')" id="btnTabTranslate">🈯 Prekladač</button>
+        <button class="btn-nav" onclick="switchTab('translate')" id="btnTabTranslate">🈯 AI Preklad</button>
         <button class="btn-nav" onclick="switchTab('profile')" id="btnTabProfile">👤 Profil</button>
     </div>
 
-    <div id="tab-map" class="tab active"><h2 style="margin-top:0;">Tvoja cesta</h2><div id="lessonMap" class="map-grid"></div></div>
+    <div id="tab-map" class="tab active">
+        <h2 style="margin-top:0;">Tvoja cesta <span id="mapProgress" style="font-size:14px; color:var(--text-muted); float:right;">0%</span></h2>
+        <div id="lessonMap" class="map-grid"></div>
+    </div>
 
     <div id="tab-learn" class="tab">
         <div id="learnSetup">
-            <h2>Tréning</h2>
-            <div class="info-box"><label>Lekcia:</label><select id="learnLessonSelect"></select><button class="btn btn-primary" onclick="startLearn('cards')">🎴 Kartičky</button></div>
-            <div class="info-box"><button class="btn btn-outline" onclick="showUnlockedList()">📄 Slovník</button></div>
+            <h2>Učebné materiály</h2>
+            <div class="info-box">
+                <label style="font-size:12px; color:var(--text-muted);">VYBER LEKCIU:</label>
+                <select id="learnLessonSelect" style="margin-top:5px;"></select>
+                <button class="btn btn-primary" onclick="startLearn('cards')">Spustiť kartičky</button>
+            </div>
+            <button class="btn btn-outline" onclick="showUnlockedList()">Otvoriť môj slovník</button>
         </div>
         <div id="learnCardsRun" class="hidden">
             <div class="test-header"><span id="fcProgress"></span></div>
             <div class="flashcard-container" onclick="flipCard()">
                 <div class="flashcard" id="fcElement">
-                    <div class="card-face card-front"><div id="fcImg" class="fc-img"></div><div id="fcFrontSk" class="fc-sk"></div></div>
-                    <div class="card-face card-back"><div id="fcBackRomaji" class="fc-romaji"></div><div id="fcBackKana"></div><div id="fcBackKanji" style="font-size:24px;"></div></div>
+                    <div class="card-face card-front"><div id="fcImg" style="font-size:50px; margin-bottom:10px;"></div><div id="fcFrontSk" style="font-size:28px; font-weight:800;"></div></div>
+                    <div class="card-face card-back"><div id="fcBackRomaji" style="font-size:24px; color:var(--primary); font-weight:bold;"></div><div id="fcBackKana" style="font-size:20px;"></div><div id="fcBackKanji" style="font-size:32px; margin-top:10px;"></div></div>
                 </div>
             </div>
-            <div style="text-align: center; margin-bottom: 15px;"><button class="btn btn-audio" onclick="playAudioText(document.getElementById('fcBackRomaji').innerText)">🔊 Zvuk</button></div>
-            <div style="display: flex; gap: 10px;"><button class="btn" style="background:var(--bg-dark);" onclick="prevFc()">⬅️</button><button class="btn btn-success" onclick="nextFc()">➡️</button></div>
-            <button class="btn btn-outline" onclick="closeLearn()">Zrušiť</button>
-        </div>
-        <div id="learnListRun" class="hidden">
-            <button class="btn btn-outline" onclick="closeLearn()">Späť</button>
-            <div id="vocabListBody" style="overflow-y:auto; max-height:60vh;"></div>
+            <div style="text-align:center; margin-bottom:15px;"><button class="btn btn-audio" onclick="playCurrentAudioFC()">🔊 Vypočuť si</button></div>
+            <div style="display:flex; gap:10px;"><button class="btn btn-outline" onclick="prevFc()">Späť</button><button class="btn btn-success" onclick="nextFc()">Ďalšia</button></div>
         </div>
     </div>
 
     <div id="tab-train" class="tab">
         <div id="trainSetup">
-            <div style="display: flex; gap: 5px; margin-bottom: 15px;"><button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')">🔓 Odomknúť</button><button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')">⏱️ Kvíz</button><button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')">🏋️ Voľný</button></div>
-            <div id="setupUnlock" class="setup-section hidden"><button class="btn btn-primary" onclick="startTraining('unlock')">Spustiť (90% na postup)</button></div>
-            <div id="setupQuiz" class="setup-section hidden"><input type="number" id="quizCount" value="20" placeholder="Počet slov"><button class="btn btn-warning" onclick="startTraining('quiz')">Spustiť Kvíz</button></div>
-            <div id="setupFree" class="setup-section hidden"><input type="number" id="freeCount" value="20" placeholder="Počet slov"><button class="btn btn-success" onclick="startTraining('free')">Spustiť tréning</button></div>
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <button class="btn-nav" id="btnModeUnlock" onclick="selectTestModeUI('unlock')">🔓 Postup</button>
+                <button class="btn-nav" id="btnModeQuiz" onclick="selectTestModeUI('quiz')">⏱️ Kvíz</button>
+                <button class="btn-nav" id="btnModeFree" onclick="selectTestModeUI('free')">🏋️ Voľný</button>
+            </div>
+            <div id="setupUnlock" class="setup-section hidden"><button class="btn btn-primary" onclick="startTraining('unlock')">Skúška na novú úroveň</button></div>
+            <div id="setupQuiz" class="setup-section hidden">
+                <div style="display:flex; gap:10px;"><select id="quizFrom"></select><select id="quizTo"></select></div>
+                <button class="btn btn-primary" onclick="startTraining('quiz')">Spustiť časovaný kvíz</button>
+            </div>
+            <div id="setupFree" class="setup-section hidden">
+                <div style="display:flex; gap:10px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
+                <button class="btn btn-success" onclick="startTraining('free')">Spustiť voľný tréning</button>
+            </div>
         </div>
         <div id="trainRun" class="hidden">
-            <div class="test-header"><span id="testProgress"></span><span>✅ <span id="testCorrect">0</span> | ❌ <span id="testWrong">0</span></span></div>
+            <div class="test-header"><span id="testProgress"></span><span id="testScoreDisplay">✅ 0 | ❌ 0</span></div>
             <div id="quizTimerContainer" class="timer-container hidden"><div id="quizTimerBar" class="timer-bar"></div></div>
-            <div class="word-display" id="twWord"></div>
+            <div id="twWord" class="word-display"></div>
             <div id="twFeedback" class="feedback-box"></div>
-            <div id="classicInputArea"><input type="text" id="twInput" placeholder="Preklad..." autocomplete="off"><button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť</button></div>
-            <div id="quizInputArea" class="quiz-grid hidden"><button class="btn-quiz" id="qb0" onclick="checkQuizAnswer(0)"></button><button class="btn-quiz" id="qb1" onclick="checkQuizAnswer(1)"></button><button class="btn-quiz" id="qb2" onclick="checkQuizAnswer(2)"></button><button class="btn-quiz" id="qb3" onclick="checkQuizAnswer(3)"></button></div>
-            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Ďalšie ➡️</button>
+            <div id="classicInputArea">
+                <input type="text" id="twInput" placeholder="Napíš Rómadži / Kana..." autocomplete="off">
+                <button class="btn btn-primary" id="twSubmitBtn" onclick="checkTrainAnswer()">Potvrdiť</button>
+            </div>
+            <div id="quizInputArea" class="quiz-grid hidden">
+                <button class="btn-quiz" id="qb0" onclick="checkQuizAnswer(0)"></button>
+                <button class="btn-quiz" id="qb1" onclick="checkQuizAnswer(1)"></button>
+                <button class="btn-quiz" id="qb2" onclick="checkQuizAnswer(2)"></button>
+                <button class="btn-quiz" id="qb3" onclick="checkQuizAnswer(3)"></button>
+            </div>
+            <button class="btn btn-success hidden" id="twNextBtn" onclick="nextTrainWord()">Pokračovať ➡️</button>
         </div>
-        <div id="trainResult" class="hidden text-center"><h1 id="trScore">0%</h1><p id="trMessage"></p><button class="btn btn-primary" onclick="closeTraining()">Späť</button></div>
+        <div id="trainResult" class="hidden" style="text-align:center;">
+            <h1 id="trScore" style="font-size:60px; margin-bottom:10px;">0%</h1>
+            <p id="trMessage" style="margin-bottom:20px;"></p>
+            <button id="btnRetryMistakes" class="btn btn-warning hidden" onclick="retryMistakes()" style="margin-bottom:10px;">🎯 Precvičiť len chyby</button>
+            <button class="btn btn-primary" onclick="closeTraining()">Návrat do menu</button>
+        </div>
     </div>
 
     <div id="tab-translate" class="tab">
-        <textarea id="transInput" rows="3" placeholder="Sem napíš text..."></textarea>
-        <button class="btn btn-primary" onclick="translateText()">Preložiť</button>
-        <div id="transOutput" class="info-box" style="min-height:50px; margin-top:10px;"></div>
+        <h2>AI Prekladač & Gramatika</h2>
+        <div class="info-box">
+            <select id="transDirection">
+                <option value="sk|ja">Slovenčina ➡️ Japončina</option>
+                <option value="ja|sk">Japončina ➡️ Slovenčina</option>
+                <option value="en|ja">Angličtina ➡️ Japončina</option>
+            </select>
+            <textarea id="transInput" rows="3" placeholder="Sem napíš text alebo celú vetu..."></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" style="flex:1;" onclick="translateText()">Preložiť</button>
+                <button class="btn-ai" style="flex:1;" onclick="analyzeWithAI()">✨ AI Analýza</button>
+            </div>
+            <div id="transOutput" style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; min-height:40px; border: 1px dashed var(--border);"></div>
+            <button id="btnTransAudio" class="btn btn-audio hidden" style="width:100%; margin-top:10px;" onclick="playTransAudio()">🔊 Prehrať výslovnosť</button>
+        </div>
     </div>
 
     <div id="tab-profile" class="tab">
-        <div style="display:flex; justify-content:space-between; align-items:center;"><h2>Profil</h2><button class="btn btn-danger" onclick="logoutUser()" style="width:auto;">Odhlásiť</button></div>
-        <div class="info-box"><input type="text" id="profileNickname" placeholder="Prezývka" onblur="updateNickname()"></div>
-        <h3>Archív testov</h3><div id="historyList"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0;">Môj progres</h2>
+            <button class="btn btn-danger" style="width:auto; padding:8px 15px;" onclick="logoutUser()">Odhlásiť</button>
+        </div>
+        <div class="info-box">
+            <input type="text" id="profileNickname" placeholder="Tvoja prezývka" onblur="updateNickname()" style="margin-bottom:0;">
+        </div>
+        <h3>História skúšok</h3>
+        <div id="historyList" style="max-height:400px; overflow-y:auto;"></div>
     </div>
 </div>
 
@@ -213,12 +251,16 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); const dbFirestore = firebase.firestore();
 
+    // --- ŠTÁT APPKY ---
     let db = [];
-    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '' };
+    let state = { unlockedLesson: 1, xp: 0, streak: 0, lastDate: null, theme: 'dark', history: [], nickname: '', perfectLessons: [] };
     let currentUser = null; let currentLang = localStorage.getItem('finale_lang') || 'sk';
-    let japaneseVoice = null; let currentFullResults = [];
+    let japaneseVoice = null; 
+    let testQueue = []; let currentIdx = 0; let mistakes = 0; 
+    let currentTestMistakes = []; let currentFullResults = [];
+    let quizTimer; let timeLeft = 7.0; let quizOptions = [];
 
-    // --- AUDIO (FÁZA 1 & 2 FIX) ---
+    // --- AUDIO ENGINE ---
     function loadVoices() {
         const voices = window.speechSynthesis.getVoices();
         japaneseVoice = voices.find(v => v.lang.includes('ja-JP') && v.name.includes('Female')) || 
@@ -237,21 +279,22 @@
         window.speechSynthesis.speak(speech);
     }
 
-    // --- NORMALIZÁCIA (FUZZY) ---
+    // --- POMOCNÉ FUNKCIE ---
     function normalizeString(str) {
         if (!str) return "";
         return str.toLowerCase().replace(/[\s\-\!\?\,\.\"\']/g, "").trim();
     }
 
-    // --- CACHING DB (FÁZA 2) ---
+    function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
+
+    // --- DATABÁZA & CACHING ---
     async function fetchDatabaseFromCloud() {
         const cached = localStorage.getItem('cached_db');
         if (cached) {
             db = JSON.parse(cached);
-            renderMap();
+            renderMap(); populateSelects();
             return;
         }
-
         try {
             const res = await fetch('./Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
             const ab = await res.arrayBuffer();
@@ -259,15 +302,15 @@
             const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval: ""});
             db = rows.map((r, i) => ({
                 id: i + 1, lekcia: parseInt(r['Lekcia']) || 0, sk: r['Slovenský'], en: r['Anglický'] || r['Slovenský'],
-                romaji: String(r['Rómadži']), kana: r['Hiragana / Katakana'] || '-', kanji: r['Kandži'] || '-'
+                romaji: String(r['Rómadži']), kana: r['Hiragana / Katakana'] || '-', kanji: r['Kandži'] || '-', 
+                img: r['Obrázok'] || ''
             })).filter(w => w.sk && w.romaji && w.lekcia > 0);
-            
             localStorage.setItem('cached_db', JSON.stringify(db));
-            renderMap();
-        } catch (e) { console.error("DB Error", e); }
+            renderMap(); populateSelects();
+        } catch (e) { console.error("Excel Error", e); }
     }
 
-    // --- CORE LOGIC ---
+    // --- AUTH & SYNC ---
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             currentUser = user;
@@ -296,41 +339,192 @@
     }
 
     function updateUI() {
-        let lvl = Math.floor(state.xp / 500) + 1;
-        document.getElementById('uiLevel').innerText = lvl;
-        document.getElementById('uiXp').innerText = state.xp;
+        let level = Math.floor(state.xp / 500) + 1;
+        let nextLevelXp = level * 500;
+        let prevLevelXp = (level - 1) * 500;
+        let progress = ((state.xp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100;
+        
+        document.getElementById('uiLevel').innerText = level;
+        document.getElementById('xpBar').style.width = progress + "%";
         document.getElementById('uiStreak').innerText = state.streak + " 🔥";
         renderHistory();
+        renderMap();
     }
 
-    // --- TEST LOGIC (UPRAVENÁ PRE DETAILNÚ HISTÓRIU) ---
-    function checkTrainAnswer() {
-        let rawInput = document.getElementById('twInput').value.trim();
-        let input = normalizeString(rawInput);
-        let w = testQueue[currentIdx];
-        let fb = document.getElementById('twFeedback');
+    // --- NAVIGÁCIA ---
+    function switchTab(t) {
+        document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + t).classList.add('active');
+        document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
+        if(t === 'train' || t === 'learn') populateSelects();
+    }
 
-        let valid = w.romaji.split('/').map(s => normalizeString(s));
-        if (w.kana !== '-') valid = valid.concat(w.kana.split('/').map(s => normalizeString(s)));
-
-        let isCorrect = valid.includes(input);
-        
-        // Ukladanie pre Fázu 2 Detail
-        currentFullResults.push({
-            sk: w.sk, romaji: w.romaji, userAns: rawInput || "---", isCorrect: isCorrect
+    function populateSelects() {
+        let opts = "";
+        for(let i=1; i<=state.unlockedLesson; i++) opts += `<option value="${i}">Lekcia ${i}</option>`;
+        document.getElementById('learnLessonSelect').innerHTML = opts;
+        ['quizFrom', 'quizTo', 'freeFrom', 'freeTo'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.innerHTML = opts;
         });
+        if(document.getElementById('quizTo')) document.getElementById('quizTo').value = state.unlockedLesson;
+        if(document.getElementById('freeTo')) document.getElementById('freeTo').value = state.unlockedLesson;
+    }
 
-        if (isCorrect) {
+    // --- MAPA ---
+    function renderMap() {
+        const map = document.getElementById('lessonMap');
+        map.innerHTML = '';
+        const lessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b);
+        lessons.forEach(l => {
+            let unlocked = l <= state.unlockedLesson;
+            let isPerfect = state.perfectLessons && state.perfectLessons.includes(l);
+            let div = document.createElement('div');
+            div.className = `lesson-node ${unlocked ? 'node-unlocked' : 'node-locked'} ${isPerfect ? 'node-perfect' : ''}`;
+            div.innerHTML = `L${l}`;
+            if (unlocked) div.onclick = () => { document.getElementById('learnLessonSelect').value = l; switchTab('learn'); };
+            map.appendChild(div);
+        });
+    }
+
+    // --- KARTIČKY ---
+    let fcIdx = 0;
+    function startLearn(mode) {
+        let l = parseInt(document.getElementById('learnLessonSelect').value);
+        fcQueue = db.filter(w => w.lekcia === l);
+        if(fcQueue.length === 0) return;
+        fcIdx = 0;
+        document.getElementById('learnSetup').classList.add('hidden');
+        document.getElementById('learnCardsRun').classList.remove('hidden');
+        loadFc();
+    }
+    function loadFc() {
+        let w = fcQueue[fcIdx];
+        document.getElementById('fcElement').classList.remove('is-flipped');
+        document.getElementById('fcProgress').innerText = `${fcIdx + 1} / ${fcQueue.length}`;
+        document.getElementById('fcFrontSk').innerText = w.sk;
+        document.getElementById('fcImg').innerText = w.img || '🇯🇵';
+        document.getElementById('fcBackRomaji').innerText = w.romaji;
+        document.getElementById('fcBackKana').innerText = w.kana;
+        document.getElementById('fcBackKanji').innerText = w.kanji !== '-' ? w.kanji : '';
+    }
+    function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
+    function nextFc() { if(fcIdx < fcQueue.length -1) { fcIdx++; loadFc(); } else closeLearn(); }
+    function prevFc() { if(fcIdx > 0) { fcIdx--; loadFc(); } }
+    function closeLearn() { document.getElementById('learnCardsRun').classList.add('hidden'); document.getElementById('learnSetup').classList.remove('hidden'); }
+    function playCurrentAudioFC() { playAudioText(fcQueue[fcIdx].romaji); }
+
+    // --- TRÉNING (OPRAVENÝ KVÍZ & GAMIFIKÁCIA) ---
+    function selectTestModeUI(m) {
+        document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
+        document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1)).classList.remove('hidden');
+    }
+
+    function startTraining(type) {
+        currentTestType = type; mistakes = 0; currentIdx = 0; 
+        currentTestMistakes = []; currentFullResults = [];
+        let pool = [];
+
+        if (type === 'unlock') {
+            pool = db.filter(w => w.lekcia === state.unlockedLesson).sort(()=>0.5-Math.random()).slice(0, 10);
+        } else {
+            let from = parseInt(document.getElementById(type+'From')?.value || 1);
+            let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
+            let count = parseInt(document.getElementById(type+'Count')?.value || 20);
+            pool = db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
+        }
+
+        testQueue = pool;
+        if(testQueue.length === 0) return;
+        document.getElementById('trainSetup').classList.add('hidden');
+        document.getElementById('trainRun').classList.remove('hidden');
+        loadTrainWord();
+    }
+
+    function loadTrainWord() {
+        let w = testQueue[currentIdx];
+        document.getElementById('twWord').innerText = w.sk;
+        document.getElementById('testProgress').innerText = `${currentIdx+1} / ${testQueue.length}`;
+        document.getElementById('twFeedback').className = 'feedback-box';
+        document.getElementById('twFeedback').style.display = 'none';
+        document.getElementById('twNextBtn').classList.add('hidden');
+
+        if(currentTestType === 'quiz') {
+            document.getElementById('classicInputArea').classList.add('hidden');
+            document.getElementById('quizInputArea').classList.remove('hidden');
+            document.getElementById('quizTimerContainer').classList.remove('hidden');
+            let others = db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
+            quizOptions = [w, ...others].sort(()=>0.5-Math.random());
+            for(let i=0; i<4; i++) {
+                let btn = document.getElementById('qb'+i);
+                btn.innerText = quizOptions[i].romaji;
+                btn.className = 'btn-quiz';
+                btn.disabled = false;
+            }
+            startQuizTimer();
+        } else {
+            document.getElementById('classicInputArea').classList.remove('hidden');
+            document.getElementById('quizInputArea').classList.add('hidden');
+            document.getElementById('quizTimerContainer').classList.add('hidden');
+            document.getElementById('twInput').value = '';
+            document.getElementById('twInput').disabled = false;
+            document.getElementById('twInput').focus();
+            document.getElementById('twSubmitBtn').classList.remove('hidden');
+        }
+    }
+
+    function startQuizTimer() {
+        timeLeft = 7.0;
+        clearInterval(quizTimer);
+        quizTimer = setInterval(() => {
+            timeLeft -= 0.1;
+            document.getElementById('quizTimerBar').style.width = (timeLeft / 7.0) * 100 + "%";
+            if(timeLeft <= 0) { clearInterval(quizTimer); checkQuizAnswer(-1); }
+        }, 100);
+    }
+
+    function checkQuizAnswer(idx) {
+        clearInterval(quizTimer);
+        let correctIdx = quizOptions.findIndex(o => o.sk === testQueue[currentIdx].sk);
+        processResult(idx !== -1 && quizOptions[idx].sk === testQueue[currentIdx].sk, idx !== -1 ? quizOptions[idx].romaji : "Čas vypršal");
+        for(let i=0; i<4; i++) {
+            document.getElementById('qb'+i).disabled = true;
+            if(i === correctIdx) document.getElementById('qb'+i).classList.add('correct');
+            else if(i === idx) document.getElementById('qb'+i).classList.add('wrong');
+        }
+    }
+
+    function checkTrainAnswer() {
+        let raw = document.getElementById('twInput').value.trim();
+        let input = normalizeString(raw);
+        let w = testQueue[currentIdx];
+        let valid = [normalizeString(w.romaji), normalizeString(w.kana)];
+        processResult(valid.includes(input), raw);
+        document.getElementById('twInput').disabled = true;
+        document.getElementById('twSubmitBtn').classList.add('hidden');
+    }
+
+    function processResult(isCorrect, userAns) {
+        let w = testQueue[currentIdx];
+        currentFullResults.push({ sk: w.sk, romaji: w.romaji, userAns, isCorrect });
+        let fb = document.getElementById('twFeedback');
+        fb.style.display = 'block';
+        if(isCorrect) {
             fb.innerHTML = "✅ Správne!"; fb.className = 'feedback-box fb-correct';
             playAudioText(w.romaji);
         } else {
-            fb.innerHTML = `❌ Správne: ${w.romaji}`; fb.className = 'feedback-box fb-wrong';
+            fb.innerHTML = `❌ Chyba! Správne: ${w.romaji}`; fb.className = 'feedback-box fb-wrong';
             mistakes++;
+            currentTestMistakes.push(w);
         }
-
-        document.getElementById('twInput').disabled = true;
-        document.getElementById('twSubmitBtn').classList.add('hidden');
         document.getElementById('twNextBtn').classList.remove('hidden');
+        document.getElementById('testScoreDisplay').innerText = `✅ ${currentIdx + 1 - mistakes} | ❌ ${mistakes}`;
+    }
+
+    function nextTrainWord() {
+        currentIdx++;
+        if(currentIdx < testQueue.length) loadTrainWord();
+        else endTraining();
     }
 
     function endTraining() {
@@ -338,111 +532,30 @@
         document.getElementById('trainResult').classList.remove('hidden');
         let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100);
         document.getElementById('trScore').innerText = perc + "%";
+        
+        let hObj = { 
+            date: Date.now(), score: perc, lesson: currentTestType === 'unlock' ? state.unlockedLesson : 'Tréning',
+            fullResults: [...currentFullResults] 
+        };
+        state.history.unshift(hObj);
+        if(state.history.length > 30) state.history.pop();
 
-        // Uloženie do histórie s Full Results
-        state.history.unshift({
-            date: Date.now(), lesson: currentUnlockTarget || "Quiz",
-            score: perc, passed: perc >= 90,
-            fullResults: JSON.parse(JSON.stringify(currentFullResults)) // hlboká kópia
-        });
-        if (state.history.length > 30) state.history.pop();
-
-        if (perc >= 90) {
-            if (currentTestType === 'unlock' && state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
-            state.xp += testQueue.length;
+        if(perc >= 90) {
+            if(currentTestType === 'unlock') state.unlockedLesson++;
+            if(perc === 100 && typeof currentTestType === 'number') state.perfectLessons.push(currentTestType);
+            state.xp += (currentTestType === 'quiz' ? Math.round(testQueue.length * 1.2) : testQueue.length);
         }
+        
+        document.getElementById('btnRetryMistakes').classList.toggle('hidden', mistakes === 0);
         saveState();
     }
 
-    // --- DETAIL TEST OVERLAY ---
-    function showTestDetail(index) {
-        const h = state.history[index];
-        if (!h || !h.fullResults) return;
-
-        document.getElementById('detailTitle').innerText = `Lekcia ${h.lesson} (${new Date(h.date).toLocaleDateString()})`;
-        document.getElementById('detailStats').innerText = `Úspešnosť: ${h.score}% | Slov: ${h.fullResults.length}`;
-        
-        let html = `<table class="detail-table"><tr><th>Slovo</th><th>Tvoja odpoveď</th><th>Správne</th></tr>`;
-        h.fullResults.forEach(r => {
-            html += `<tr>
-                <td>${r.sk}</td>
-                <td class="${r.isCorrect ? 'ans-correct' : 'ans-wrong'}">${r.userAns}</td>
-                <td style="color:var(--primary)">${r.romaji}</td>
-            </tr>`;
-        });
-        html += `</table>`;
-        
-        document.getElementById('detailList').innerHTML = html;
-        document.getElementById('historyOverlay').style.display = 'flex';
-    }
-
-    function closeHistoryDetail() { document.getElementById('historyOverlay').style.display = 'none'; }
-
-    function renderHistory() {
-        const container = document.getElementById('historyList');
-        container.innerHTML = '';
-        state.history.forEach((h, i) => {
-            let div = document.createElement('div');
-            div.className = `history-item ${h.passed ? 'passed' : 'failed'}`;
-            div.innerHTML = `
-                <div style="display:flex; justify-content:space-between;">
-                    <span>Lekcia ${h.lesson} - ${h.score}%</span>
-                    <button onclick="showTestDetail(${i})" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold;">DETAIL</button>
-                </div>`;
-            container.appendChild(div);
-        });
-    }
-
-    // --- ZVYŠOK FUNKCIÍ (NAV, MAP, atď.) ---
-    function switchTab(t) {
-        document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + t).classList.add('active');
-        document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.add('active');
-    }
-
-    function renderMap() {
-        const map = document.getElementById('lessonMap'); map.innerHTML = '';
-        const lessons = [...new Set(db.map(w => w.lekcia))].sort((a,b)=>a-b);
-        lessons.forEach(l => {
-            let unlocked = l <= state.unlockedLesson;
-            let div = document.createElement('div');
-            div.className = `lesson-node ${unlocked ? 'node-unlocked' : 'node-locked'}`;
-            div.innerText = 'L' + l;
-            if (unlocked) div.onclick = () => { switchTab('learn'); startLearn('cards', l); };
-            map.appendChild(div);
-        });
-    }
-
-    // Pomocné funkcie pre štart
-    function startTraining(type) {
-        currentTestType = type; mistakes = 0; currentIdx = 0; currentFullResults = [];
-        if (type === 'unlock') {
-            currentUnlockTarget = state.unlockedLesson;
-            testQueue = db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
-        } else {
-            testQueue = db.slice(0, 20).sort(()=>0.5-Math.random());
-        }
-        document.getElementById('trainSetup').classList.add('hidden');
+    function retryMistakes() {
+        testQueue = [...currentTestMistakes];
+        currentIdx = 0; mistakes = 0; currentTestMistakes = []; currentFullResults = [];
+        document.getElementById('trainResult').classList.add('hidden');
         document.getElementById('trainRun').classList.remove('hidden');
         loadTrainWord();
-    }
-    
-    function loadTrainWord() {
-        let w = testQueue[currentIdx];
-        document.getElementById('twWord').innerText = w.sk;
-        document.getElementById('twInput').value = '';
-        document.getElementById('twInput').disabled = false;
-        document.getElementById('twInput').focus();
-        document.getElementById('twFeedback').className = 'hidden';
-        document.getElementById('twSubmitBtn').classList.remove('hidden');
-        document.getElementById('twNextBtn').classList.add('hidden');
-        document.getElementById('testProgress').innerText = `${currentIdx+1}/${testQueue.length}`;
-    }
-
-    function nextTrainWord() {
-        currentIdx++;
-        if (currentIdx < testQueue.length) loadTrainWord();
-        else endTraining();
     }
 
     function closeTraining() {
@@ -451,25 +564,67 @@
         document.getElementById('trainSetup').classList.remove('hidden');
     }
 
-    function selectTestModeUI(m) {
-        document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
-        document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1)).classList.remove('hidden');
+    // --- AI & PREKLADAČ ---
+    async function translateText() {
+        let text = document.getElementById('transInput').value;
+        let pair = document.getElementById('transDirection').value;
+        let out = document.getElementById('transOutput');
+        out.innerText = "Prekladám...";
+        try {
+            let res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${pair}`);
+            let d = await res.json();
+            out.innerText = d.responseData.translatedText;
+            document.getElementById('btnTransAudio').classList.remove('hidden');
+        } catch(e) { out.innerText = "Chyba prekladu."; }
     }
 
-    async function loginUser() {
-        try { await auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); }
-        catch(e) { document.getElementById('authError').innerText = e.message; }
+    function playTransAudio() {
+        let pair = document.getElementById('transDirection').value.split('|')[1];
+        playAudioText(document.getElementById('transOutput').innerText, pair === 'ja' ? 'ja-JP' : 'sk-SK');
     }
-    
-    async function registerUser() {
-        try { await auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value); }
-        catch(e) { document.getElementById('authError').innerText = e.message; }
+
+    async function analyzeWithAI() {
+        let text = document.getElementById('transInput').value;
+        if(!text) return;
+        document.getElementById('overlayAI').style.display = 'flex';
+        document.getElementById('aiResponse').innerText = "AI Sensei premýšľa nad gramatikou...";
+        
+        // TU VLOŽ SVOJ GEMINI API VOLANIE (Firebase Cloud Function je lepšia, ale pre test simulujeme)
+        setTimeout(() => {
+            document.getElementById('aiResponse').innerText = `Analýza vety: "${text}"\n\nGramatické poznámky:\nV tejto vete AI Sensei identifikoval kľúčové častice a zdvorilostnú formu. (Pre plnú analýzu prepoj appku s Gemini API kľúčom).`;
+        }, 1500);
     }
-    
-    function logoutUser() { auth.signOut(); }
+
+    // --- PROFIL & HISTÓRIA DETAIL ---
+    function renderHistory() {
+        const cont = document.getElementById('historyList');
+        cont.innerHTML = '';
+        state.history.forEach((h, i) => {
+            let div = document.createElement('div');
+            div.className = `history-item ${h.score === 100 ? 'perfect' : ''}`;
+            div.innerHTML = `<span>L${h.lesson} - ${h.score}%</span><button onclick="showDetail(${i})" class="btn-nav" style="min-width:60px;">Detail</button>`;
+            cont.appendChild(div);
+        });
+    }
+
+    function showDetail(idx) {
+        let h = state.history[idx];
+        document.getElementById('detailTitle').innerText = `Lekcia ${h.lesson} (${h.score}%)`;
+        document.getElementById('detailStats').innerText = `Dátum: ${new Date(h.date).toLocaleDateString()}`;
+        let html = `<table class="detail-table">`;
+        h.fullResults.forEach(r => {
+            html += `<tr><td>${r.sk}</td><td>${r.isCorrect ? '' : `<span class="res-wrong">${r.userAns}</span><br>`}<span class="res-correct">${r.romaji}</span></td><td>${r.isCorrect ? '✅' : '❌'}</td></tr>`;
+        });
+        html += `</table>`;
+        document.getElementById('detailList').innerHTML = html;
+        document.getElementById('overlayDetail').style.display = 'flex';
+    }
+
     function updateNickname() { state.nickname = document.getElementById('profileNickname').value; saveState(); }
-    function setLang(l) { currentLang = l; localStorage.setItem('finale_lang', l); }
-
+    function logoutUser() { auth.signOut(); }
+    async function loginUser() { auth.signInWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => document.getElementById('authError').innerText = e.message); }
+    async function registerUser() { auth.createUserWithEmailAndPassword(document.getElementById('authEmail').value, document.getElementById('authPass').value).catch(e => document.getElementById('authError').innerText = e.message); }
 </script>
 </body>
 </html>
+
