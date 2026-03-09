@@ -83,6 +83,8 @@
         .detail-table td { padding: 12px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
         .res-wrong { color: var(--danger); text-decoration: line-through; font-size: 12px; }
         .res-correct { color: var(--success); font-weight: bold; }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body data-theme="dark">
@@ -307,6 +309,9 @@
             })).filter(w => w.sk && w.romaji && w.lekcia > 0);
             localStorage.setItem('cached_db', JSON.stringify(db));
             renderMap(); populateSelects();
+            
+            selectTestModeUI('unlock'); // <-- PRIDANÉ: Nastaví predvolený režim
+            closeTraining();
         } catch (e) { console.error("Excel Error", e); }
     }
 
@@ -416,8 +421,24 @@
 
     // --- TRÉNING (OPRAVENÝ KVÍZ & GAMIFIKÁCIA) ---
     function selectTestModeUI(m) {
+        // Skryje všetky panely nastavení
         document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
+        
+        // Zruší podsvietenie všetkých tlačidiel v hornom menu testu
+        document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => {
+            btn.style.backgroundColor = 'var(--bg-dark)';
+            btn.style.color = 'var(--text-muted)';
+        });
+        
+        // Zobrazí len ten správny panel
         document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1)).classList.remove('hidden');
+        
+        // Podsvieti aktívne tlačidlo na modro
+        let activeBtn = document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1));
+        if(activeBtn) {
+            activeBtn.style.backgroundColor = 'var(--primary)';
+            activeBtn.style.color = 'white';
+        }
     }
 
     function startTraining(type) {
@@ -627,4 +648,5 @@
 </script>
 </body>
 </html>
+
 
