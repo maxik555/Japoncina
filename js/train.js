@@ -24,6 +24,8 @@ function getLevenshteinDistance(a, b) {
 // --- TRÉNING, TESTY A KARTIČKY ---
 
 let testQueue = []; let currentIdx = 0; let mistakes = 0; 
+let currentUnlockTarget = 0; 
+let isBossTest = false;
 let currentTestMistakes = []; let currentFullResults = [];
 let quizTimer; let timeLeft = 5.0; let quizOptions = [];
 let fcQueue = []; let fcIdx = 0;
@@ -102,7 +104,12 @@ function startTraining(type) {
     let pool = [];
 
     if (type === 'unlock') {
-        pool = db.filter(w => w.lekcia === state.unlockedLesson).sort(()=>0.5-Math.random()).slice(0, 10);
+        currentUnlockTarget = state.unlockedLesson; // OPRAVA: Tu si to apka konečne zapamätá
+        isBossTest = (currentUnlockTarget === 40 || currentUnlockTarget === 115); // Logika pre Boss lekcie
+        
+        // Ak je to Boss level, dáme 50 slov z celej histórie. Ak bežný, len 10 slov z aktuálnej lekcie.
+        pool = isBossTest ? db.filter(w => w.lekcia <= currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 50) 
+                          : db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
     } else {
         let from = parseInt(document.getElementById(type+'From')?.value || 1);
         let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
@@ -111,6 +118,13 @@ function startTraining(type) {
         pool = db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random());
         if (count > 0 && count < pool.length) pool = pool.slice(0, count);
     }
+
+    testQueue = pool;
+    if(testQueue.length === 0) return;
+    document.getElementById('trainSetup').classList.add('hidden');
+    document.getElementById('trainRun').classList.remove('hidden');
+    loadTrainWord();
+}
 
     testQueue = pool;
     if(testQueue.length === 0) return;
@@ -270,13 +284,14 @@ function endTraining() {
         if (perc >= 90) { 
             msg.innerHTML = "🎉 Odomkol si novú úroveň!"; 
             msg.style.color = "var(--success)"; 
-            if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; 
-            addXP(100); saveState(); 
+            if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; // TUTO TO ODOMKNE
+            addXP(isBossTest ? 500 : 100); saveState(); 
         } else { 
             msg.innerHTML = "❌ Potrebuješ aspoň 90%. Skús to znova."; 
             msg.style.color = "var(--danger)"; 
         }
-    } else {
+    }
+    else {
         if (perc >= 80) {
             msg.innerHTML = `✅ Test úspešný! Získavaš <strong>${gainedXP} XP</strong><br><small>(Bonus za streak: ${xpPerWord} XP/slovo)</small>`;
             msg.style.color = "var(--success)";
