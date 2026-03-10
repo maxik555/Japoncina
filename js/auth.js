@@ -1,41 +1,56 @@
 // --- PRIHLASOVANIE A SYNCHRONIZÁCIA ---
 
+// Sledovanie stavu prihlásenia (Firebase Observer)
 auth.onAuthStateChanged(async (user) => {
+    const authContainer = document.getElementById('auth-container');
+    const mainApp = document.getElementById('main-app');
+    const loader = document.getElementById('loadingOverlay');
+
     if (user) {
         currentUser = user;
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('main-app').style.display = 'flex';
+        if (authContainer) authContainer.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'flex';
         await loadUserData();
     } else {
-        document.getElementById('auth-container').style.display = 'block';
-        document.getElementById('main-app').style.display = 'none';
-        if (document.getElementById('loadingOverlay')) {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
+        currentUser = null;
+        if (authContainer) authContainer.style.display = 'block';
+        if (mainApp) mainApp.style.display = 'none';
+        if (loader) loader.style.display = 'none';
     }
 });
 
+// Načítanie dát používateľa z Firestore
 async function loadUserData() {
+    if (!currentUser) return;
+
     try {
-        const snap = await dbFirestore.collection('users').doc(currentUser.uid).get();
+        const docRef = dbFirestore.collection('users').doc(currentUser.uid);
+        const snap = await docRef.get();
+        
         if (snap.exists) {
+            // Zlúčenie predvoleného stavu s dátami z cloudu
             state = { ...state, ...snap.data() };
+        } else {
+            // Ak je to nový používateľ, vytvoríme mu prvý záznam
+            console.log("Vytváram nový profil v dódžó...");
+            await saveState();
         }
         
+        // Synchronizácia UI s načítanými dátami
         const nickInput = document.getElementById('profileNickname');
         if (nickInput) nickInput.value = state.nickname || '';
         
         setLang(currentLang);
         updateUI();
         
-        // Načítame databázu
+        // Až po načítaní používateľa ťaháme slovíčka
         await fetchDatabaseFromCloud();
 
     } catch (e) {
         console.error("Chyba pri načítaní dát používateľa:", e);
     }
     
-    // SKRYTIE NAČÍTAVACEJ OBRAZOVKY
+    // Plynulé skrytie načítavacej obrazovky
     const loader = document.getElementById('loadingOverlay');
     if (loader) {
         loader.style.opacity = '0';
@@ -43,56 +58,109 @@ async function loadUserData() {
     }
 }
 
+// Uloženie aktuálneho stavu do Firestore
 async function saveState() {
+    if (!currentUser) return;
 
-    if (currentUser) {
-        try {
-            await dbFirestore.collection('users').doc(currentUser.uid).set(state);
-        } catch(e) {
-            console.error("Chyba pri ukladaní do Firestore:", e);
-        }
+    try {
+        // Ukladáme celý objekt 'state'
+        await dbFirestore.collection('users').doc(currentUser.uid).set(state);
+    } catch(e) {
+        console.error("Chyba pri ukladaní do Firestore:", e);
     }
 }
 
-function updateUI() {
-    let level = Math.floor(state.xp / 500) + 1;
-    let nextLevelXp = level * 500;
-    let prevLevelXp = (level - 1) * 500;
-    let progress = ((state.xp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100;
+// Funkcia na pridávanie XP s kontrolou streaku
+function addXP(amount) {
+    state.xp = (state.xp || 0) + amount;
     
-    const lvlEl = document.getElementById('uiLevel');
-    const xpEl = document.getElementById('xpBar');
-    const strEl = document.getElementById('uiStreak');
+    // Logika pre denný streak
+    const today = new Date().toDateString();
+    if (state.lastDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (state.lastDate === yesterday.toDateString()) {
+            state.streak++;
+        } else {
+            state.streak = 1; // Prvý deň po pauze
+        }
+        state.lastDate = today;
+    }
     
-    if (lvlEl) lvlEl.innerText = level;
-    if (xpEl) xpEl.style.width = Math.max(0, Math.min(100, progress)) + "%";
-    if (strEl) strEl.innerText = (state.streak || 0) + " 🔥";
-    
-    if (typeof renderHistory === 'function') renderHistory();
-    if (typeof renderMap === 'function') renderMap();
-    
-    updateProfileStats();
+    updateUI();
+    saveState();
 }
 
+// Komplexná aktualizácia UI prvkov
+function updateUI() {
+    // Výpočet levelu (1 level = 500 XP)
+    let level = Math.floor((state.xp || 0) / 500) + 1;
+    let currentLevelXp = state.xp % 500;
+    let progress = (currentLevelXp / 500) * 100;
+    
+    // Hlavná horná lišta
+    const lvlEl = document.getElementById('uiLevel');
+    const xpBar = document.getElementById('xpBar');
+    const streakEl = document.getElementById('uiStreak');
+    
+    if (lvlEl) lvlEl.innerText = level;
+    if (xpBar) xpBar.style.width = Math.max(0, Math.min(100, progress)) + "%";
+    if (streakEl) streakEl.innerText = (state.streak || 0) + " 🔥";
+    
+    // Prevolanie renderovania v ostatných moduloch, ak existujú
+    if (typeof renderHistory === 'function') renderHistory();
+    if (typeof renderMap === 'function') renderMap();
+    if (typeof updateProfileStats === 'function') updateProfileStats();
+}
+
+// Autentifikačné akcie
 async function loginUser() { 
     const errEl = document.getElementById('authError');
-    const email = document.getElementById('authEmail').value;
+    const email = document.getElementById('authEmail').value.trim();
     const pass = document.getElementById('authPass').value;
-    try { await auth.signInWithEmailAndPassword(email, pass); } 
-    catch(e) { if (errEl) errEl.innerText = "Chyba prihlásenia."; } 
+    
+    if (!email || !pass) {
+        if (errEl) errEl.innerText = "Doplň údaje.";
+        return;
+    }
+
+    try { 
+        await auth.signInWithEmailAndPassword(email, pass); 
+    } catch(e) { 
+        if (errEl) errEl.innerText = "Nesprávny email alebo heslo."; 
+    } 
 }
 
 async function registerUser() { 
     const errEl = document.getElementById('authError');
-    const email = document.getElementById('authEmail').value;
+    const email = document.getElementById('authEmail').value.trim();
     const pass = document.getElementById('authPass').value;
-    try { await auth.createUserWithEmailAndPassword(email, pass); } 
-    catch(e) { if (errEl) errEl.innerText = "Chyba registrácie."; } 
+
+    if (!email || pass.length < 6) {
+        if (errEl) errEl.innerText = "Email musí byť platný a heslo aspoň 6 znakov.";
+        return;
+    }
+
+    try { 
+        await auth.createUserWithEmailAndPassword(email, pass); 
+    } catch(e) { 
+        if (errEl) errEl.innerText = "Tento email už niekto používa."; 
+    } 
 }
 
 function updateNickname() { 
     const nickInput = document.getElementById('profileNickname');
-    if (nickInput) { state.nickname = nickInput.value.trim(); saveState(); }
+    if (nickInput) { 
+        state.nickname = nickInput.value.trim(); 
+        saveState(); 
+        updateUI();
+    }
 }
 
-function logoutUser() { auth.signOut(); }
+function logoutUser() { 
+    const confirmMsg = currentLang === 'sk' ? "Naozaj sa chceš odhlásiť?" : "Logout?";
+    if (confirm(confirmMsg)) {
+        auth.signOut(); 
+    }
+}
