@@ -390,3 +390,100 @@ document.addEventListener('keypress', e => {
         }
     }
 });
+
+let grammarQueue = [];
+let grammarIdx = 0;
+let userSentence = [];
+let grammarMistakes = 0;
+
+function startGrammarTest() {
+    let l = parseInt(document.getElementById('grammarLessonSelect').value);
+    // Vyberieme vety pre danú lekciu a náhodne ich premiešame
+    grammarQueue = grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random());
+    
+    if (grammarQueue.length < 5) {
+        alert(currentLang === 'sk' ? "Pre túto lekciu nemáš dosť viet (min. 5)." : "Not enough sentences for this lesson (min 5).");
+        return;
+    }
+    
+    grammarQueue = grammarQueue.slice(0, 5); // Zoberieme len 5 viet
+    grammarIdx = 0;
+    grammarMistakes = 0;
+    
+    document.getElementById('grammarSetup').classList.add('hidden');
+    document.getElementById('grammarRun').classList.remove('hidden');
+    loadGrammarSentence();
+}
+
+function loadGrammarSentence() {
+    let veta = grammarQueue[grammarIdx];
+    userSentence = [];
+    document.getElementById('grammarProgress').innerText = `${currentLang === 'sk' ? 'Veta' : 'Sentence'} ${grammarIdx + 1} / 5`;
+    document.getElementById('grammarTask').innerText = veta.sk;
+    document.getElementById('grammarSolution').innerHTML = '';
+    document.getElementById('grammarFeedback').style.display = 'none';
+    document.getElementById('btnNextGrammar').classList.add('hidden');
+    document.getElementById('btnCheckGrammar').classList.remove('hidden');
+
+    // Rozdelíme japonskú vetu (romaji) na slová podľa medzier
+    let words = veta.romaji.split(' ').sort(() => 0.5 - Math.random());
+    
+    let optionsHtml = '';
+    words.forEach((w, i) => {
+        optionsHtml += `<button class="btn-quiz" style="padding: 10px 15px; width: auto;" onclick="addWordToSolution('${w}', this)">${w}</button>`;
+    });
+    document.getElementById('grammarOptions').innerHTML = optionsHtml;
+}
+
+function addWordToSolution(word, btn) {
+    userSentence.push(word);
+    btn.style.visibility = 'hidden'; // Schováme kliknutú bublinu
+    
+    let solDiv = document.getElementById('grammarSolution');
+    let wordSpan = document.createElement('span');
+    wordSpan.className = 'btn-quiz';
+    wordSpan.style = 'padding: 10px 15px; width: auto; background: var(--primary);';
+    wordSpan.innerText = word;
+    solDiv.appendChild(wordSpan);
+}
+
+function resetCurrentSentence() {
+    loadGrammarSentence();
+}
+
+function checkGrammarAnswer() {
+    let correct = grammarQueue[grammarIdx].romaji;
+    let answer = userSentence.join(' ');
+    let fb = document.getElementById('grammarFeedback');
+    
+    fb.style.display = 'block';
+    
+    if (answer === correct) {
+        fb.innerHTML = "✅ " + (currentLang === 'sk' ? "Výborne!" : "Perfect!");
+        fb.className = "feedback-box fb-correct";
+        document.getElementById('btnCheckGrammar').classList.add('hidden');
+        document.getElementById('btnNextGrammar').classList.remove('hidden');
+        playAudioText(grammarQueue[grammarIdx].ja, 'ja-JP');
+    } else {
+        fb.innerHTML = "❌ " + (currentLang === 'sk' ? "Chyba! Skús to znova bez chyby." : "Wrong! Try again without mistakes.");
+        fb.className = "feedback-box fb-wrong";
+        // Ak spraví chybu, vrátime ho na začiatok (podľa tvojho zadania "bez chyby")
+        setTimeout(() => {
+            alert(currentLang === 'sk' ? "Spravil si chybu! Musíš začať od prvej vety." : "Mistake! You must start from the first sentence.");
+            startGrammarTest(); 
+        }, 1500);
+    }
+}
+
+function nextGrammarSentence() {
+    grammarIdx++;
+    if (grammarIdx < 5) {
+        loadGrammarSentence();
+    } else {
+        // KONIEC TESTU - VŠETKO SPRÁVNE
+        alert(currentLang === 'sk' ? "Gratulujem! Zvládol si gramatiku tejto lekcie! 🏆" : "Congrats! You mastered the grammar! 🏆");
+        addXP(150);
+        document.getElementById('grammarRun').classList.add('hidden');
+        document.getElementById('grammarSetup').classList.remove('hidden');
+    }
+}
