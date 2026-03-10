@@ -44,7 +44,7 @@ async function loadUserData() {
 }
 
 async function saveState() {
-    updateUI();
+    ();
     if (currentUser) {
         try {
             await dbFirestore.collection('users').doc(currentUser.uid).set(state);
@@ -70,6 +70,8 @@ function updateUI() {
     
     if (typeof renderHistory === 'function') renderHistory();
     if (typeof renderMap === 'function') renderMap();
+    
+    updateProfileStats();
 }
 
 async function loginUser() { 
