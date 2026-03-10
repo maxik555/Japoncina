@@ -2,16 +2,21 @@
 
 async function fetchDatabaseFromCloud() {
     const cached = localStorage.getItem('cached_db');
+    
+    // Ak máme dáta v cache, skúsime ich použiť, ale preveríme, či obsahujú JLPT
     if (cached) {
         db = JSON.parse(cached);
-        renderMap(); 
-        populateSelects();
-        if (typeof selectTestModeUI === 'function') selectTestModeUI('unlock');
-        return;
+        // Kontrola: Ak prvé slovo nemá jlpt, cache je stará a musíme ju premazat
+        if (db.length > 0 && db[0].jlpt) {
+            console.log("Databáza načítaná z cache.");
+            finalizeDatabaseLoad();
+            return;
+        }
     }
     
     try {
-        // Stiahnutie Excelu s cache-busterom (aktuálny čas)
+        console.log("Sťahujem čerstvú databázu z cloudu...");
+        // Stiahnutie Excelu s cache-busterom
         const res = await fetch('./Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(new Uint8Array(ab), {type: 'array'});
@@ -25,16 +30,26 @@ async function fetchDatabaseFromCloud() {
             romaji: String(r['Rómadži']), 
             kana: r['Hiragana / Katakana'] || '-', 
             kanji: r['Kandži'] || '-', 
-            img: r['Obrázok'] || ''
+            img: r['Obrázok'] || '',
+            // PRIDANÉ: Mapovanie JLPT úrovne (predpokladá stĺpec "JLPT" v Exceli)
+            jlpt: r['JLPT'] ? String(r['JLPT']).toUpperCase() : 'N5' 
         })).filter(w => w.sk && w.romaji && w.lekcia > 0);
         
         localStorage.setItem('cached_db', JSON.stringify(db));
-        renderMap(); 
-        populateSelects();
-        if (typeof selectTestModeUI === 'function') selectTestModeUI('unlock');
+        finalizeDatabaseLoad();
+        
     } catch (e) { 
         console.error("Chyba pri načítaní Excelu:", e); 
     }
+}
+
+// Pomocná funkcia na spustenie UI po načítaní dát
+function finalizeDatabaseLoad() {
+    renderMap(); 
+    populateSelects();
+    if (typeof selectTestModeUI === 'function') selectTestModeUI('unlock');
+    // Aktualizujeme profil, aby sa hneď prepočítali JLPT štatistiky
+    if (typeof updateProfileStats === 'function') updateProfileStats();
 }
 
 function renderMap() {
@@ -58,9 +73,12 @@ function renderMap() {
         
         if (unlocked) {
             div.onclick = () => { 
-                document.getElementById('learnLessonSelect').value = l; 
-                switchTab('learn'); 
-                if (typeof startLearn === 'function') startLearn('cards');
+                const select = document.getElementById('learnLessonSelect');
+                if (select) {
+                    select.value = l; 
+                    switchTab('learn'); 
+                    if (typeof startLearn === 'function') startLearn('cards');
+                }
             };
         }
         map.appendChild(div);
@@ -75,14 +93,18 @@ function populateSelects() {
         opts += `<option value="${i}">${langPrefix} ${i}</option>`;
     }
     
-    // Tu pridávame IDčka pre všetky tvoje výbery vrátane Senseia
     ['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo', 'senseiFrom', 'senseiTo'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = opts;
     });
 
     // Nastavenie koncových lekcií na maximum
-    if (document.getElementById('quizTo')) document.getElementById('quizTo').value = state.unlockedLesson;
-    if (document.getElementById('freeTo')) document.getElementById('freeTo').value = state.unlockedLesson;
-    if (document.getElementById('senseiTo')) document.getElementById('senseiTo').value = state.unlockedLesson;
+    const setToMax = (id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = state.unlockedLesson;
+    };
+
+    setToMax('quizTo');
+    setToMax('freeTo');
+    setToMax('senseiTo');
 }
