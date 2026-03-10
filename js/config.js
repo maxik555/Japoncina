@@ -1,8 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-// --- KONFIGURÁCIA ---
+// --- KONFIGURÁCIA FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyDEJcyJE7H9rlqWYPPit8r83sIgLG3w1OI", 
     authDomain: "learning-japanase.firebaseapp.com",
@@ -12,16 +8,17 @@ const firebaseConfig = {
     appId: "1:555713188608:web:d8375f9ef216321d2319e5"
 };
 
-// Inicializácia Firebase
-const app = initializeApp(firebaseConfig);
+// Inicializácia Firebase (cez compat verziu)
+firebase.initializeApp(firebaseConfig);
 
-// Export do globálneho okna (aby to videli ostatné skripty)
-window.auth = getAuth(app);
-window.dbFirestore = getFirestore(app);
+// Globálne premenné pre služby
+const auth = firebase.auth(); 
+const dbFirestore = firebase.firestore();
 
 // --- GLOBÁLNY STAV APLIKÁCIE ---
-window.db = [];
-window.state = { 
+// Premenné sú definované globálne, aby k nim mali prístup všetky súbory (auth.js, ui.js, atď.)
+let db = [];
+let state = { 
     unlockedLesson: 1, 
     xp: 0, 
     streak: 0, 
@@ -31,8 +28,10 @@ window.state = {
     nickname: '', 
     perfectLessons: [],
     usedSenseiSentences: [],
-    geminiKey: null
+    geminiKey: null // Tu sa bezpečne uloží kľúč používateľa po zadaní v Senseiovi
 };
 
-window.currentUser = null; 
-window.currentLang = localStorage.getItem('finale_lang') || 'sk';
+let currentUser = null; 
+let currentLang = localStorage.getItem('finale_lang') || 'sk';
+
+console.log("Konfigurácia dódžó úspešne načítaná.");
