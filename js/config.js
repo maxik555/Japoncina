@@ -8,17 +8,14 @@ const firebaseConfig = {
     appId: "1:555713188608:web:d8375f9ef216321d2319e5"
 };
 
-// Inicializácia Firebase (cez compat verziu)
 firebase.initializeApp(firebaseConfig);
-
-// Globálne premenné pre služby
 const auth = firebase.auth(); 
 const dbFirestore = firebase.firestore();
 
-// --- GLOBÁLNY STAV APLIKÁCIE ---
-// Premenné sú definované globálne, aby k nim mali prístup všetky súbory (auth.js, ui.js, atď.)
-let db = [];
-let state = { 
+// --- GLOBÁLNY STAV ---
+window.db = [];           // Slovíčka
+window.grammarDb = [];    // Gramatika (Sheet 2)
+window.state = { 
     unlockedLesson: 1, 
     xp: 0, 
     streak: 0, 
@@ -28,10 +25,8 @@ let state = {
     nickname: '', 
     perfectLessons: [],
     usedSenseiSentences: [],
-    geminiKey: null // Tu sa bezpečne uloží kľúč používateľa po zadaní v Senseiovi
+    geminiKey: null 
 };
 
-let currentUser = null; 
-let currentLang = localStorage.getItem('finale_lang') || 'sk';
-
-console.log("Konfigurácia dódžó úspešne načítaná.");
+window.currentUser = null; 
+window.currentLang = localStorage.getItem('finale_lang') || 'sk';
