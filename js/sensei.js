@@ -162,3 +162,68 @@ function playTransAudio() {
     let jaPart = text.split('(')[0].trim();
     playAudioText(jaPart, 'ja-JP');
 }
+
+// --- GLOBAL SENSEI CHAT ---
+let chatHistory = []; // Sem si budeme ukladať kontext konverzácie
+
+function toggleSenseiChat() {
+    const chatWindow = document.getElementById('senseiChatWindow');
+    if (chatWindow.classList.contains('hidden')) {
+        chatWindow.classList.remove('hidden');
+    } else {
+        chatWindow.classList.add('hidden');
+    }
+}
+
+async function sendChatMessage() {
+    const inputField = document.getElementById('senseiChatInput');
+    const msgText = inputField.value.trim();
+    if (!msgText) return;
+
+    // 1. Zobrazíme tvoju správu
+    addChatMessage(msgText, 'user-msg');
+    inputField.value = "";
+
+    // 2. Pridáme ju do pamäte pre AI (uchováme len posledných 6 správ, aby sme ju nepreťažili)
+    chatHistory.push(`Študent: ${msgText}`);
+    if (chatHistory.length > 6) chatHistory.shift(); 
+
+    // 3. Zobrazíme, že Sensei "píše..."
+    addChatMessage("Sensei premýšľa... ⏳", 'sensei-msg', 'typing-indicator');
+
+    // 4. Poskladáme zadanie vrátane histórie
+    let prompt = `Si priateľský učiteľ japončiny. Tykáš mi. Odpovedaj LEN na otázky týkajúce sa japončiny, gramatiky alebo japonskej kultúry. ABSOLÚTNE NEPOUŽÍVAJ formátovanie ako hviezdičky (**). Buď stručný, ľudský a nápomocný.
+    
+    Tu je história našej doterajšej konverzácie:
+    ${chatHistory.join("\n")}
+    
+    Učiteľ (tvoja odpoveď):`;
+
+    // 5. Zavoláme Gemini (použije tvoj už hotový callGemini systém)
+    let aiResponse = await callGemini(prompt);
+
+    // 6. Odstránime indikátor "píše..."
+    const typingInd = document.getElementById('typing-indicator');
+    if (typingInd) typingInd.remove();
+
+    // 7. Zobrazíme odpoveď
+    if (aiResponse) {
+        // Pre istotu vymažeme hviezdičky, ak by ich tam AI náhodou dala
+        aiResponse = aiResponse.replace(/\*\*/g, ""); 
+        addChatMessage(aiResponse, 'sensei-msg');
+        chatHistory.push(`Učiteľ: ${aiResponse}`);
+    } else {
+        addChatMessage("Prepáč, niečo sa mi pomiešalo v hlave. Skús to znova.", 'sensei-msg');
+    }
+}
+
+function addChatMessage(text, className, id = "") {
+    const chatBox = document.getElementById('senseiChatMessages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `msg ${className}`;
+    if (id) msgDiv.id = id;
+    msgDiv.innerText = text;
+    chatBox.appendChild(msgDiv);
+    // Automatické scrollovanie dole
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
