@@ -122,8 +122,61 @@
         <div class="info-box"><select id="transDirection"><option value="sk|ja">SK ➡️ JA</option><option value="ja|sk">JA ➡️ SK</option><option value="en|ja">EN ➡️ JA</option></select><textarea id="transInput" rows="3"></textarea><div style="display:flex; gap:10px;"><button class="btn btn-primary" style="flex:1;" onclick="translateText()" data-sk="Preložiť" data-en="Translate">Preložiť</button><button class="btn-ai" style="flex:1;" onclick="analyzeWithAI()" data-sk="✨ Analýza" data-en="✨ Analysis">✨ Analýza</button></div><div id="transOutput" style="margin-top:15px; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; min-height:40px;"></div><button id="btnTransAudio" class="btn btn-audio hidden" style="width:100%; margin-top:10px;" onclick="playTransAudio()" data-sk="🔊 Zvuk" data-en="🔊 Audio">🔊 Zvuk</button></div>
     </div>
 
-    <div id="tab-profile" class="tab"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h2 data-sk="Profil" data-en="Profile">Profil</h2><button class="btn btn-danger" onclick="logoutUser()" data-sk="Odhlásiť" data-en="Logout">Odhlásiť</button></div><div class="info-box"><input type="text" id="profileNickname" onblur="updateNickname()"></div><div id="historyList"></div></div>
-</div>
+    <div id="tab-profile" class="tab">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0;" data-sk="Môj progres" data-en="My Progress">Môj progres</h2>
+            <button class="btn btn-danger" style="width:auto; padding:8px 15px;" onclick="logoutUser()" data-sk="Odhlásiť" data-en="Logout">Odhlásiť</button>
+        </div>
+
+        <div class="nav" style="margin-bottom: 15px;">
+            <button class="btn-nav active" onclick="switchProfileTab('overview')" id="btnProfOverview" data-sk="📊 Prehľad" data-en="📊 Overview">📊 Prehľad</button>
+            <button class="btn-nav" onclick="switchProfileTab('history')" id="btnProfHistory" data-sk="📜 História" data-en="📜 History">📜 História</button>
+            <button class="btn-nav" onclick="switchProfileTab('certs')" id="btnProfCerts" data-sk="🏆 Certifikáty" data-en="🏆 Certs">🏆 Certifikáty</button>
+        </div>
+
+        <div id="prof-overview" class="prof-tab active">
+            <div class="info-box">
+                <label style="font-size:12px; color:var(--text-muted);" data-sk="TVOJA PREZÝVKA:" data-en="YOUR NICKNAME:">TVOJA PREZÝVKA:</label>
+                <input type="text" id="profileNickname" placeholder="Zadaj meno..." data-sk="Zadaj meno..." data-en="Enter name..." onblur="updateNickname()" style="margin-bottom:0; margin-top:5px;">
+            </div>
+
+            <div class="progress-box">
+                <h3 style="margin-top:0; margin-bottom:10px;" data-sk="Úroveň a XP" data-en="Level and XP">Úroveň a XP</h3>
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:5px;">
+                    <span id="profLevelText" style="font-weight:bold; color:var(--primary);">Level 1</span>
+                    <span id="profXpText" style="color:var(--text-muted);">0 / 500 XP</span>
+                </div>
+                <div class="timer-container" style="height:12px; background:var(--bg-dark);"><div id="profXpBar" class="timer-bar" style="background:var(--primary); width:0%;"></div></div>
+            </div>
+
+            <div class="progress-box">
+                <h3 style="margin-top:0; margin-bottom:10px;" data-sk="Odomknutá slovná zásoba" data-en="Unlocked Vocabulary">Odomknutá slovná zásoba</h3>
+                
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:5px;">
+                    <span style="font-weight:bold;">JLPT N5 (Základy)</span>
+                    <span id="profN5Text" style="color:var(--text-muted);">0%</span>
+                </div>
+                <div class="timer-container" style="height:12px; background:var(--bg-dark); margin-bottom:15px;"><div id="profN5Bar" class="timer-bar" style="background:var(--success); width:0%;"></div></div>
+                
+                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:5px;">
+                    <span style="font-weight:bold;">JLPT N4 (Pokročilý)</span>
+                    <span id="profN4Text" style="color:var(--text-muted);">0%</span>
+                </div>
+                <div class="timer-container" style="height:12px; background:var(--bg-dark);"><div id="profN4Bar" class="timer-bar" style="background:var(--warning); width:0%;"></div></div>
+            </div>
+        </div>
+
+        <div id="prof-history" class="prof-tab hidden">
+            <h3 data-sk="História skúšok" data-en="Exam History" style="margin-top:0;">História skúšok</h3>
+            <div id="historyList" style="max-height:400px; overflow-y:auto; padding-right:5px;"></div>
+        </div>
+
+        <div id="prof-certs" class="prof-tab hidden">
+            <h3 data-sk="Získané odznaky" data-en="Earned Badges" style="margin-top:0;">Získané odznaky</h3>
+            <div id="badgesGrid" class="badges-grid">
+                </div>
+        </div>
+    </div>
 
 <script src="js/config.js"></script>
     <script src="js/audio.js"></script>
@@ -152,6 +205,7 @@
     
 </body>
 </html>
+
 
 
 
