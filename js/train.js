@@ -129,13 +129,13 @@ function loadTrainWord() {
 }
 
 function startQuizTimer() {
-    timeLeft = 7.0;
+    timeLeft = 5.0;
     let bar = document.getElementById('quizTimerBar');
     bar.style.width = '100%';
     clearInterval(quizTimer);
     quizTimer = setInterval(() => {
         timeLeft -= 0.1;
-        bar.style.width = (timeLeft / 7.0) * 100 + "%";
+        bar.style.width = (timeLeft / 5.0) * 100 + "%";
         if (timeLeft <= 0) { clearInterval(quizTimer); checkQuizAnswer(-1); }
     }, 100);
 }
