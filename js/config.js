@@ -17,6 +17,7 @@ window.db = [];
 window.grammarDb = [];    
 window.state = { 
     unlockedLesson: 1, 
+    unlockedGrammarLesson: 1, // NOVÉ: Sledovanie progresu v gramatike
     xp: 0, 
     streak: 0, 
     lastDate: null, 
