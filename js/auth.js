@@ -44,7 +44,7 @@ async function loadUserData() {
 }
 
 async function saveState() {
-    ();
+
     if (currentUser) {
         try {
             await dbFirestore.collection('users').doc(currentUser.uid).set(state);
