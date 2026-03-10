@@ -304,10 +304,25 @@ function checkGrammarAnswer() {
 
 function nextGrammarSentence() {
     grammarIdx++;
-    if (grammarIdx < 5) loadGrammarSentence();
-    else {
-        alert("Výborne! Zvládol si gramatiku! +150 XP");
-        addXP(150);
+    if (grammarIdx < 5) {
+        loadGrammarSentence();
+    } else {
+        // ÚSPEŠNÉ DOKONČENIE VÝZVY
+        alert("Výborne! Zvládol si gramatiku tejto lekcie! 🏆");
+        if (typeof addXP === 'function') addXP(150);
+
+        let currentL = parseInt(document.getElementById('grammarLessonSelect').value);
+
+        // Ak používateľ dokončil svoju momentálne najvyššiu dostupnú lekciu, odomkneme mu ďalšiu
+        if (currentL === state.unlockedGrammarLesson) {
+            state.unlockedGrammarLesson++;
+            console.log("Odomknutá nová lekcia gramatiky:", state.unlockedGrammarLesson);
+            
+            // Uložíme progres do Firebase a aktualizujeme menu
+            if (typeof saveState === 'function') saveState();
+            populateSelects(); 
+        }
+
         document.getElementById('grammarRun').classList.add('hidden');
         document.getElementById('grammarSetup').classList.remove('hidden');
     }
