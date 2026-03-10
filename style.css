@@ -219,3 +219,48 @@ input, select, textarea { width: 100%; padding: 15px; border-radius: 12px; borde
     cursor: pointer;
     margin-left: 10px;
 }
+
+/* --- PROFIL A ODZNAKY --- */
+.prof-tab { display: block; animation: fadeIn 0.3s; }
+.prof-tab.hidden { display: none !important; }
+
+.progress-box {
+    background: rgba(0,0,0,0.1);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 15px;
+}
+
+.badge-item {
+    background: var(--bg-dark);
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    padding: 15px 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.badge-item:hover { transform: translateY(-3px); }
+
+.badge-icon { font-size: 35px; margin-bottom: 10px; }
+.badge-title { font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 5px; line-height: 1.2;}
+.badge-desc { font-size: 11px; color: var(--text-muted); line-height: 1.2;}
+
+.badge-locked {
+    border-color: var(--border);
+    opacity: 0.5;
+    filter: grayscale(100%);
+    box-shadow: none;
+}
