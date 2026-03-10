@@ -177,16 +177,43 @@ function checkQuizAnswer(idx) {
 }
 
 function checkTrainAnswer() {
-    let raw = document.getElementById('twInput').value.trim();
-    if (raw === '') return;
-    let input = normalizeString(raw);
-    let w = testQueue[currentIdx];
-    let validAnswers = w.romaji.split('/').map(s => normalizeString(s));
-    if (w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s => normalizeString(s)));
-    processResult(validAnswers.includes(input), raw);
-    document.getElementById('twInput').disabled = true;
-    document.getElementById('twSubmitBtn').classList.add('hidden');
-}
+        let input = normalizeString(document.getElementById('twInput').value); // Využijeme tvoj normalizeString
+        let w = testQueue[currentIdx]; 
+        let fb = document.getElementById('twFeedback');
+        if(input === '') return;
+
+        // Vytiahneme len prvú správnu odpoveď na porovnanie preklepov
+        let mainCorrectAnswer = normalizeString(w.romaji.split('/')[0]);
+        let validAnswers = w.romaji.toLowerCase().split('/').map(s=>normalizeString(s));
+        if(w.kana && w.kana !== '-') validAnswers = validAnswers.concat(w.kana.split('/').map(s=>normalizeString(s)));
+
+        if(validAnswers.includes(input)) {
+            // 100% správne
+            fb.innerHTML = `✅ <strong>Správne!</strong>`; fb.className = 'feedback-box fb-correct'; 
+            playCurrentAudio();
+        } else { 
+            // Kontrola preklepov
+            let distance = getLevenshteinDistance(input, mainCorrectAnswer);
+            let allowedTypos = (mainCorrectAnswer.length > 7) ? 2 : (mainCorrectAnswer.length > 4 ? 1 : 0);
+
+            if (distance > 0 && distance <= allowedTypos) {
+                // Uznaný preklep (Oranžová)
+                fb.innerHTML = `⚠️ <strong>Uznané (preklep)!</strong><br><small>Malo byť: ${w.romaji}</small>`; 
+                fb.className = 'feedback-box fb-typo'; 
+                playCurrentAudio();
+            } else {
+                // Úplne zle
+                fb.innerHTML = `❌ Správne: <br><span style="font-size:24px; color:#fff;">${w.romaji}</span>`; 
+                fb.className = 'feedback-box fb-wrong'; 
+                mistakes++; 
+            }
+        }
+        
+        document.getElementById('twInput').disabled = true; 
+        document.getElementById('twSubmitBtn').classList.add('hidden'); 
+        document.getElementById('twNextBtn').classList.remove('hidden'); 
+        document.getElementById('twAudioBtn').classList.remove('hidden');
+    }
 
 function processResult(isCorrect, userAns) {
     let w = testQueue[currentIdx];
@@ -213,20 +240,41 @@ function nextTrainWord() {
 }
 
 function endTraining() {
-    document.getElementById('trainRun').classList.add('hidden');
-    document.getElementById('trainResult').classList.remove('hidden');
-    let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100);
-    document.getElementById('trScore').innerText = perc + "%";
-    let lessonTitle = currentTestType === 'unlock' ? state.unlockedLesson : (currentLang==='sk'?'Tréning':'Training');
-    state.history.unshift({ date: Date.now(), score: perc, lesson: lessonTitle, passed: perc >= 90, fullResults: JSON.parse(JSON.stringify(currentFullResults)) });
-    if(state.history.length > 50) state.history.pop();
-    if(perc >= 90) {
-        if(currentTestType === 'unlock') state.unlockedLesson++;
-        state.xp += testQueue.length;
+        document.getElementById('trainRun').classList.add('hidden'); 
+        document.getElementById('trainResult').classList.remove('hidden');
+        
+        let correctCount = testQueue.length - mistakes;
+        let perc = Math.round((correctCount / testQueue.length) * 100); 
+        document.getElementById('trScore').innerText = `${perc}%`;
+        let msg = document.getElementById('trMessage');
+        
+        // Výpočet dynamického XP
+        let userStreak = state.streak || 0; 
+        let xpPerWord = (userStreak >= 5) ? 5 : 2; 
+        let gainedXP = correctCount * xpPerWord;
+
+        if (currentTestType === 'unlock') {
+            if (perc >= 90) { 
+                msg.innerHTML = "🎉 Odomkol si novú úroveň!"; 
+                msg.style.color = "var(--success)"; 
+                if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++; 
+                addXP(isBossTest ? 500 : 100); saveState(); 
+            } else { 
+                msg.innerHTML = "❌ Potrebuješ aspoň 90%. Skús to znova."; 
+                msg.style.color = "var(--danger)"; 
+            }
+        } else {
+            // Logika pre Kvíz a Voľný tréning (min. 80%)
+            if (perc >= 80) {
+                msg.innerHTML = `✅ Test úspešný! Získavaš <strong>${gainedXP} XP</strong><br><small>(Bonus za streak: ${xpPerWord} XP/slovo)</small>`;
+                msg.style.color = "var(--success)";
+                addXP(gainedXP);
+            } else {
+                msg.innerHTML = `❌ Test neúspešný. Na zisk bodov potrebuješ aspoň 80%.`;
+                msg.style.color = "var(--warning)";
+            }
+        }
     }
-    document.getElementById('btnRetryMistakes').classList.toggle('hidden', mistakes === 0);
-    saveState();
-}
 
 function retryMistakes() {
     testQueue = [...currentTestMistakes];
