@@ -100,31 +100,44 @@ function renderMap() {
 }
 
 function populateSelects() {
+    if (!window.db || window.db.length === 0) return;
+
     const ids = ['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
     const currentValues = {};
-    
-    // Zapamätáme si, čo je vybrané
     ids.forEach(id => { 
         const el = document.getElementById(id); 
         if (el) currentValues[id] = el.value; 
     });
 
-    // Vygenerujeme HTML zoznam lekcií
-    let opts = "";
+    // 1. Menu pre slovíčka (všetko okrem gramatiky)
+    let vocabOpts = "";
     for (let i = 1; i <= state.unlockedLesson; i++) {
-        opts += `<option value="${i}">Lekcia ${i}</option>`;
+        vocabOpts += `<option value="${i}">Lekcia ${i}</option>`;
+    }
+
+    // 2. Menu pre gramatiku (má vlastný progres)
+    let grammarOpts = "";
+    const maxGrammar = state.unlockedGrammarLesson || 1;
+    for (let i = 1; i <= maxGrammar; i++) {
+        grammarOpts += `<option value="${i}">Lekcia ${i}</option>`;
     }
     
-    // Naplníme menu a vrátime pôvodné hodnoty
-    ids.forEach(id => {
+    // Naplníme všetky selecty okrem gramatiky
+    ids.filter(id => id !== 'grammarLessonSelect').forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.innerHTML = opts;
+            el.innerHTML = vocabOpts;
             if (currentValues[id]) el.value = currentValues[id];
         }
     });
 
-    // Nastavenie predvolených hodnôt pre rozsahy testov
+    // Naplníme špeciálne select pre gramatiku
+    const gSel = document.getElementById('grammarLessonSelect');
+    if (gSel) {
+        gSel.innerHTML = grammarOpts;
+        if (currentValues['grammarLessonSelect']) gSel.value = currentValues['grammarLessonSelect'];
+    }
+
     const setToMax = (id) => {
         const el = document.getElementById(id);
         if (el && (!el.value || el.value === "")) el.value = state.unlockedLesson;
