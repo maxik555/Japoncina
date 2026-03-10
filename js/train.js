@@ -2,7 +2,7 @@
 
 let testQueue = []; let currentIdx = 0; let mistakes = 0; 
 let currentTestMistakes = []; let currentFullResults = [];
-let quizTimer; let timeLeft = 7.0; let quizOptions = [];
+let quizTimer; let timeLeft = 5.0; let quizOptions = [];
 let fcQueue = []; let fcIdx = 0;
 let currentTestType = '';
 
