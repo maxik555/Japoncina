@@ -13,8 +13,8 @@ const auth = firebase.auth();
 const dbFirestore = firebase.firestore();
 
 // --- GLOBÁLNY STAV ---
-window.db = [];           // Slovíčka
-window.grammarDb = [];    // Gramatika (Sheet 2)
+window.db = [];           
+window.grammarDb = [];    
 window.state = { 
     unlockedLesson: 1, 
     xp: 0, 
