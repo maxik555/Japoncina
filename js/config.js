@@ -1,4 +1,8 @@
-// --- KONFIGURÁCIA A STAV ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// --- KONFIGURÁCIA ---
 const firebaseConfig = {
     apiKey: "AIzaSyDEJcyJE7H9rlqWYPPit8r83sIgLG3w1OI", 
     authDomain: "learning-japanase.firebaseapp.com",
@@ -8,14 +12,16 @@ const firebaseConfig = {
     appId: "1:555713188608:web:d8375f9ef216321d2319e5"
 };
 
-// !!! SEM VLOŽ SVOJ GEMINI KĽÚČ (ten dlhý začínajúci AIza...) !!!
+// Inicializácia Firebase
+const app = initializeApp(firebaseConfig);
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(); 
-const dbFirestore = firebase.firestore();
+// Export do globálneho okna (aby to videli ostatné skripty)
+window.auth = getAuth(app);
+window.dbFirestore = getFirestore(app);
 
-let db = [];
-let state = { 
+// --- GLOBÁLNY STAV APLIKÁCIE ---
+window.db = [];
+window.state = { 
     unlockedLesson: 1, 
     xp: 0, 
     streak: 0, 
@@ -24,8 +30,9 @@ let state = {
     history: [], 
     nickname: '', 
     perfectLessons: [],
-    usedSenseiSentences: [] 
+    usedSenseiSentences: [],
+    geminiKey: null
 };
 
-let currentUser = null; 
-let currentLang = localStorage.getItem('finale_lang') || 'sk';
+window.currentUser = null; 
+window.currentLang = localStorage.getItem('finale_lang') || 'sk';
