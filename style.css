@@ -348,3 +348,13 @@ input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus,
     from { opacity: 0; transform: translateY(15px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* --- OPRAVA PREKRÝVANIA KARTIČIEK --- */
+
+.flashcard-container {
+    height: 380px; /* Pôvodne bolo 320px, dáme jej viac priestoru */
+    margin-bottom: 40px; /* Odstrčíme tlačidlá poriadne pod ňu */
+}
+
+.btn-audio {
+    margin-top: 10px; /* Pre istotu ešte odlepíme audio tlačidlo zhora */
+}
