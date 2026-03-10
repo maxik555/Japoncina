@@ -131,8 +131,28 @@
     <script src="js/train.js"></script>
     <script src="js/sensei.js"></script>
     <script src="js/database.js"></script> <script src="js/auth.js"></script>
+
+    <div id="senseiChatBtn" onclick="toggleSenseiChat()">
+        💬 Sensei
+    </div>
+
+    <div id="senseiChatWindow" class="hidden">
+        <div class="chat-header">
+            <span>AI Sensei</span>
+            <button onclick="toggleSenseiChat()">✖</button>
+        </div>
+        <div class="chat-messages" id="senseiChatMessages">
+            <div class="msg sensei-msg">Ahoj! Som tvoj AI Sensei. Máš nejakú otázku ohľadom japončiny? 🎌</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="senseiChatInput" placeholder="Spýtaj sa na slovíčko alebo gramatiku..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+    
 </body>
 </html>
+
 
 
 
