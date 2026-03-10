@@ -104,8 +104,17 @@ async function submitToSensei() {
     document.getElementById('senseiEvaluation').classList.remove('hidden');
     document.getElementById('senseiEvalText').innerHTML = `<span style="color:var(--primary);">Sensei hodnotí...</span>`;
 
-    let prompt = `Študent preložil: ${userAnswers}. Zadanie bolo: ${currentSenseiTask}. Zhodnoť to ako učiteľ japončiny v slovenčine.`;
-
+// Nové inštrukcie pre Senseia - priateľský, bez formátovania a stručný
+    let prompt = `Si môj priateľský učiteľ japončiny. Tykaj mi. 
+    Zadanie na preklad bolo: "${currentSenseiTask}". 
+    Môj preklad je: "${userAnswers}". 
+    
+    Tvoja úloha:
+    1. ABSOLÚTNE ZAKAZUJEM používať formátovanie ako hviezdičky (**) alebo tučné písmo. Tvoj text musí byť čistý.
+    2. Ak je môj preklad ÚPLNE SPRÁVNY, len ma krátko pochváľ (napr. "Super, máš to na 100% ✅") a už NIČ iné nevysvetľuj.
+    3. Ak mám chybu, vysvetli mi ju jednoducho, stručne a ľudsky, ako kamošovi. 
+    4. Použi zopár emoji pre lepšiu náladu.`;
+    
     let aiResponse = await callGemini(prompt);
     if (aiResponse) {
         document.getElementById('senseiEvalText').innerText = aiResponse;
