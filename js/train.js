@@ -487,3 +487,69 @@ function nextGrammarSentence() {
         document.getElementById('grammarSetup').classList.remove('hidden');
     }
 }
+let grammarQueue = []; let grammarIdx = 0; let userSentence = [];
+
+function startGrammarTest() {
+    let l = parseInt(document.getElementById('grammarLessonSelect').value);
+    grammarQueue = grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random());
+    if (grammarQueue.length < 5) { alert("Málo viet v tejto lekcii (potrebuješ aspoň 5)."); return; }
+    grammarQueue = grammarQueue.slice(0, 5); 
+    grammarIdx = 0;
+    document.getElementById('grammarSetup').classList.add('hidden');
+    document.getElementById('grammarRun').classList.remove('hidden');
+    loadGrammarSentence();
+}
+
+function loadGrammarSentence() {
+    let veta = grammarQueue[grammarIdx];
+    userSentence = [];
+    document.getElementById('grammarProgress').innerText = `Veta ${grammarIdx + 1} / 5`;
+    document.getElementById('grammarTask').innerText = veta.sk;
+    document.getElementById('grammarSolution').innerHTML = '';
+    document.getElementById('grammarFeedback').style.display = 'none';
+    document.getElementById('btnNextGrammar').classList.add('hidden');
+    document.getElementById('btnCheckGrammar').classList.remove('hidden');
+
+    let words = veta.romaji.split(' ').sort(() => 0.5 - Math.random());
+    let html = '';
+    words.forEach(w => { html += `<button class="btn-quiz" style="padding: 10px 15px; width: auto;" onclick="addWordToGrammar('${w}', this)">${w}</button>`; });
+    document.getElementById('grammarOptions').innerHTML = html;
+}
+
+function addWordToGrammar(word, btn) {
+    userSentence.push(word);
+    btn.style.visibility = 'hidden';
+    let span = document.createElement('span');
+    span.className = 'btn-quiz';
+    span.style = 'padding: 10px 15px; width: auto; background: var(--primary); color: white;';
+    span.innerText = word;
+    document.getElementById('grammarSolution').appendChild(span);
+}
+
+function checkGrammarAnswer() {
+    let correct = grammarQueue[grammarIdx].romaji;
+    let answer = userSentence.join(' ');
+    let fb = document.getElementById('grammarFeedback');
+    fb.style.display = 'block';
+    
+    if (answer === correct) {
+        fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
+        document.getElementById('btnCheckGrammar').classList.add('hidden');
+        document.getElementById('btnNextGrammar').classList.remove('hidden');
+        playAudioText(grammarQueue[grammarIdx].ja, 'ja-JP');
+    } else {
+        fb.innerHTML = "❌ Chyba! Skús to znova."; fb.className = "feedback-box fb-wrong";
+        setTimeout(loadGrammarSentence, 1500); // Po chybe resetuje vetu
+    }
+}
+
+function nextGrammarSentence() {
+    grammarIdx++;
+    if (grammarIdx < 5) loadGrammarSentence();
+    else {
+        alert("Gratulujem! Zvládol si výzvu 5 viet! +150 XP");
+        addXP(150);
+        document.getElementById('grammarRun').classList.add('hidden');
+        document.getElementById('grammarSetup').classList.remove('hidden');
+    }
+}
