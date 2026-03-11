@@ -1,4 +1,4 @@
-console.log("Logika slovíčok načítaná.");
+console.log("--- 2. train-vocab.js načítané ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -106,7 +106,6 @@ window.checkTrainAnswer = function() {
     let inputNorm = window.normalizeString(inputRaw);
     let w = window.testQueue[window.currentIdx];
     
-    // Možné správne odpovede
     let correctRomaji = window.normalizeString(w.romaji);
     let correctKana = w.kana.trim();
     let correctKanji = w.kanji.trim();
@@ -114,7 +113,7 @@ window.checkTrainAnswer = function() {
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
 
-    // Kontrola: Rómadži (s toleranciou 1 preklep) ALEBO presná zhoda s Kana/Kanji
+    // OPRAVA VOLANIA: Tu musí byť window.getLevenshteinDistance
     let isCorrect = (inputNorm === correctRomaji || window.getLevenshteinDistance(inputNorm, correctRomaji) <= 1);
     
     if (!isCorrect && (inputRaw === correctKana || inputRaw === correctKanji)) {
@@ -123,9 +122,9 @@ window.checkTrainAnswer = function() {
 
     if (isCorrect) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
-        playAudioText(w.romaji, 'ja-JP');
+        if (typeof playAudioText === 'function') playAudioText(w.romaji, 'ja-JP');
     } else {
-        fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji} (${w.kana})`; fb.className = "feedback-box fb-wrong";
+        fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong";
         window.mistakes++;
     }
     window.updateScoreDisplay();
@@ -133,7 +132,6 @@ window.checkTrainAnswer = function() {
     document.getElementById('twSubmitBtn').classList.add('hidden');
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
-
 
 window.checkQuizAnswer = function(idx) {
     let w = window.testQueue[window.currentIdx];
