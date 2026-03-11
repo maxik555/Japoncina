@@ -1,13 +1,14 @@
 console.log("--- 1. train-utils.js načítané ---");
 
-// Definujeme premenné v globálnom okne
+// GLOBÁLNE PREMENNÉ
 window.testQueue = []; 
 window.currentIdx = 0; 
 window.mistakes = 0; 
 window.currentUnlockTarget = 0; 
 window.currentTestType = '';
+window.currentFullResults = []; // Tu ukladáme detaily odpovedí
 
-// POMOCNÉ FUNKCIE - Musia začínať s window.
+// POMOCNÉ FUNKCIE
 window.normalizeString = function(str) {
     if (!str) return "";
     return str.toLowerCase()
@@ -46,14 +47,15 @@ window.updateScoreDisplay = function() {
     }
 };
 
-window.saveToHistory = function(lesson, type, score, passed) {
+window.saveToHistory = function(lesson, type, score, passed, details) {
     if (!state.history) state.history = [];
     const entry = {
         date: Date.now(),
         lesson: lesson,
         type: type,
         score: score,
-        passed: passed
+        passed: passed,
+        details: details || [] // Ukladáme aj konkrétne vety/slová
     };
     state.history.push(entry);
     if (state.history.length > 50) state.history.shift();
@@ -66,20 +68,16 @@ document.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         const trainRun = document.getElementById('trainRun');
         const grammarRun = document.getElementById('grammarRun');
+        
         if (trainRun && !trainRun.classList.contains('hidden') && window.currentTestType !== 'quiz') {
             const nextBtn = document.getElementById('twNextBtn');
-            if (nextBtn && nextBtn.classList.contains('hidden')) {
-                if (typeof window.checkTrainAnswer === 'function') window.checkTrainAnswer();
-            } else {
-                if (typeof window.nextTrainWord === 'function') window.nextTrainWord();
-            }
-        } else if (grammarRun && !grammarRun.classList.contains('hidden') && window.grammarMode === 'write') {
+            if (nextBtn && nextBtn.classList.contains('hidden')) window.checkTrainAnswer();
+            else window.nextTrainWord();
+        } 
+        else if (grammarRun && !grammarRun.classList.contains('hidden') && window.grammarMode === 'write') {
             const nextBtnG = document.getElementById('btnNextGrammar');
-            if (nextBtnG && nextBtnG.classList.contains('hidden')) {
-                if (typeof window.checkGrammarAnswer === 'function') window.checkGrammarAnswer();
-            } else {
-                if (typeof window.nextGrammarSentence === 'function') window.nextGrammarSentence();
-            }
+            if (nextBtnG && nextBtnG.classList.contains('hidden')) window.checkGrammarAnswer();
+            else window.nextGrammarSentence();
         }
     }
 });
