@@ -100,18 +100,32 @@ window.loadTrainWord = function() {
     }
 };
 
+
 window.checkTrainAnswer = function() {
-    let input = window.normalizeString(document.getElementById('twInput').value);
+    let inputRaw = document.getElementById('twInput').value.trim();
+    let inputNorm = window.normalizeString(inputRaw);
     let w = window.testQueue[window.currentIdx];
-    let correct = window.normalizeString(w.romaji);
+    
+    // Možné správne odpovede
+    let correctRomaji = window.normalizeString(w.romaji);
+    let correctKana = w.kana.trim();
+    let correctKanji = w.kanji.trim();
+
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
 
-    if (input === correct || window.getLevenshteinDistance(input, correct) <= 1) {
+    // Kontrola: Rómadži (s toleranciou 1 preklep) ALEBO presná zhoda s Kana/Kanji
+    let isCorrect = (inputNorm === correctRomaji || window.getLevenshteinDistance(inputNorm, correctRomaji) <= 1);
+    
+    if (!isCorrect && (inputRaw === correctKana || inputRaw === correctKanji)) {
+        isCorrect = true;
+    }
+
+    if (isCorrect) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         playAudioText(w.romaji, 'ja-JP');
     } else {
-        fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong";
+        fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji} (${w.kana})`; fb.className = "feedback-box fb-wrong";
         window.mistakes++;
     }
     window.updateScoreDisplay();
@@ -119,6 +133,7 @@ window.checkTrainAnswer = function() {
     document.getElementById('twSubmitBtn').classList.add('hidden');
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
+
 
 window.checkQuizAnswer = function(idx) {
     let w = window.testQueue[window.currentIdx];
