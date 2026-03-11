@@ -3,12 +3,6 @@ let testQueue = [];
 let currentIdx = 0; 
 let mistakes = 0; 
 let currentUnlockTarget = 0; 
-let isBossTest = false;
-let currentTestMistakes = []; 
-let currentFullResults = [];
-let quizTimer = null; 
-let timeLeft = 5.0; 
-let quizOptions = [];
 let currentTestType = '';
 
 // --- PREMENNÉ PRE KARTIČKY ---
@@ -20,7 +14,7 @@ let grammarQueue = [];
 let grammarIdx = 0; 
 let userSentence = []; 
 let grammarLives = 3;
-let grammarMode = 'click'; // Predvolený režim 'click' (bubliny)
+let grammarMode = 'click'; 
 
 // --- POMOCNÉ FUNKCIE (LOGIKA) ---
 
@@ -54,7 +48,56 @@ function updateScoreDisplay() {
     }
 }
 
-// --- KARTIČKY (TAB LEARN) ---
+// --- HISTÓRIA TESTOV ---
+
+function saveToHistory(lesson, type, score, passed) {
+    if (!state.history) state.history = [];
+    
+    const entry = {
+        date: Date.now(),
+        lesson: lesson,
+        type: type, // 'Slovíčka', 'Kvíz', 'Odomknutie', 'Gramatika'
+        score: score,
+        passed: passed
+    };
+    
+    state.history.push(entry);
+    // Udržíme len posledných 50 záznamov
+    if (state.history.length > 50) state.history.shift();
+    
+    if (typeof saveState === 'function') saveState();
+    if (typeof renderHistory === 'function') renderHistory();
+}
+
+function renderHistory() {
+    const cont = document.getElementById('historyList');
+    if (!cont) return;
+    cont.innerHTML = '';
+    
+    if (!state.history || state.history.length === 0) {
+        cont.innerHTML = `<p style="color:var(--text-muted); text-align:center;">Zatiaľ žiadne záznamy.</p>`;
+        return;
+    }
+    
+    // Zobrazenie od najnovšieho po najstaršie
+    [...state.history].reverse().forEach(h => {
+        let dateStr = new Date(h.date).toLocaleDateString() + " " + new Date(h.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        let div = document.createElement('div');
+        div.className = `history-item ${h.passed ? 'passed' : 'failed'}`;
+        div.style = "background:var(--bg-dark); padding:12px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; border-left: 4px solid " + (h.passed ? 'var(--success)' : 'var(--danger)');
+        
+        div.innerHTML = `
+            <div>
+                <div style="font-weight:bold;">${h.type} - ${h.lesson}</div>
+                <div style="font-size:12px; color:var(--text-muted);">${dateStr}</div>
+            </div>
+            <div style="font-weight:bold; font-size:18px;">${h.score}%</div>
+        `;
+        cont.appendChild(div);
+    });
+}
+
+// --- KARTIČKY ---
 
 function startLearn(mode) {
     const select = document.getElementById('learnLessonSelect');
@@ -65,18 +108,15 @@ function startLearn(mode) {
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
-    document.getElementById('learnListRun').classList.add('hidden');
     loadFc();
 }
 
 function loadFc() {
-    if (!fcQueue[fcIdx]) return;
     let w = fcQueue[fcIdx];
-    const card = document.getElementById('fcElement');
-    if (card) card.classList.remove('is-flipped');
+    document.getElementById('fcElement').classList.remove('is-flipped');
     setTimeout(() => {
         document.getElementById('fcProgress').innerText = `${fcIdx + 1} / ${fcQueue.length}`;
-        document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en;
+        document.getElementById('fcFrontSk').innerText = w.sk;
         document.getElementById('fcImg').innerText = w.img || '🇯🇵';
         document.getElementById('fcBackRomaji').innerText = w.romaji;
         document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : '';
@@ -84,69 +124,27 @@ function loadFc() {
     }, 150);
 }
 
-function flipCard() { 
-    const card = document.getElementById('fcElement');
-    if (card) card.classList.toggle('is-flipped'); 
-}
-
-function nextFc() { 
-    if (fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } 
-    else { closeLearn(); }
-}
-
+function flipCard() { document.getElementById('fcElement').classList.toggle('is-flipped'); }
+function nextFc() { if (fcIdx < fcQueue.length - 1) { fcIdx++; loadFc(); } else closeLearn(); }
 function prevFc() { if (fcIdx > 0) { fcIdx--; loadFc(); } }
-
 function closeLearn() { 
     document.getElementById('learnCardsRun').classList.add('hidden'); 
     document.getElementById('learnSetup').classList.remove('hidden'); 
 }
+function playCurrentAudioFC() { if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); }
 
-function playCurrentAudioFC() { 
-    if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); 
-}
-
-function showUnlockedList() {
-    document.getElementById('learnSetup').classList.add('hidden');
-    document.getElementById('learnListRun').classList.remove('hidden');
-    let pool = window.db.filter(w => w.lekcia <= state.unlockedLesson);
-    let tbody = document.getElementById('vocabListBody');
-    let table = `<table class="detail-table"><tr><th>Lekcia</th><th>Význam</th><th>Romaji</th></tr>`;
-    pool.forEach(w => {
-        table += `<tr><td>${w.lekcia}</td><td>${w.sk}</td><td>${w.romaji}</td></tr>`;
-    });
-    table += `</table><button class="btn btn-outline" style="margin-top:15px;" onclick="closeLearn()">Zatvoriť</button>`;
-    tbody.innerHTML = table;
-}
-
-// --- SLOVNÉ TESTY (TAB TRAIN) ---
-
-function selectTestModeUI(m) {
-    document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
-    document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.remove('hidden');
-    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => btn.classList.remove('active'));
-    document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.add('active');
-}
+// --- SLOVNÉ TESTY ---
 
 function startTraining(type) {
-    currentTestType = type; 
-    mistakes = 0; 
-    currentIdx = 0; 
-    currentTestMistakes = [];
-    let pool = [];
-
-    if (type === 'unlock') {
-        currentUnlockTarget = state.unlockedLesson;
-        pool = window.db.filter(w => w.lekcia === currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
-    } else {
-        let from = parseInt(document.getElementById(type+'From')?.value || 1);
-        let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
-        let countInput = document.getElementById(type+'Count');
-        let count = countInput ? parseInt(countInput.value) : 20; 
-        
-        if (from > to) [from, to] = [to, from];
-        pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
-    }
-
+    currentTestType = type; mistakes = 0; currentIdx = 0;
+    let from = parseInt(document.getElementById(type+'From')?.value || 1);
+    let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
+    let countInput = document.getElementById(type+'Count');
+    let count = countInput ? parseInt(countInput.value) : 10;
+    
+    if (from > to) [from, to] = [to, from];
+    let pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
+    
     testQueue = pool;
     if (testQueue.length === 0) return;
     document.getElementById('trainSetup').classList.add('hidden');
@@ -157,56 +155,38 @@ function startTraining(type) {
 function loadTrainWord() {
     let w = testQueue[currentIdx];
     document.getElementById('twWord').innerText = w.sk;
+    document.getElementById('testProgress').innerText = `${currentIdx + 1} / ${testQueue.length}`;
     document.getElementById('twFeedback').style.display = 'none';
     document.getElementById('twNextBtn').classList.add('hidden');
-    document.getElementById('testProgress').innerText = `${currentIdx + 1} / ${testQueue.length}`;
     updateScoreDisplay();
 
     if (currentTestType === 'quiz') {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
-        document.getElementById('quizTimerContainer').classList.remove('hidden');
-        
         let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
         quizOptions = [w, ...others].sort(()=>0.5-Math.random());
         for(let i=0; i<4; i++) {
             let btn = document.getElementById('qb'+i);
             btn.innerText = quizOptions[i].romaji;
-            btn.className = 'btn-quiz';
-            btn.disabled = false;
+            btn.className = 'btn-quiz'; btn.disabled = false;
         }
-        startQuizTimer();
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
-        document.getElementById('quizTimerContainer').classList.add('hidden');
-        const input = document.getElementById('twInput');
-        input.value = ''; input.disabled = false; input.focus();
-        document.getElementById('twSubmitBtn').classList.remove('hidden');
+        document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false;
+        document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden');
     }
 }
 
-function startQuizTimer() {
-    clearInterval(quizTimer);
-    timeLeft = 5.0;
-    const bar = document.getElementById('quizTimerBar');
-    if (bar) bar.style.width = '100%';
-    quizTimer = setInterval(() => {
-        timeLeft -= 0.1;
-        if (bar) bar.style.width = (timeLeft / 5.0) * 100 + "%";
-        if (timeLeft <= 0) { clearInterval(quizTimer); checkQuizAnswer(-1); }
-    }, 100);
-}
-
 function checkTrainAnswer() {
-    let inputRaw = document.getElementById('twInput').value;
-    let input = normalizeString(inputRaw);
+    let input = normalizeString(document.getElementById('twInput').value);
     let w = testQueue[currentIdx];
     let correct = normalizeString(w.romaji);
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
 
-    if (input === correct || getLevenshteinDistance(input, correct) <= 1) {
+    let isCorrect = (input === correct || getLevenshteinDistance(input, correct) <= 1);
+    if (isCorrect) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         playAudioText(w.romaji, 'ja-JP');
     } else {
@@ -220,9 +200,8 @@ function checkTrainAnswer() {
 }
 
 function checkQuizAnswer(idx) {
-    clearInterval(quizTimer);
     let w = testQueue[currentIdx];
-    let isCorrect = (idx !== -1 && quizOptions[idx].sk === w.sk);
+    let isCorrect = (quizOptions[idx].sk === w.sk);
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
 
@@ -230,8 +209,7 @@ function checkQuizAnswer(idx) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         playAudioText(w.romaji, 'ja-JP');
     } else {
-        fb.innerHTML = idx === -1 ? `⏰ Čas vypršal! <br> ${w.romaji}` : `❌ Chyba! Je to: ${w.romaji}`;
-        fb.className = "feedback-box fb-wrong";
+        fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong";
         mistakes++;
     }
     updateScoreDisplay();
@@ -240,33 +218,27 @@ function checkQuizAnswer(idx) {
 }
 
 function nextTrainWord() {
-    currentIdx++;
-    if (currentIdx < testQueue.length) loadTrainWord();
+    if (currentIdx < testQueue.length - 1) { currentIdx++; loadTrainWord(); }
     else endTraining();
 }
 
 function endTraining() {
     document.getElementById('trainRun').classList.add('hidden');
     document.getElementById('trainResult').classList.remove('hidden');
-    let correctCount = testQueue.length - mistakes;
-    let perc = Math.round((correctCount / testQueue.length) * 100);
+    let correct = testQueue.length - mistakes;
+    let perc = Math.round((correct / testQueue.length) * 100);
     document.getElementById('trScore').innerText = `${perc}%`;
-    const msg = document.getElementById('trMessage');
+    
+    let typeName = currentTestType === 'quiz' ? 'Kvíz' : 'Slovíčka';
+    saveToHistory(`Lekcia ${testQueue[0].lekcia}`, typeName, perc, perc >= 80);
+    
     if (perc >= 90 && currentTestType === 'unlock') {
         if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
-        addXP(100); msg.innerText = "🎉 Nová úroveň odomknutá!";
-        saveState();
-    } else if (perc >= 80) {
-        addXP(50); msg.innerText = "✅ Skvelý výkon!";
-    } else { msg.innerText = "Skús to znova pre zisk XP."; }
+        addXP(100); saveState();
+    } else if (perc >= 80) addXP(50);
 }
 
-function closeTraining() {
-    document.getElementById('trainResult').classList.add('hidden');
-    document.getElementById('trainSetup').classList.remove('hidden');
-}
-
-// --- GRAMATIKA (TAB GRAMMAR) ---
+// --- GRAMATIKA ---
 
 function setGrammarMode(mode) {
     grammarMode = mode;
@@ -276,9 +248,8 @@ function setGrammarMode(mode) {
 
 function startGrammarTest() {
     let l = parseInt(document.getElementById('grammarLessonSelect').value);
-    grammarQueue = window.grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random());
-    if (grammarQueue.length < 5) { alert("V Exceli (Sheet 2) je pre túto lekciu málo viet."); return; }
-    grammarQueue = grammarQueue.slice(0, 5); 
+    grammarQueue = window.grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random()).slice(0, 5);
+    if (grammarQueue.length < 5) { alert("Málo viet."); return; }
     grammarIdx = 0; grammarLives = 3;
     updateGrammarLives();
     document.getElementById('grammarSetup').classList.add('hidden');
@@ -308,9 +279,8 @@ function loadGrammarSentence() {
     } else {
         document.getElementById('grammarClickArea').classList.add('hidden');
         document.getElementById('grammarWriteArea').classList.remove('hidden');
-        const input = document.getElementById('grammarInput');
-        input.value = ''; input.disabled = false;
-        setTimeout(() => input.focus(), 200);
+        document.getElementById('grammarInput').value = ''; document.getElementById('grammarInput').disabled = false;
+        setTimeout(() => document.getElementById('grammarInput').focus(), 200);
     }
 }
 
@@ -341,41 +311,40 @@ function checkGrammarAnswer() {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         document.getElementById('btnCheckGrammar').classList.add('hidden');
         document.getElementById('btnNextGrammar').classList.remove('hidden');
-        if (grammarMode === 'write') document.getElementById('grammarInput').disabled = true;
         playAudioText(grammarQueue[grammarIdx].ja, 'ja-JP');
     } else {
-        fb.innerHTML = `❌ Chyba!`; fb.className = "feedback-box fb-wrong";
-        grammarLives--; updateGrammarLives();
-        setTimeout(() => { if (grammarLives <= 0) startGrammarTest(); else loadGrammarSentence(); }, 1200);
+        grammarLives--;
+        updateGrammarLives();
+        if (grammarLives <= 0) {
+            fb.innerHTML = `❌ Neúspech! <br> Správne: <br> <strong style="color:white;">${correct}</strong>`;
+            fb.className = "feedback-box fb-wrong";
+            document.getElementById('btnCheckGrammar').classList.add('hidden');
+            saveToHistory(`Lekcia ${grammarQueue[0].lekcia}`, 'Gramatika', Math.round((grammarIdx/5)*100), false);
+            setTimeout(() => { 
+                document.getElementById('grammarRun').classList.add('hidden');
+                document.getElementById('grammarSetup').classList.remove('hidden');
+            }, 4000);
+        } else {
+            fb.innerHTML = `❌ Skús to znova!`; fb.className = "feedback-box fb-wrong";
+            setTimeout(loadGrammarSentence, 1200);
+        }
     }
 }
 
 function nextGrammarSentence() {
-    grammarIdx++;
-    if (grammarIdx < 5) loadGrammarSentence();
+    if (grammarIdx < 4) { grammarIdx++; loadGrammarSentence(); }
     else {
-        alert("Výborne! Gramatika lekcie zvládnutá! +150 XP");
+        alert("Gramatika zvládnutá! +150 XP");
         addXP(150);
         let cur = parseInt(document.getElementById('grammarLessonSelect').value);
         if(cur === state.unlockedGrammarLesson) { state.unlockedGrammarLesson++; saveState(); populateSelects(); }
+        saveToHistory(`Lekcia ${cur}`, 'Gramatika', 100, true);
         document.getElementById('grammarRun').classList.add('hidden');
         document.getElementById('grammarSetup').classList.remove('hidden');
     }
 }
 
-function resetCurrentSentence() { loadGrammarSentence(); }
-
-// Globálny Enter
-document.addEventListener('keypress', e => {
-    if (e.key === 'Enter') {
-        const trainRun = document.getElementById('trainRun');
-        const grammarRun = document.getElementById('grammarRun');
-        if (trainRun && !trainRun.classList.contains('hidden') && currentTestType !== 'quiz') { 
-            if (document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer(); 
-            else nextTrainWord(); 
-        } else if (grammarRun && !grammarRun.classList.contains('hidden')) {
-            if (document.getElementById('btnNextGrammar').classList.contains('hidden')) checkGrammarAnswer();
-            else nextGrammarSentence();
-        }
-    }
-});
+function closeTraining() {
+    document.getElementById('trainResult').classList.add('hidden');
+    document.getElementById('trainSetup').classList.remove('hidden');
+}
