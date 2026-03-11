@@ -1,4 +1,6 @@
-// --- ZDIEĽANÉ PREMENNÉ ---
+console.log("Nástroje tréningu načítané.");
+
+// --- GLOBÁLNE PREMENNÉ (Zdieľané medzi vocab a grammar) ---
 window.testQueue = []; 
 window.currentIdx = 0; 
 window.mistakes = 0; 
@@ -8,16 +10,15 @@ window.quizTimer = null;
 
 // --- POMOCNÉ FUNKCIE ---
 
-// Normalizácia textu (odstránenie diakritiky a medzier pre lepšie porovnávanie)
-function normalizeString(str) {
+window.normalizeString = function(str) {
     if (!str) return "";
     return str.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Odstráni mäkčene/dĺžne
-        .replace(/[.!?]/g, "") // Odstráni interpunkciu
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[.!?]/g, "") 
         .trim();
-}
+};
 
-function getLevenshteinDistance(a, b) {
+window.getLevenshteinDistance = function(a, b) {
     if (!a) return b ? b.length : 0;
     if (!b) return a.length;
     const matrix = [];
@@ -37,17 +38,17 @@ function getLevenshteinDistance(a, b) {
         }
     }
     return matrix[b.length][a.length];
-}
+};
 
-function updateScoreDisplay() {
+window.updateScoreDisplay = function() {
     const scoreEl = document.getElementById('testScoreDisplay');
     if (scoreEl) {
         let correct = window.currentIdx - window.mistakes;
         scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${window.mistakes}`;
     }
-}
+};
 
-function saveToHistory(lesson, type, score, passed) {
+window.saveToHistory = function(lesson, type, score, passed) {
     if (!state.history) state.history = [];
     const entry = {
         date: Date.now(),
@@ -60,4 +61,4 @@ function saveToHistory(lesson, type, score, passed) {
     if (state.history.length > 50) state.history.shift();
     if (typeof saveState === 'function') saveState();
     if (typeof renderHistory === 'function') renderHistory();
-}
+};
