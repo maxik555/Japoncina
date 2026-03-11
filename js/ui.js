@@ -1,93 +1,192 @@
-// --- UI A JAZYKOVÁ LOGIKA ---
+console.log("--- ui.js načítané ---");
 
-function switchTab(t) {
+window.switchTab = function(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
-    if(document.getElementById('tab-' + t)) document.getElementById('tab-' + t).classList.add('active');
+    
+    const targetTab = document.getElementById('tab-' + t);
+    if (targetTab) targetTab.classList.add('active');
+    
     const btn = document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.classList.add('active');
-    if (['train', 'learn', 'sensei', 'grammar'].includes(t)) populateSelects();
-    if (t === 'profile') { window.renderHistory(); updateProfileStats(); }
-}
+    
+    // Ak ideme do učenia/testovania, aktualizujeme selecty
+    if (['train', 'learn', 'sensei', 'grammar'].includes(t)) {
+        if (typeof populateSelects === 'function') populateSelects();
+    }
+    
+    // Ak ideme do profilu, hneď prekreslíme štatistiky a históriu
+    if (t === 'profile') { 
+        if (typeof window.renderHistory === 'function') window.renderHistory(); 
+        if (typeof window.updateProfileStats === 'function') window.updateProfileStats(); 
+    }
+};
 
-function setLang(lang) {
-    currentLang = lang; localStorage.setItem('finale_lang', lang);
+window.setLang = function(lang) {
+    window.currentLang = lang; 
+    localStorage.setItem('finale_lang', lang);
+    
+    if(document.getElementById('flag-sk')) document.getElementById('flag-sk').className = lang === 'sk' ? '' : 'inactive'; 
+    if(document.getElementById('flag-en')) document.getElementById('flag-en').className = lang === 'en' ? '' : 'inactive';
+    
     document.querySelectorAll('[data-sk], [data-en]').forEach(el => { 
         let txt = el.getAttribute('data-' + lang);
-        if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.setAttribute('placeholder', txt);
-        else el.innerHTML = txt; 
+        if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.setAttribute('placeholder', txt);
+        } else {
+            el.innerHTML = txt; 
+        }
     });
-    if (window.db && window.db.length > 0) populateSelects();
+    
+    if (window.db && window.db.length > 0) {
+        if (typeof populateSelects === 'function') populateSelects();
+    }
     if (typeof updateUI === 'function') updateUI(); 
-}
+};
 
-function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
+window.closeOverlay = function(id) { 
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none'; 
+};
 
 // --- LOGIKA PROFILU A HISTÓRIE ---
 
-function switchProfileTab(tabId) {
+window.switchProfileTab = function(tabId) {
     document.querySelectorAll('.prof-tab').forEach(el => el.classList.add('hidden'));
-    document.getElementById('prof-' + tabId).classList.remove('hidden');
+    const targetTab = document.getElementById('prof-' + tabId);
+    if (targetTab) targetTab.classList.remove('hidden');
+    
     document.querySelectorAll('#tab-profile .btn-nav').forEach(btn => btn.classList.remove('active'));
     let activeBtn = document.getElementById('btnProf' + tabId.charAt(0).toUpperCase() + tabId.slice(1));
     if (activeBtn) activeBtn.classList.add('active');
-    if (tabId === 'history') window.renderHistory();
-}
+    
+    if (tabId === 'history') {
+        if (typeof window.renderHistory === 'function') window.renderHistory();
+    }
+};
 
 window.renderHistory = function() {
     const cont = document.getElementById('historyList');
     if (!cont) return;
     cont.innerHTML = '';
-    if (!state.history || state.history.length === 0) {
-        cont.innerHTML = `<p style="color:var(--text-muted); text-align:center;">Zatiaľ žiadne záznamy.</p>`;
+    
+    if (!window.state || !window.state.history || window.state.history.length === 0) {
+        cont.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">Zatiaľ žiadne záznamy.</p>`;
         return;
     }
-    [...state.history].reverse().forEach((h, i) => {
+    
+    [...window.state.history].reverse().forEach((h) => {
+        const actualIndex = window.state.history.indexOf(h);
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.onclick = () => window.showHistoryDetail(state.history.indexOf(h));
-        div.style = `cursor:pointer; background: var(--bg-dark); padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'};`;
-        div.innerHTML = `<div><strong>${h.type} - ${h.lesson} 🔍</strong><br><small>${new Date(h.date).toLocaleDateString()}</small></div><div style="font-weight:bold; color:${h.passed ? 'var(--success)' : 'var(--danger)'};">${h.score}%</div>`;
+        div.onclick = () => window.showHistoryDetail(actualIndex);
+        div.style = `cursor:pointer; background: var(--bg-dark); padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'};`;
+        
+        const dateStr = new Date(h.date).toLocaleDateString() + " " + new Date(h.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        div.innerHTML = `
+            <div>
+                <div style="font-weight:bold; font-size:14px;">${h.type} - ${h.lesson} 🔍</div>
+                <div style="font-size:11px; color:var(--text-muted);">${dateStr}</div>
+            </div>
+            <div style="font-weight:bold; color:${h.passed ? 'var(--success)' : 'var(--danger)'};">${h.score}%</div>
+        `;
         cont.appendChild(div);
     });
 };
 
 window.showHistoryDetail = function(idx) {
-    const h = state.history[idx];
-    if (!h || !h.details) { alert("Detaily nie sú dostupné pre tento záznam."); return; }
-    document.getElementById('detailStats').innerHTML = `<strong>${h.type}</strong> | ${h.lesson}<br>Skóre: ${h.score}%`;
+    if (!window.state || !window.state.history) return;
+    const h = window.state.history[idx];
+    
+    if (!h || !h.details || h.details.length === 0) { 
+        alert("Pre tento starší test nie sú dostupné podrobnosti."); 
+        return; 
+    }
+    
+    const statsDiv = document.getElementById('detailStats');
+    const listDiv = document.getElementById('detailList');
+    if (!statsDiv || !listDiv) return;
+
+    statsDiv.innerHTML = `<strong>${h.type}</strong> | ${h.lesson}<br>Skóre: ${h.score}%`;
+    
     let html = `<table style="width:100%; font-size:13px; border-spacing:0 5px;">`;
     h.details.forEach(item => {
         html += `<tr style="background:rgba(255,255,255,0.05);">
-            <td style="padding:10px;">${item.q}</td>
-            <td style="padding:10px; color:${item.isCorrect ? 'var(--success)' : 'var(--danger)'};">
-                ${item.a} ${item.isCorrect ? '' : '<br><small style="opacity:0.6;">Správne: '+item.correct+'</small>'}
+            <td style="padding:10px; border-radius: 8px 0 0 8px;">${item.q}</td>
+            <td style="padding:10px; border-radius: 0 8px 8px 0; color:${item.isCorrect ? 'var(--success)' : 'var(--danger)'};">
+                ${item.a} ${item.isCorrect ? '' : '<br><small style="opacity:0.6; color:white;">Správne: '+item.correct+'</small>'}
             </td>
         </tr>`;
     });
-    document.getElementById('detailList').innerHTML = html + `</table>`;
+    html += `</table>`;
+    
+    listDiv.innerHTML = html;
     document.getElementById('overlayDetail').style.display = 'flex';
 };
 
-function updateProfileStats() {
-    let lvl = Math.floor(state.xp / 500) + 1;
-    let curXp = state.xp % 500;
-    if(document.getElementById('profLevelText')) document.getElementById('profLevelText').innerText = `Level ${lvl}`;
-    if(document.getElementById('profXpText')) document.getElementById('profXpText').innerText = `${curXp} / 500 XP`;
-    if(document.getElementById('profXpBar')) document.getElementById('profXpBar').style.width = `${(curXp/500)*100}%`;
-    renderBadges();
-}
+window.updateProfileStats = function() {
+    if (!window.state) return;
+    
+    // 1. Výpočet XP a Levelu
+    let lvl = Math.floor(window.state.xp / 500) + 1;
+    let curXp = window.state.xp % 500;
+    
+    let levelEl = document.getElementById('profLevelText');
+    let xpEl = document.getElementById('profXpText');
+    let barEl = document.getElementById('profXpBar');
+    
+    if(levelEl) levelEl.innerText = `Level ${lvl}`;
+    if(xpEl) xpEl.innerText = `${curXp} / 500 XP`;
+    if(barEl) barEl.style.width = `${(curXp/500)*100}%`;
 
-function renderBadges() {
+    // 2. Výpočet JLPT N5 a N4
+    if (window.db && window.db.length > 0) {
+        // Bezpečné určenie JLPT tagu (ak v Exceli nie je, berie sa ako N5; odstraňuje medzery)
+        const getJlpt = (w) => (w.jlpt ? w.jlpt.trim().toUpperCase() : 'N5');
+
+        let n5Total = window.db.filter(w => getJlpt(w) === 'N5').length;
+        let n4Total = window.db.filter(w => getJlpt(w) === 'N4').length;
+
+        let n5Unlocked = window.db.filter(w => getJlpt(w) === 'N5' && w.lekcia <= window.state.unlockedLesson).length;
+        let n4Unlocked = window.db.filter(w => getJlpt(w) === 'N4' && w.lekcia <= window.state.unlockedLesson).length;
+
+        let n5Percent = n5Total > 0 ? Math.round((n5Unlocked / n5Total) * 100) : 0;
+        let n4Percent = n4Total > 0 ? Math.round((n4Unlocked / n4Total) * 100) : 0;
+
+        let profN5Text = document.getElementById('profN5Text');
+        let profN5Bar = document.getElementById('profN5Bar');
+        if(profN5Text) profN5Text.innerText = `${n5Percent}% (${n5Unlocked}/${n5Total} slov)`;
+        if(profN5Bar) profN5Bar.style.width = `${n5Percent}%`;
+
+        let profN4Text = document.getElementById('profN4Text');
+        let profN4Bar = document.getElementById('profN4Bar');
+        if(profN4Text) profN4Text.innerText = `${n4Percent}% (${n4Unlocked}/${n4Total} slov)`;
+        if(profN4Bar) profN4Bar.style.width = `${n4Percent}%`;
+    }
+    
+    if (typeof window.renderBadges === 'function') window.renderBadges();
+};
+
+window.renderBadges = function() {
+    if (!window.state) return;
     const badges = [
-        { id: 'first_step', icon: '🐣', title: 'Prvý krok', desc: 'Odomkni Lekciu 2', condition: () => state.unlockedLesson >= 2 },
-        { id: 'perfect_test', icon: '🎯', title: 'Perfekcionista', desc: 'Daj test na 100%', condition: () => state.history && state.history.some(h => h.score === 100) }
+        { id: 'first_step', icon: '🐣', title: 'Prvý krok', desc: 'Odomkni Lekciu 2', condition: () => window.state.unlockedLesson >= 2 },
+        { id: 'streak_5', icon: '🔥', title: 'Vytrvalec', desc: 'Získaj 5-dňový streak', condition: () => window.state.streak >= 5 },
+        { id: 'perfect_test', icon: '🎯', title: 'Perfekcionista', desc: 'Daj test na 100%', condition: () => window.state.history && window.state.history.some(h => h.score === 100 && h.passed) },
+        { id: 'boss_1', icon: '👹', title: 'Základy za mnou', desc: 'Odomkni Lekciu 40', condition: () => window.state.unlockedLesson >= 40 }
     ];
-    let grid = document.getElementById('badgesGrid'); if (!grid) return; grid.innerHTML = '';
+    
+    let grid = document.getElementById('badgesGrid'); 
+    if (!grid) return; 
+    grid.innerHTML = '';
+    
     badges.forEach(b => {
-        let ok = b.condition();
+        let ok = false;
+        try { ok = b.condition(); } catch(e) {} // Ochrana pre prípad, že state.history ešte neexistuje
+        
         let div = document.createElement('div');
         div.className = `badge-item ${ok ? '' : 'badge-locked'}`;
         div.innerHTML = `<div class="badge-icon">${b.icon}</div><div class="badge-title">${b.title}</div><div class="badge-desc">${b.desc}</div>`;
         grid.appendChild(div);
     });
-}
+};
