@@ -1,4 +1,21 @@
-// --- POMOCNÉ FUNKCIE A HISTÓRIA ---
+// --- ZDIEĽANÉ PREMENNÉ ---
+window.testQueue = []; 
+window.currentIdx = 0; 
+window.mistakes = 0; 
+window.currentUnlockTarget = 0; 
+window.currentTestType = '';
+window.quizTimer = null;
+
+// --- POMOCNÉ FUNKCIE ---
+
+// Normalizácia textu (odstránenie diakritiky a medzier pre lepšie porovnávanie)
+function normalizeString(str) {
+    if (!str) return "";
+    return str.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Odstráni mäkčene/dĺžne
+        .replace(/[.!?]/g, "") // Odstráni interpunkciu
+        .trim();
+}
 
 function getLevenshteinDistance(a, b) {
     if (!a) return b ? b.length : 0;
@@ -25,14 +42,20 @@ function getLevenshteinDistance(a, b) {
 function updateScoreDisplay() {
     const scoreEl = document.getElementById('testScoreDisplay');
     if (scoreEl) {
-        let correct = currentIdx - mistakes;
-        scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${mistakes}`;
+        let correct = window.currentIdx - window.mistakes;
+        scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${window.mistakes}`;
     }
 }
 
 function saveToHistory(lesson, type, score, passed) {
     if (!state.history) state.history = [];
-    const entry = { date: Date.now(), lesson: lesson, type: type, score: score, passed: passed };
+    const entry = {
+        date: Date.now(),
+        lesson: lesson,
+        type: type,
+        score: score,
+        passed: passed
+    };
     state.history.push(entry);
     if (state.history.length > 50) state.history.shift();
     if (typeof saveState === 'function') saveState();
