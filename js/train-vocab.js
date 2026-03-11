@@ -4,7 +4,7 @@ let fcQueue = [];
 let fcIdx = 0;
 let quizOptions = [];
 
-// --- TOTO JE TÁ STRATENÁ FUNKCIA NA PREPÍNANIE REŽIMOV ---
+// --- UI PREPÍNANIE REŽIMOV TESTU ---
 window.selectTestModeUI = function(m) {
     document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
     const setupEl = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
@@ -15,12 +15,15 @@ window.selectTestModeUI = function(m) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- KARTIČKY ---
+// --- KARTIČKY (LEARN) ---
 window.startLearn = function(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
     fcQueue = window.db.filter(w => w.lekcia === parseInt(select.value));
-    if (fcQueue.length === 0) return;
+    if (fcQueue.length === 0) {
+        alert("Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
+        return;
+    }
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
@@ -49,20 +52,32 @@ window.closeLearn = function() {
 };
 window.playCurrentAudioFC = function() { if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); };
 
-// --- TESTY (KVÍZ / PÍSANIE) ---
+// --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE) ---
 window.startTraining = function(type) {
-    window.currentTestType = type; window.mistakes = 0; window.currentIdx = 0;
-    window.currentFullResults = []; // Zbieranie dát pre históriu
+    window.currentTestType = type; 
+    window.mistakes = 0; 
+    window.currentIdx = 0;
+    window.currentFullResults = [];
     
-    let from = parseInt(document.getElementById(type+'From')?.value || 1);
-    let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
-    let count = parseInt(document.getElementById(type+'Count')?.value || 10);
-    
-    if (from > to) [from, to] = [to, from];
-    window.testQueue = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
+    let pool = [];
+
+    // Logika pre režim Postupu (Unlock)
+    if (type === 'unlock') {
+        window.currentUnlockTarget = window.state.unlockedLesson;
+        pool = window.db.filter(w => w.lekcia === window.currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
+    } else {
+        let from = parseInt(document.getElementById(type+'From')?.value || 1);
+        let to = parseInt(document.getElementById(type+'To')?.value || window.state.unlockedLesson);
+        let count = parseInt(document.getElementById(type+'Count')?.value || 10);
+        
+        if (from > to) [from, to] = [to, from];
+        pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
+    }
+
+    window.testQueue = pool;
     
     if (window.testQueue.length === 0) {
-        alert("Nenašli sa žiadne slovíčka.");
+        alert("Nenašli sa žiadne slovíčka. Skontroluj, či má táto lekcia slová v Exceli.");
         return;
     }
     
@@ -102,11 +117,9 @@ window.checkTrainAnswer = function() {
     let inputNorm = window.normalizeString(inputRaw);
     let w = window.testQueue[window.currentIdx];
     
-    // Uznáme romadži (s 1 preklepom) alebo presnú kanu/kanji
     let isCorrect = (inputNorm === window.normalizeString(w.romaji) || window.getLevenshteinDistance(inputNorm, window.normalizeString(w.romaji)) <= 1);
     if (!isCorrect && (inputRaw === w.kana.trim() || inputRaw === w.kanji.trim())) isCorrect = true;
 
-    // Uložíme výsledok do detailov histórie
     window.currentFullResults.push({ q: w.sk, a: inputRaw || "(nič)", correct: w.romaji, isCorrect: isCorrect });
     
     let fb = document.getElementById('twFeedback');
@@ -129,7 +142,6 @@ window.checkQuizAnswer = function(idx) {
     let w = window.testQueue[window.currentIdx];
     let isCorrect = (quizOptions[idx].sk === w.sk);
     
-    // Uložíme výsledok do detailov histórie
     window.currentFullResults.push({ q: w.sk, a: quizOptions[idx].romaji, correct: w.romaji, isCorrect: isCorrect });
     
     let fb = document.getElementById('twFeedback');
@@ -158,12 +170,30 @@ window.endTraining = function() {
     let perc = Math.round(((window.testQueue.length - window.mistakes) / window.testQueue.length) * 100);
     document.getElementById('trScore').innerText = `${perc}%`;
     
-    window.saveToHistory(`Lekcia ${window.testQueue[0].lekcia}`, window.currentTestType === 'quiz' ? 'Kvíz' : 'Slovíčka', perc, perc >= 80, window.currentFullResults);
+    let typeName = window.currentTestType === 'unlock' ? 'Odomknutie' : (window.currentTestType === 'quiz' ? 'Kvíz' : 'Slovíčka');
+    window.saveToHistory(`Lekcia ${window.testQueue[0].lekcia}`, typeName, perc, perc >= 80, window.currentFullResults);
     
+    // Logika postupu na ďalšiu úroveň (90% a viac)
     if (perc >= 90 && window.currentTestType === 'unlock') {
-        if(state.unlockedLesson === window.currentUnlockTarget) state.unlockedLesson++;
-        addXP(100); saveState();
-    } else if (perc >= 80) addXP(50);
+        if(window.state.unlockedLesson === window.currentUnlockTarget) {
+            window.state.unlockedLesson++;
+            if (typeof addXP === 'function') addXP(100); 
+            if (typeof saveState === 'function') saveState();
+            
+            // Okamžité prekreslenie UI
+            if (typeof renderMap === 'function') renderMap();
+            if (typeof populateSelects === 'function') populateSelects();
+            
+            setTimeout(() => alert("🎉 Výborne! Odomkol si novú lekciu!"), 300);
+        } else {
+            // Ak už bola odomknutá predtým, len pridať XP
+            if (typeof addXP === 'function') addXP(100); 
+            if (typeof saveState === 'function') saveState();
+        }
+    } else if (perc >= 80) {
+        if (typeof addXP === 'function') addXP(50); 
+        if (typeof saveState === 'function') saveState();
+    }
 };
 
 window.closeTraining = function() {
