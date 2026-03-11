@@ -31,14 +31,14 @@ let currentUnlockTarget = 0;
 let isBossTest = false;
 let currentTestMistakes = []; 
 let currentFullResults = [];
-let quizTimer; 
+let quizTimer = null; 
 let timeLeft = 5.0; 
 let quizOptions = [];
 let fcQueue = []; 
 let fcIdx = 0;
 let currentTestType = '';
 
-// Premenné pre gramatiku (DEKLAROVANÉ LEN RAZ)
+// Premenné pre gramatiku
 let grammarQueue = []; 
 let grammarIdx = 0; 
 let userSentence = []; 
@@ -48,12 +48,9 @@ let grammarLives = 3;
 function startLearn(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
-    
     let l = parseInt(select.value);
     fcQueue = window.db.filter(w => w.lekcia === l);
-    
     if (fcQueue.length === 0) return;
-    
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
@@ -66,7 +63,6 @@ function loadFc() {
     let w = fcQueue[fcIdx];
     const card = document.getElementById('fcElement');
     if (card) card.classList.remove('is-flipped');
-    
     setTimeout(() => {
         document.getElementById('fcProgress').innerText = `${fcIdx + 1} / ${fcQueue.length}`;
         document.getElementById('fcFrontSk').innerText = currentLang === 'sk' ? w.sk : w.en;
@@ -112,13 +108,33 @@ function showUnlockedList() {
 }
 
 // --- LOGIKA SLOVNÝCH TESTOV ---
+
+function updateScoreDisplay() {
+    const scoreEl = document.getElementById('testScoreDisplay');
+    if (scoreEl) {
+        let correct = (currentIdx) - mistakes;
+        // Ak sme práve odpovedali, currentIdx sa inkrementuje až v nextTrainWord, 
+        // takže zobrazenie musíme ladiť podľa toho, kde sa v cykle nachádzame.
+        scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${mistakes}`;
+    }
+}
+
 function selectTestModeUI(m) {
     document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
     document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.remove('hidden');
+    
+    // Reset farieb tlačidiel
+    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.add('active');
 }
 
 function startTraining(type) {
-    currentTestType = type; mistakes = 0; currentIdx = 0; currentTestMistakes = [];
+    currentTestType = type; 
+    mistakes = 0; 
+    currentIdx = 0; 
+    currentTestMistakes = [];
     let pool = [];
 
     if (type === 'unlock') {
@@ -127,7 +143,10 @@ function startTraining(type) {
     } else {
         let from = parseInt(document.getElementById(type+'From')?.value || 1);
         let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
-        pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, 20);
+        let count = parseInt(document.getElementById(type+'Count')?.value) || 20; // NAČÍTANIE POČTU
+        
+        if (from > to) [from, to] = [to, from];
+        pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
     }
 
     testQueue = pool;
@@ -142,10 +161,14 @@ function loadTrainWord() {
     document.getElementById('twWord').innerText = w.sk;
     document.getElementById('twFeedback').style.display = 'none';
     document.getElementById('twNextBtn').classList.add('hidden');
-    
+    document.getElementById('testProgress').innerText = `${currentIdx + 1} / ${testQueue.length}`;
+    updateScoreDisplay();
+
     if (currentTestType === 'quiz') {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
+        document.getElementById('quizTimerContainer').classList.remove('hidden');
+        
         let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
         quizOptions = [w, ...others].sort(()=>0.5-Math.random());
         for(let i=0; i<4; i++) {
@@ -154,14 +177,35 @@ function loadTrainWord() {
             btn.className = 'btn-quiz';
             btn.disabled = false;
         }
+        startQuizTimer();
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
-        document.getElementById('twInput').value = '';
-        document.getElementById('twInput').disabled = false;
-        document.getElementById('twInput').focus();
+        document.getElementById('quizTimerContainer').classList.add('hidden');
+        
+        const input = document.getElementById('twInput');
+        input.value = '';
+        input.disabled = false;
+        input.focus();
         document.getElementById('twSubmitBtn').classList.remove('hidden');
     }
+}
+
+function startQuizTimer() {
+    clearInterval(quizTimer);
+    timeLeft = 5.0;
+    const bar = document.getElementById('quizTimerBar');
+    if (bar) bar.style.width = '100%';
+
+    quizTimer = setInterval(() => {
+        timeLeft -= 0.1;
+        if (bar) bar.style.width = (timeLeft / 5.0) * 100 + "%";
+        
+        if (timeLeft <= 0) {
+            clearInterval(quizTimer);
+            checkQuizAnswer(-1); // Vypršanie času
+        }
+    }, 100);
 }
 
 function checkTrainAnswer() {
@@ -178,24 +222,32 @@ function checkTrainAnswer() {
         fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong";
         mistakes++;
     }
+    
+    updateScoreDisplay();
     document.getElementById('twInput').disabled = true;
     document.getElementById('twSubmitBtn').classList.add('hidden');
     document.getElementById('twNextBtn').classList.remove('hidden');
 }
 
 function checkQuizAnswer(idx) {
+    clearInterval(quizTimer);
     let w = testQueue[currentIdx];
-    let isCorrect = (quizOptions[idx].sk === w.sk);
+    let isCorrect = (idx !== -1 && quizOptions[idx].sk === w.sk);
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
 
     if (isCorrect) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         playAudioText(w.romaji, 'ja-JP');
+        if(idx !== -1) document.getElementById('qb'+idx).classList.add('correct');
     } else {
-        fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong";
+        fb.innerHTML = idx === -1 ? `⏰ Čas vypršal! <br> ${w.romaji}` : `❌ Chyba! Je to: ${w.romaji}`;
+        fb.className = "feedback-box fb-wrong";
         mistakes++;
+        if(idx !== -1) document.getElementById('qb'+idx).classList.add('wrong');
     }
+    
+    updateScoreDisplay();
     for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true;
     document.getElementById('twNextBtn').classList.remove('hidden');
 }
@@ -209,14 +261,22 @@ function nextTrainWord() {
 function endTraining() {
     document.getElementById('trainRun').classList.add('hidden');
     document.getElementById('trainResult').classList.remove('hidden');
-    let perc = Math.round(((testQueue.length - mistakes) / testQueue.length) * 100);
+    let correctCount = testQueue.length - mistakes;
+    let perc = Math.round((correctCount / testQueue.length) * 100);
     document.getElementById('trScore').innerText = `${perc}%`;
+    
+    const msg = document.getElementById('trMessage');
+    
     if (perc >= 90 && currentTestType === 'unlock') {
-        state.unlockedLesson++;
+        if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
         addXP(100);
+        msg.innerText = "🎉 Nová úroveň odomknutá!";
         saveState();
     } else if (perc >= 80) {
         addXP(50);
+        msg.innerText = "✅ Skvelý výkon!";
+    } else {
+        msg.innerText = "Skús to znova pre zisk XP.";
     }
 }
 
@@ -225,21 +285,15 @@ function closeTraining() {
     document.getElementById('trainSetup').classList.remove('hidden');
 }
 
-// --- LOGIKA GRAMATIKY (VETY) ---
+// --- LOGIKA GRAMATIKY ---
+
 function startGrammarTest() {
     let l = parseInt(document.getElementById('grammarLessonSelect').value);
     grammarQueue = window.grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random());
-    
-    if (grammarQueue.length < 5) {
-        alert("Pre túto lekciu máš v Exceli (Sheet 2) málo viet. Potrebuješ aspoň 5.");
-        return;
-    }
-    
+    if (grammarQueue.length < 5) { alert("Málo viet v Exceli."); return; }
     grammarQueue = grammarQueue.slice(0, 5); 
-    grammarIdx = 0;
-    grammarLives = 3;
+    grammarIdx = 0; grammarLives = 3;
     updateGrammarLives();
-    
     document.getElementById('grammarSetup').classList.add('hidden');
     document.getElementById('grammarRun').classList.remove('hidden');
     loadGrammarSentence();
@@ -254,30 +308,24 @@ function loadGrammarSentence() {
     document.getElementById('grammarFeedback').style.display = 'none';
     document.getElementById('btnNextGrammar').classList.add('hidden');
     document.getElementById('btnCheckGrammar').classList.remove('hidden');
-
     let words = veta.romaji.split(/\s+/).sort(() => 0.5 - Math.random());
     let html = '';
-    words.forEach(w => {
-        html += `<button class="btn-quiz" style="padding: 10px 15px; width: auto; font-size: 16px;" onclick="addWordToGrammar('${w}', this)">${w}</button>`;
-    });
+    words.forEach(w => { html += `<button class="btn-quiz" style="padding: 10px 15px; width: auto;" onclick="addWordToGrammar('${w}', this)">${w}</button>`; });
     document.getElementById('grammarOptions').innerHTML = html;
 }
 
 function addWordToGrammar(word, btn) {
     userSentence.push(word);
     btn.style.visibility = 'hidden'; 
-    let solDiv = document.getElementById('grammarSolution');
     let span = document.createElement('span');
     span.className = 'btn-quiz';
     span.style = 'padding: 10px 15px; width: auto; background: var(--primary); color: white;';
     span.innerText = word;
-    solDiv.appendChild(span);
+    document.getElementById('grammarSolution').appendChild(span);
 }
 
 function updateGrammarLives() {
-    let hearts = "";
-    for(let i=0; i<grammarLives; i++) hearts += "❤️";
-    document.getElementById('grammarLives').innerText = hearts;
+    document.getElementById('grammarLives').innerText = "❤️".repeat(grammarLives);
 }
 
 function checkGrammarAnswer() {
@@ -285,47 +333,40 @@ function checkGrammarAnswer() {
     let answer = userSentence.join(' ');
     let fb = document.getElementById('grammarFeedback');
     fb.style.display = 'block';
-    
     if (answer.toLowerCase() === correct.toLowerCase()) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         document.getElementById('btnCheckGrammar').classList.add('hidden');
         document.getElementById('btnNextGrammar').classList.remove('hidden');
         playAudioText(grammarQueue[grammarIdx].ja, 'ja-JP');
     } else {
-        fb.innerHTML = `❌ Chyba! Správne: ${correct}`; fb.className = "feedback-box fb-wrong";
-        grammarLives--;
-        updateGrammarLives();
-        setTimeout(() => {
-            if (grammarLives <= 0) { alert("Stratil si životy! Začínaš odznova."); startGrammarTest(); }
-            else { loadGrammarSentence(); }
-        }, 1500);
+        fb.innerHTML = `❌ Chyba!`; fb.className = "feedback-box fb-wrong";
+        grammarLives--; updateGrammarLives();
+        setTimeout(() => { if (grammarLives <= 0) startGrammarTest(); else loadGrammarSentence(); }, 1200);
     }
 }
 
 function nextGrammarSentence() {
     grammarIdx++;
-    if (grammarIdx < 5) {
-        loadGrammarSentence();
-    } else {
-        // ÚSPEŠNÉ DOKONČENIE VÝZVY
-        alert("Výborne! Zvládol si gramatiku tejto lekcie! 🏆");
-        if (typeof addXP === 'function') addXP(150);
-
-        let currentL = parseInt(document.getElementById('grammarLessonSelect').value);
-
-        // Ak používateľ dokončil svoju momentálne najvyššiu dostupnú lekciu, odomkneme mu ďalšiu
-        if (currentL === state.unlockedGrammarLesson) {
-            state.unlockedGrammarLesson++;
-            console.log("Odomknutá nová lekcia gramatiky:", state.unlockedGrammarLesson);
-            
-            // Uložíme progres do Firebase a aktualizujeme menu
-            if (typeof saveState === 'function') saveState();
-            populateSelects(); 
-        }
-
+    if (grammarIdx < 5) loadGrammarSentence();
+    else {
+        alert("Gramatika zvládnutá! +150 XP");
+        addXP(150);
+        let cur = parseInt(document.getElementById('grammarLessonSelect').value);
+        if(cur === state.unlockedGrammarLesson) { state.unlockedGrammarLesson++; saveState(); populateSelects(); }
         document.getElementById('grammarRun').classList.add('hidden');
         document.getElementById('grammarSetup').classList.remove('hidden');
     }
 }
 
 function resetCurrentSentence() { loadGrammarSentence(); }
+
+// Global Enter Key
+document.addEventListener('keypress', e => {
+    if (e.key === 'Enter') {
+        const trainRun = document.getElementById('trainRun');
+        if (trainRun && !trainRun.classList.contains('hidden') && currentTestType !== 'quiz') { 
+            if (document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer(); 
+            else nextTrainWord(); 
+        }
+    }
+});
