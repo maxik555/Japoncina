@@ -1,6 +1,29 @@
-// --- TRÉNING, TESTY A KARTIČKY ---
+// --- PREMENNÉ PRE TESTY SLOVÍČOK ---
+let testQueue = []; 
+let currentIdx = 0; 
+let mistakes = 0; 
+let currentUnlockTarget = 0; 
+let isBossTest = false;
+let currentTestMistakes = []; 
+let currentFullResults = [];
+let quizTimer = null; 
+let timeLeft = 5.0; 
+let quizOptions = [];
+let currentTestType = '';
 
-// Výpočet preklepov (Levenshtein)
+// --- PREMENNÉ PRE KARTIČKY ---
+let fcQueue = []; 
+let fcIdx = 0;
+
+// --- PREMENNÉ PRE GRAMATIKU ---
+let grammarQueue = []; 
+let grammarIdx = 0; 
+let userSentence = []; 
+let grammarLives = 3;
+let grammarMode = 'click'; // Predvolený režim 'click' (bubliny)
+
+// --- POMOCNÉ FUNKCIE (LOGIKA) ---
+
 function getLevenshteinDistance(a, b) {
     if (!a) return b ? b.length : 0;
     if (!b) return a.length;
@@ -23,28 +46,16 @@ function getLevenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-// Premenné pre testy
-let testQueue = []; 
-let currentIdx = 0; 
-let mistakes = 0; 
-let currentUnlockTarget = 0; 
-let isBossTest = false;
-let currentTestMistakes = []; 
-let currentFullResults = [];
-let quizTimer = null; 
-let timeLeft = 5.0; 
-let quizOptions = [];
-let fcQueue = []; 
-let fcIdx = 0;
-let currentTestType = '';
+function updateScoreDisplay() {
+    const scoreEl = document.getElementById('testScoreDisplay');
+    if (scoreEl) {
+        let correct = currentIdx - mistakes;
+        scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${mistakes}`;
+    }
+}
 
-// Premenné pre gramatiku
-let grammarQueue = []; 
-let grammarIdx = 0; 
-let userSentence = []; 
-let grammarLives = 3;
+// --- KARTIČKY (TAB LEARN) ---
 
-// --- KARTIČKY (LEARN) ---
 function startLearn(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
@@ -107,26 +118,12 @@ function showUnlockedList() {
     tbody.innerHTML = table;
 }
 
-// --- LOGIKA SLOVNÝCH TESTOV ---
-
-function updateScoreDisplay() {
-    const scoreEl = document.getElementById('testScoreDisplay');
-    if (scoreEl) {
-        let correct = (currentIdx) - mistakes;
-        // Ak sme práve odpovedali, currentIdx sa inkrementuje až v nextTrainWord, 
-        // takže zobrazenie musíme ladiť podľa toho, kde sa v cykle nachádzame.
-        scoreEl.innerText = `✅ ${correct < 0 ? 0 : correct} | ❌ ${mistakes}`;
-    }
-}
+// --- SLOVNÉ TESTY (TAB TRAIN) ---
 
 function selectTestModeUI(m) {
     document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
     document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.remove('hidden');
-    
-    // Reset farieb tlačidiel
-    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => {
-        btn.classList.remove('active');
-    });
+    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => btn.classList.remove('active'));
     document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1))?.classList.add('active');
 }
 
@@ -143,7 +140,8 @@ function startTraining(type) {
     } else {
         let from = parseInt(document.getElementById(type+'From')?.value || 1);
         let to = parseInt(document.getElementById(type+'To')?.value || state.unlockedLesson);
-        let count = parseInt(document.getElementById(type+'Count')?.value) || 20; // NAČÍTANIE POČTU
+        let countInput = document.getElementById(type+'Count');
+        let count = countInput ? parseInt(countInput.value) : 20; 
         
         if (from > to) [from, to] = [to, from];
         pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
@@ -182,11 +180,8 @@ function loadTrainWord() {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
         document.getElementById('quizTimerContainer').classList.add('hidden');
-        
         const input = document.getElementById('twInput');
-        input.value = '';
-        input.disabled = false;
-        input.focus();
+        input.value = ''; input.disabled = false; input.focus();
         document.getElementById('twSubmitBtn').classList.remove('hidden');
     }
 }
@@ -196,20 +191,16 @@ function startQuizTimer() {
     timeLeft = 5.0;
     const bar = document.getElementById('quizTimerBar');
     if (bar) bar.style.width = '100%';
-
     quizTimer = setInterval(() => {
         timeLeft -= 0.1;
         if (bar) bar.style.width = (timeLeft / 5.0) * 100 + "%";
-        
-        if (timeLeft <= 0) {
-            clearInterval(quizTimer);
-            checkQuizAnswer(-1); // Vypršanie času
-        }
+        if (timeLeft <= 0) { clearInterval(quizTimer); checkQuizAnswer(-1); }
     }, 100);
 }
 
 function checkTrainAnswer() {
-    let input = normalizeString(document.getElementById('twInput').value);
+    let inputRaw = document.getElementById('twInput').value;
+    let input = normalizeString(inputRaw);
     let w = testQueue[currentIdx];
     let correct = normalizeString(w.romaji);
     let fb = document.getElementById('twFeedback');
@@ -222,7 +213,6 @@ function checkTrainAnswer() {
         fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong";
         mistakes++;
     }
-    
     updateScoreDisplay();
     document.getElementById('twInput').disabled = true;
     document.getElementById('twSubmitBtn').classList.add('hidden');
@@ -239,14 +229,11 @@ function checkQuizAnswer(idx) {
     if (isCorrect) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         playAudioText(w.romaji, 'ja-JP');
-        if(idx !== -1) document.getElementById('qb'+idx).classList.add('correct');
     } else {
         fb.innerHTML = idx === -1 ? `⏰ Čas vypršal! <br> ${w.romaji}` : `❌ Chyba! Je to: ${w.romaji}`;
         fb.className = "feedback-box fb-wrong";
         mistakes++;
-        if(idx !== -1) document.getElementById('qb'+idx).classList.add('wrong');
     }
-    
     updateScoreDisplay();
     for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true;
     document.getElementById('twNextBtn').classList.remove('hidden');
@@ -264,20 +251,14 @@ function endTraining() {
     let correctCount = testQueue.length - mistakes;
     let perc = Math.round((correctCount / testQueue.length) * 100);
     document.getElementById('trScore').innerText = `${perc}%`;
-    
     const msg = document.getElementById('trMessage');
-    
     if (perc >= 90 && currentTestType === 'unlock') {
         if(state.unlockedLesson === currentUnlockTarget) state.unlockedLesson++;
-        addXP(100);
-        msg.innerText = "🎉 Nová úroveň odomknutá!";
+        addXP(100); msg.innerText = "🎉 Nová úroveň odomknutá!";
         saveState();
     } else if (perc >= 80) {
-        addXP(50);
-        msg.innerText = "✅ Skvelý výkon!";
-    } else {
-        msg.innerText = "Skús to znova pre zisk XP.";
-    }
+        addXP(50); msg.innerText = "✅ Skvelý výkon!";
+    } else { msg.innerText = "Skús to znova pre zisk XP."; }
 }
 
 function closeTraining() {
@@ -285,12 +266,18 @@ function closeTraining() {
     document.getElementById('trainSetup').classList.remove('hidden');
 }
 
-// --- LOGIKA GRAMATIKY ---
+// --- GRAMATIKA (TAB GRAMMAR) ---
+
+function setGrammarMode(mode) {
+    grammarMode = mode;
+    document.getElementById('btnGrammarModeClick').classList.toggle('active', mode === 'click');
+    document.getElementById('btnGrammarModeWrite').classList.toggle('active', mode === 'write');
+}
 
 function startGrammarTest() {
     let l = parseInt(document.getElementById('grammarLessonSelect').value);
     grammarQueue = window.grammarDb.filter(v => v.lekcia === l).sort(() => 0.5 - Math.random());
-    if (grammarQueue.length < 5) { alert("Málo viet v Exceli."); return; }
+    if (grammarQueue.length < 5) { alert("V Exceli (Sheet 2) je pre túto lekciu málo viet."); return; }
     grammarQueue = grammarQueue.slice(0, 5); 
     grammarIdx = 0; grammarLives = 3;
     updateGrammarLives();
@@ -304,14 +291,27 @@ function loadGrammarSentence() {
     userSentence = [];
     document.getElementById('grammarProgress').innerText = `Veta ${grammarIdx + 1} / 5`;
     document.getElementById('grammarTask').innerText = veta.sk;
-    document.getElementById('grammarSolution').innerHTML = '';
     document.getElementById('grammarFeedback').style.display = 'none';
     document.getElementById('btnNextGrammar').classList.add('hidden');
     document.getElementById('btnCheckGrammar').classList.remove('hidden');
-    let words = veta.romaji.split(/\s+/).sort(() => 0.5 - Math.random());
-    let html = '';
-    words.forEach(w => { html += `<button class="btn-quiz" style="padding: 10px 15px; width: auto;" onclick="addWordToGrammar('${w}', this)">${w}</button>`; });
-    document.getElementById('grammarOptions').innerHTML = html;
+
+    if (grammarMode === 'click') {
+        document.getElementById('grammarClickArea').classList.remove('hidden');
+        document.getElementById('grammarWriteArea').classList.add('hidden');
+        document.getElementById('grammarSolution').innerHTML = '';
+        let words = veta.romaji.split(/\s+/).sort(() => 0.5 - Math.random());
+        let html = '';
+        words.forEach(w => {
+            html += `<button class="btn-quiz" style="padding: 10px 15px; width: auto;" onclick="addWordToGrammar('${w}', this)">${w}</button>`;
+        });
+        document.getElementById('grammarOptions').innerHTML = html;
+    } else {
+        document.getElementById('grammarClickArea').classList.add('hidden');
+        document.getElementById('grammarWriteArea').classList.remove('hidden');
+        const input = document.getElementById('grammarInput');
+        input.value = ''; input.disabled = false;
+        setTimeout(() => input.focus(), 200);
+    }
 }
 
 function addWordToGrammar(word, btn) {
@@ -330,13 +330,18 @@ function updateGrammarLives() {
 
 function checkGrammarAnswer() {
     let correct = grammarQueue[grammarIdx].romaji;
-    let answer = userSentence.join(' ');
+    let answer = (grammarMode === 'click') ? userSentence.join(' ') : document.getElementById('grammarInput').value.trim();
     let fb = document.getElementById('grammarFeedback');
     fb.style.display = 'block';
-    if (answer.toLowerCase() === correct.toLowerCase()) {
+
+    let cleanA = answer.replace(/[.!?]$/, "").toLowerCase().trim();
+    let cleanC = correct.replace(/[.!?]$/, "").toLowerCase().trim();
+
+    if (cleanA === cleanC) {
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct";
         document.getElementById('btnCheckGrammar').classList.add('hidden');
         document.getElementById('btnNextGrammar').classList.remove('hidden');
+        if (grammarMode === 'write') document.getElementById('grammarInput').disabled = true;
         playAudioText(grammarQueue[grammarIdx].ja, 'ja-JP');
     } else {
         fb.innerHTML = `❌ Chyba!`; fb.className = "feedback-box fb-wrong";
@@ -349,7 +354,7 @@ function nextGrammarSentence() {
     grammarIdx++;
     if (grammarIdx < 5) loadGrammarSentence();
     else {
-        alert("Gramatika zvládnutá! +150 XP");
+        alert("Výborne! Gramatika lekcie zvládnutá! +150 XP");
         addXP(150);
         let cur = parseInt(document.getElementById('grammarLessonSelect').value);
         if(cur === state.unlockedGrammarLesson) { state.unlockedGrammarLesson++; saveState(); populateSelects(); }
@@ -360,13 +365,17 @@ function nextGrammarSentence() {
 
 function resetCurrentSentence() { loadGrammarSentence(); }
 
-// Global Enter Key
+// Globálny Enter
 document.addEventListener('keypress', e => {
     if (e.key === 'Enter') {
         const trainRun = document.getElementById('trainRun');
+        const grammarRun = document.getElementById('grammarRun');
         if (trainRun && !trainRun.classList.contains('hidden') && currentTestType !== 'quiz') { 
             if (document.getElementById('twNextBtn').classList.contains('hidden')) checkTrainAnswer(); 
             else nextTrainWord(); 
+        } else if (grammarRun && !grammarRun.classList.contains('hidden')) {
+            if (document.getElementById('btnNextGrammar').classList.contains('hidden')) checkGrammarAnswer();
+            else nextGrammarSentence();
         }
     }
 });
