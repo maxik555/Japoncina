@@ -1,8 +1,15 @@
-console.log("--- 2. train-vocab.js načítané ---");
+console.log("--- 2. train-vocab.js načítané (S podporou viacerých odpovedí) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
 let quizOptions = [];
+
+// Pomocná funkcia na rozdelenie možností (napr. "yon / shi" -> ["yon", "shi"])
+function getPossibleAnswers(str) {
+    if (!str || str === '-') return [];
+    // Rozdelí text podľa lomky alebo čiarky a odstráni medzery na krajoch
+    return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
+}
 
 // --- UI PREPÍNANIE REŽIMOV TESTU ---
 window.selectTestModeUI = function(m) {
@@ -61,7 +68,6 @@ window.startTraining = function(type) {
     
     let pool = [];
 
-    // Logika pre režim Postupu (Unlock)
     if (type === 'unlock') {
         window.currentUnlockTarget = window.state.unlockedLesson;
         pool = window.db.filter(w => w.lekcia === window.currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
@@ -117,8 +123,27 @@ window.checkTrainAnswer = function() {
     let inputNorm = window.normalizeString(inputRaw);
     let w = window.testQueue[window.currentIdx];
     
-    let isCorrect = (inputNorm === window.normalizeString(w.romaji) || window.getLevenshteinDistance(inputNorm, window.normalizeString(w.romaji)) <= 1);
-    if (!isCorrect && (inputRaw === w.kana.trim() || inputRaw === w.kanji.trim())) isCorrect = true;
+    // Získame všetky možné správne odpovede
+    let possibleRomaji = getPossibleAnswers(w.romaji).map(s => window.normalizeString(s));
+    let possibleKana = getPossibleAnswers(w.kana);
+    let possibleKanji = getPossibleAnswers(w.kanji);
+
+    let isCorrect = false;
+
+    // 1. Kontrola Rómadži (pre každú možnosť skontrolujeme zhodu alebo 1 preklep)
+    for (let r of possibleRomaji) {
+        if (inputNorm === r || window.getLevenshteinDistance(inputNorm, r) <= 1) {
+            isCorrect = true;
+            break;
+        }
+    }
+
+    // 2. Kontrola pre Kanu a Kandži (presná zhoda s niektorou z možností)
+    if (!isCorrect) {
+        if (possibleKana.includes(inputRaw) || possibleKanji.includes(inputRaw) || inputRaw === w.kana.trim() || inputRaw === w.kanji.trim()) {
+            isCorrect = true;
+        }
+    }
 
     window.currentFullResults.push({ q: w.sk, a: inputRaw || "(nič)", correct: w.romaji, isCorrect: isCorrect });
     
@@ -126,7 +151,7 @@ window.checkTrainAnswer = function() {
     fb.style.display = 'block';
     if (isCorrect) { 
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
-        if (typeof playAudioText === 'function') playAudioText(w.romaji, 'ja-JP'); 
+        if (typeof playAudioText === 'function') playAudioText(possibleRomaji[0] || w.romaji, 'ja-JP'); 
     }
     else { 
         fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
@@ -148,7 +173,9 @@ window.checkQuizAnswer = function(idx) {
     fb.style.display = 'block';
     if (isCorrect) { 
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
-        if (typeof playAudioText === 'function') playAudioText(w.romaji, 'ja-JP'); 
+        // Pre audio vyberieme prvú možnosť, ak ich je viac
+        let audioText = getPossibleAnswers(w.romaji)[0] || w.romaji;
+        if (typeof playAudioText === 'function') playAudioText(audioText, 'ja-JP'); 
     }
     else { 
         fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
@@ -173,20 +200,17 @@ window.endTraining = function() {
     let typeName = window.currentTestType === 'unlock' ? 'Odomknutie' : (window.currentTestType === 'quiz' ? 'Kvíz' : 'Slovíčka');
     window.saveToHistory(`Lekcia ${window.testQueue[0].lekcia}`, typeName, perc, perc >= 80, window.currentFullResults);
     
-    // Logika postupu na ďalšiu úroveň (90% a viac)
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
             window.state.unlockedLesson++;
             if (typeof addXP === 'function') addXP(100); 
             if (typeof saveState === 'function') saveState();
             
-            // Okamžité prekreslenie UI
             if (typeof renderMap === 'function') renderMap();
             if (typeof populateSelects === 'function') populateSelects();
             
             setTimeout(() => alert("🎉 Výborne! Odomkol si novú lekciu!"), 300);
         } else {
-            // Ak už bola odomknutá predtým, len pridať XP
             if (typeof addXP === 'function') addXP(100); 
             if (typeof saveState === 'function') saveState();
         }
