@@ -3,7 +3,21 @@ console.log("Logika slovíčok načítaná.");
 let fcQueue = []; 
 let fcIdx = 0;
 let quizOptions = [];
-let timeLeft = 5.0;
+
+// --- PREPÍNANIE REŽIMOV UI (OPRAVA CHYBY) ---
+window.selectTestModeUI = function(m) {
+    // Schováme všetky sekcie nastavení
+    document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
+    
+    // Zobrazíme tú správnu
+    const setupEl = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (setupEl) setupEl.classList.remove('hidden');
+    
+    // Aktualizujeme vizuál tlačidiel
+    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (activeBtn) activeBtn.classList.add('active');
+};
 
 // --- KARTIČKY ---
 window.startLearn = function(mode) {
@@ -20,6 +34,7 @@ window.startLearn = function(mode) {
 
 window.loadFc = function() {
     let w = fcQueue[fcIdx];
+    if (!w) return;
     document.getElementById('fcElement').classList.remove('is-flipped');
     setTimeout(() => {
         document.getElementById('fcProgress').innerText = `${fcIdx + 1} / ${fcQueue.length}`;
@@ -50,7 +65,10 @@ window.startTraining = function(type) {
     if (from > to) [from, to] = [to, from];
     window.testQueue = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
     
-    if (window.testQueue.length === 0) return;
+    if (window.testQueue.length === 0) {
+        alert("Žiadne slová pre tento výber.");
+        return;
+    }
     document.getElementById('trainSetup').classList.add('hidden');
     document.getElementById('trainRun').classList.remove('hidden');
     window.loadTrainWord();
@@ -73,7 +91,6 @@ window.loadTrainWord = function() {
             let btn = document.getElementById('qb'+i);
             btn.innerText = quizOptions[i].romaji;
             btn.className = 'btn-quiz'; btn.disabled = false;
-            btn.classList.remove('correct', 'wrong');
         }
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
