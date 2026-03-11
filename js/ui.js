@@ -1,10 +1,24 @@
 // --- UI A JAZYKOVÁ LOGIKA ---
+
 function switchTab(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + t).classList.add('active');
+    
+    const targetTab = document.getElementById('tab-' + t);
+    if (targetTab) targetTab.classList.add('active');
+    
     const btn = document.getElementById('btnTab' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.classList.add('active');
-    if (t === 'train' || t === 'learn' || t === 'sensei') populateSelects();
+
+    // Ak prepíname na testy, učenie alebo gramatiku, aktualizujeme selecty
+    if (['train', 'learn', 'sensei', 'grammar'].includes(t)) {
+        if (typeof populateSelects === 'function') populateSelects();
+    }
+
+    // NOVÉ: Ak prepneme na profil, vykreslíme históriu a štatistiky
+    if (t === 'profile') {
+        window.renderHistory();
+        updateProfileStats();
+    }
 }
 
 function setLang(lang) {
@@ -24,17 +38,12 @@ function setLang(lang) {
         }
     });
     
-    if (db.length > 0) populateSelects();
-    updateUI(); 
+    if (window.db && window.db.length > 0) populateSelects();
+    if (typeof updateUI === 'function') updateUI(); 
 }
 
 function closeOverlay(id) { 
     document.getElementById(id).style.display = 'none'; 
-}
-
-function normalizeString(str) {
-    if (!str) return "";
-    return str.toLowerCase().replace(/[\s\-\!\?\,\.\"\']/g, "").trim();
 }
 
 // --- LOGIKA PROFILU ---
@@ -55,10 +64,12 @@ function switchProfileTab(tabId) {
         activeBtn.style.backgroundColor = 'var(--primary)';
         activeBtn.style.color = 'white';
     }
+
+    // Ak klikne na pod-tab história, vykreslíme ju
+    if (tabId === 'history') window.renderHistory();
 }
 
 function updateProfileStats() {
-    // 1. Výpočet XP a Levelu
     let currentLevel = Math.floor(state.xp / 500) + 1;
     let currentLevelXp = state.xp % 500; 
     let xpPercent = (currentLevelXp / 500) * 100;
@@ -71,30 +82,51 @@ function updateProfileStats() {
     if(xpEl) xpEl.innerText = `${currentLevelXp} / 500 XP`;
     if(barEl) barEl.style.width = `${xpPercent}%`;
 
-    // 2. Výpočet JLPT N5 a N4
-    if (db.length > 0) {
-        let n5Total = db.filter(w => w.jlpt === 'N5').length;
-        let n4Total = db.filter(w => w.jlpt === 'N4').length;
-
-        let n5Unlocked = db.filter(w => w.jlpt === 'N5' && w.lekcia <= state.unlockedLesson).length;
-        let n4Unlocked = db.filter(w => w.jlpt === 'N4' && w.lekcia <= state.unlockedLesson).length;
+    if (window.db && window.db.length > 0) {
+        let n5Total = window.db.filter(w => w.jlpt === 'N5').length;
+        let n4Total = window.db.filter(w => w.jlpt === 'N4').length;
+        let n5Unlocked = window.db.filter(w => w.jlpt === 'N5' && w.lekcia <= state.unlockedLesson).length;
+        let n4Unlocked = window.db.filter(w => w.jlpt === 'N4' && w.lekcia <= state.unlockedLesson).length;
 
         let n5Percent = n5Total > 0 ? Math.round((n5Unlocked / n5Total) * 100) : 0;
         let n4Percent = n4Total > 0 ? Math.round((n4Unlocked / n4Total) * 100) : 0;
 
-        let profN5Text = document.getElementById('profN5Text');
-        let profN5Bar = document.getElementById('profN5Bar');
-        if(profN5Text) profN5Text.innerText = `${n5Percent}% (${n5Unlocked}/${n5Total} slov)`;
-        if(profN5Bar) profN5Bar.style.width = `${n5Percent}%`;
-
-        let profN4Text = document.getElementById('profN4Text');
-        let profN4Bar = document.getElementById('profN4Bar');
-        if(profN4Text) profN4Text.innerText = `${n4Percent}% (${n4Unlocked}/${n4Total} slov)`;
-        if(profN4Bar) profN4Bar.style.width = `${n4Percent}%`;
+        if(document.getElementById('profN5Text')) document.getElementById('profN5Text').innerText = `${n5Percent}% (${n5Unlocked}/${n5Total} slov)`;
+        if(document.getElementById('profN5Bar')) document.getElementById('profN5Bar').style.width = `${n5Percent}%`;
+        if(document.getElementById('profN4Text')) document.getElementById('profN4Text').innerText = `${n4Percent}% (${n4Unlocked}/${n4Total} slov)`;
+        if(document.getElementById('profN4Bar')) document.getElementById('profN4Bar').style.width = `${n4Percent}%`;
     }
-
     renderBadges();
 }
+
+// NOVÉ: Funkcia pre vykreslenie histórie
+window.renderHistory = function() {
+    const cont = document.getElementById('historyList');
+    if (!cont) return;
+    cont.innerHTML = '';
+    
+    if (!state.history || state.history.length === 0) {
+        cont.innerHTML = `<p style="color:var(--text-muted); text-align:center; padding:20px;">Zatiaľ žiadne záznamy o skúškach.</p>`;
+        return;
+    }
+    
+    const sorted = [...state.history].sort((a, b) => b.date - a.date);
+    sorted.forEach(h => {
+        const dateStr = new Date(h.date).toLocaleDateString() + " " + new Date(h.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.style = `background: var(--bg-dark); padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'};`;
+        
+        div.innerHTML = `
+            <div>
+                <div style="font-weight:bold; font-size:14px;">${h.type} - ${h.lesson}</div>
+                <div style="font-size:11px; color:var(--text-muted);">${dateStr}</div>
+            </div>
+            <div style="font-weight:bold; color:${h.passed ? 'var(--success)' : 'var(--danger)'};">${h.score}%</div>
+        `;
+        cont.appendChild(div);
+    });
+};
 
 function renderBadges() {
     const badges = [
