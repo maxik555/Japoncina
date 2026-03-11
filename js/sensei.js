@@ -1,31 +1,28 @@
-// --- AI SENSEI & AI PREKLADAČ (Verzia 2026 / Gemini 2.5 Flash) ---
+console.log("--- sensei.js načítané ---");
 
 let currentSenseiTask = "";
 let chatHistory = []; 
 
 // Hlavná funkcia na volanie Gemini API
-async function callGemini(promptText) {
-    if (!state.geminiKey) {
+window.callGemini = async function(promptText) {
+    if (!window.state.geminiKey) {
         const userInput = prompt("Zadaj svoj Gemini API kľúč (uloží sa bezpečne do tvojho profilu):");
         if (!userInput || userInput.trim() === "") {
             alert("Bez API kľúča Sensei nemôže fungovať.");
             return null;
         }
-        state.geminiKey = userInput.trim();
-        saveState();
+        window.state.geminiKey = userInput.trim();
+        if (typeof saveState === 'function') saveState();
     }
 
-    const key = state.geminiKey;
+    const key = window.state.geminiKey;
 
     try {
-        // Používame model gemini-2.5-flash podľa tvojho zadania
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: promptText }]
-                }]
+                contents: [{ parts: [{ text: promptText }] }]
             })
         });
 
@@ -34,15 +31,15 @@ async function callGemini(promptText) {
         if (data.error) {
             alert("Sensei API Error: " + data.error.message);
             if (data.error.code === 400 || data.error.code === 403) {
-                state.geminiKey = null;
-                saveState();
+                window.state.geminiKey = null;
+                if (typeof saveState === 'function') saveState();
             }
             return null;
         }
 
         if (data.candidates && data.candidates[0].content) {
             let text = data.candidates[0].content.parts[0].text;
-            // Globálna poistka: Odstránime všetky hviezdičky pre čistý dizajn
+            // Odstránime hviezdičky pre čistý dizajn
             return text.replace(/\*/g, "");
         }
         
@@ -51,22 +48,37 @@ async function callGemini(promptText) {
         console.error("Network Error:", error);
         return null;
     }
-}
+};
 
 // --- SEKCIA SENSEI (TRÉNING VIET) ---
 
-async function startSenseiSession() {
+window.startSenseiSession = async function() {
     let from = parseInt(document.getElementById('senseiFrom').value);
     let to = parseInt(document.getElementById('senseiTo').value);
     let count = parseInt(document.getElementById('senseiCount').value) || 3;
     if (from > to) [from, to] = [to, from];
 
-    let allowedWords = db.filter(w => w.lekcia >= from && w.lekcia <= to)
-                         .map(w => `${w.sk} (${w.romaji})`).join(", ");
-    
-    if (!allowedWords) {
+    let wordPool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to);
+    if (wordPool.length === 0) {
         alert("Žiadne slová v tomto rozsahu lekcií!");
         return;
+    }
+
+    // 1. Náhodný výber max 15 slovíčok pre inšpiráciu (aby sme nepreplnili prompt)
+    let sampleWords = wordPool.sort(() => 0.5 - Math.random())
+                              .slice(0, 15)
+                              .map(w => w.sk)
+                              .join(", ");
+
+    // 2. Náhodný výber gramatiky z daných lekcií pre nastavenie náročnosti
+    let grammarPool = (window.grammarDb || []).filter(g => g.lekcia >= from && g.lekcia <= to);
+    let grammarHint = "";
+    if (grammarPool.length > 0) {
+        let sampleGrammar = grammarPool.sort(() => 0.5 - Math.random())
+                                       .slice(0, 3)
+                                       .map(g => g.sk)
+                                       .join(" | ");
+        grammarHint = `Ako inšpiráciu pre zložitosť gramatiky si pozri tieto vety, ktoré študent už ovláda: "${sampleGrammar}".`;
     }
 
     // Reset UI
@@ -76,60 +88,72 @@ async function startSenseiSession() {
     document.getElementById('senseiUserInput').disabled = false;
     document.getElementById('senseiUserInput').value = "";
     document.getElementById('btnSenseiSubmit').classList.remove('hidden');
-    document.getElementById('senseiTaskText').innerHTML = `<span style="color:var(--ai-glow);">Sensei pripravuje zadanie... 🎋</span>`;
+    document.getElementById('senseiTaskText').innerHTML = `<span style="color:var(--ai-glow);">Sensei pre teba vymýšľa komplexné vety... 🎋</span>`;
 
-    let avoidSentences = (state.usedSenseiSentences || []).slice(-10).join(" | ");
+    let avoidSentences = (window.state.usedSenseiSentences || []).slice(-10).join(" | ");
 
-    // Prompt nastavený na "priateľského učiteľa"
-    let prompt = `Si priateľský učiteľ japončiny. Vygeneruj ${count} krátkych a jednoduchých viet na preklad do japončiny pre svojho študenta.
-    Používaj výhradne tieto slová: ${allowedWords}. Vyhni sa týmto vetám: ${avoidSentences}. 
-    Odpovedaj LEN očíslovaným zoznamom viet v slovenčine. Nepoužívaj žiadne formátovanie (hviezdičky).`;
+    // 3. Nový, inteligentnejší prompt
+    let prompt = `Si priateľský, ale náročný učiteľ japončiny. Vygeneruj presne ${count} zmysluplných a prirodzených viet na preklad zo slovenčiny do japončiny.
+    Študent momentálne trénuje lekcie ${from} až ${to}, čo zodpovedá úrovni JLPT N5 až N4.
+    
+    Tvoje pravidlá:
+    1. Vety NESMÚ byť len jednoduché trojslovné spojenia (napr. nie "Ja som študent" alebo "Mám jablko").
+    2. Používaj rozvité vety, súvetia, spájaj myšlienky pomocou spojok (pretože, ale, a), používaj príslovky času a miesta.
+    3. Zakomponuj do viet niektoré z týchto slovíčok (vyber si len tie, ktoré sa ti hodia): ${sampleWords}.
+    4. ${grammarHint}
+    5. Vyhni sa týmto vetám, tie už prekladal: ${avoidSentences}. 
+    6. Odpovedaj LEN očíslovaným zoznamom viet v slovenčine. Nepíš žiadny iný text, žiadne úvody ani závery.
+    7. ZÁKAZ používať hviezdičky (**) alebo iné formátovanie.`;
 
-    let aiResponse = await callGemini(prompt);
+    let aiResponse = await window.callGemini(prompt);
     
     if (aiResponse) {
         currentSenseiTask = aiResponse;
         document.getElementById('senseiTaskText').innerText = aiResponse;
-        if(!state.usedSenseiSentences) state.usedSenseiSentences = [];
-        state.usedSenseiSentences.push(aiResponse.substring(0, 100));
-        saveState();
+        if(!window.state.usedSenseiSentences) window.state.usedSenseiSentences = [];
+        window.state.usedSenseiSentences.push(aiResponse.substring(0, 100));
+        if (typeof saveState === 'function') saveState();
+    } else {
+        document.getElementById('senseiTaskText').innerText = "Chyba pri spojení so Senseiom. Skús to znova.";
     }
-}
+};
 
-async function submitToSensei() {
+window.submitToSensei = async function() {
     let userAnswers = document.getElementById('senseiUserInput').value.trim();
     if (!userAnswers) return;
 
     document.getElementById('senseiUserInput').disabled = true;
     document.getElementById('btnSenseiSubmit').classList.add('hidden');
     document.getElementById('senseiEvaluation').classList.remove('hidden');
-    document.getElementById('senseiEvalText').innerHTML = `<span style="color:var(--ai-glow);">Sensei kontroluje tvoje vedomosti... 🧐</span>`;
+    document.getElementById('senseiEvalText').innerHTML = `<span style="color:var(--ai-glow);">Sensei analyzuje tvoju gramatiku a kandži... 🧐</span>`;
 
     let prompt = `Si môj priateľský sensei, tykáš mi. 
-    Zadanie bolo: "${currentSenseiTask}". 
-    Môj preklad je: "${userAnswers}". 
+    Zadanie, ktoré som mal preložiť, bolo:
+    "${currentSenseiTask}"
+    
+    Môj japonský preklad je:
+    "${userAnswers}"
     
     Tvoja úloha:
-    1. Skontroluj gramatiku, častice a výber slov.
-    2. Ak je to na 100%, len ma krátko a milo pochváľ.
-    3. Ak tam sú chyby, vysvetli ich stručne a ľudsky (ako kamoš).
-    4. ABSOLÚTNE nepoužívaj hviezdičky ani tučné písmo.
-    5. Použi nejaké japonské emoji.`;
+    1. Dôkladne skontroluj gramatiku, častice (ha/ga/wo/ni/de) a výber slov.
+    2. Ak sú moje vety dokonalé, len ma krátko a milo pochváľ a pridaj emoji.
+    3. Ak tam sú chyby, rozpíš mi pre každú vetu, čo som spravil zle a vysvetli mi to ľudsky a pochopiteľne. Ukáž mi aj správny japonský preklad (Kandži + Hiragana + Romaji).
+    4. ABSOLÚTNE nepoužívaj hviezdičky (**) ani tučné písmo. Všetko píš čistým textom.`;
     
-    let aiResponse = await callGemini(prompt);
+    let aiResponse = await window.callGemini(prompt);
     if (aiResponse) {
         document.getElementById('senseiEvalText').innerText = aiResponse;
     }
-}
+};
 
-function closeSenseiSession() {
+window.closeSenseiSession = function() {
     document.getElementById('senseiRun').classList.add('hidden');
     document.getElementById('senseiSetup').classList.remove('hidden');
-}
+};
 
 // --- AI PREKLADAČ A ANALÝZA ---
 
-async function translateText() {
+window.translateText = async function() {
     let text = document.getElementById('transInput').value.trim();
     if(!text) return;
     let dir = document.getElementById('transDirection').value;
@@ -137,86 +161,87 @@ async function translateText() {
     out.innerText = "Prekladám... 🏮";
 
     let prompt = `Prelož text "${text}" z ${dir.split('|')[0]} do ${dir.split('|')[1]}. 
-    Uveď japonský zápis (kandži/kana) a pod to rómadži. Nepoužívaj hviezdičky.`;
+    Uveď japonský zápis (kandži/kana) a pod to rómadži. Nepoužívaj hviezdičky ani markdown formátovanie.`;
 
-    let res = await callGemini(prompt);
+    let res = await window.callGemini(prompt);
     if(res) {
         out.innerText = res;
         document.getElementById('btnTransAudio').classList.remove('hidden');
     }
-}
+};
 
-async function analyzeWithAI() {
+window.analyzeWithAI = async function() {
     let text = document.getElementById('transInput').value.trim();
     if(!text) return;
     
     document.getElementById('aiResponse').innerHTML = "⏳ Sensei rozoberá vetu na kúsky...";
     document.getElementById('overlayAI').style.display = 'flex';
 
-    let prompt = `Analyzuj japonskú vetu: "${text}". 
-    Vysvetli význam jednotlivých slov, častíc a gramatiku v slovenčine. 
-    Buď stručný a nepoužívaj žiadne hviezdičky v texte.`;
+    let prompt = `Analyzuj túto japonskú vetu: "${text}". 
+    Vysvetli význam jednotlivých slov, prelož ich, vysvetli použité častice a gramatiku. 
+    Všetko vysvetľuj v slovenčine, buď stručný a zrozumiteľný. Nepoužívaj hviezdičky (**) v texte.`;
 
-    let res = await callGemini(prompt);
+    let res = await window.callGemini(prompt);
     if(res) document.getElementById('aiResponse').innerText = res;
-}
+};
 
-function playTransAudio() {
+window.playTransAudio = function() {
     let text = document.getElementById('transOutput').innerText;
     if(!text) return;
-    // Skúsime vybrať len japonskú časť (pred zátvorkou alebo novým riadkom)
+    // Výber japonskej časti
     let jaPart = text.split('\n')[0].split('(')[0].trim();
-    playAudioText(jaPart, 'ja-JP');
-}
+    if (typeof playAudioText === 'function') playAudioText(jaPart, 'ja-JP');
+};
 
 // --- POP-UP CHAT SO SENSEIOM ---
 
-function toggleSenseiChat() {
+window.toggleSenseiChat = function() {
     const chatWindow = document.getElementById('senseiChatWindow');
-    chatWindow.classList.toggle('hidden');
-}
+    if (chatWindow) chatWindow.classList.toggle('hidden');
+};
 
-async function sendChatMessage() {
+window.sendChatMessage = async function() {
     const inputField = document.getElementById('senseiChatInput');
     const msgText = inputField.value.trim();
     if (!msgText) return;
 
-    addChatMessage(msgText, 'user-msg');
+    window.addChatMessage(msgText, 'user-msg');
     inputField.value = "";
 
     chatHistory.push(`Študent: ${msgText}`);
     if (chatHistory.length > 8) chatHistory.shift(); 
 
-    addChatMessage("Sensei premýšľa... 💭", 'sensei-msg', 'typing-indicator');
+    window.addChatMessage("Sensei premýšľa... 💭", 'sensei-msg', 'typing-indicator');
 
-    let prompt = `Si priateľský učiteľ japončiny (Sensei). Tykáš mi. 
-    Odpovedaj stručne a k veci. Ak sa pýtam na niečo iné ako japončinu, diplomaticky ma vráť k téme.
-    ZÁKAZ používať hviezdičky (**).
+    let prompt = `Si priateľský a povzbudivý učiteľ japončiny (Sensei). Tykáš mi. 
+    Odpovedaj stručne a k veci. Ak sa pýtam na niečo iné ako japončinu, diplomaticky ma vráť k téme učenia.
+    ZÁKAZ používať hviezdičky (**) alebo iné formátovanie.
     
-    História:
+    História konverzácie:
     ${chatHistory.join("\n")}
     
     Sensei:`;
 
-    let aiResponse = await callGemini(prompt);
+    let aiResponse = await window.callGemini(prompt);
 
     const typingInd = document.getElementById('typing-indicator');
     if (typingInd) typingInd.remove();
 
     if (aiResponse) {
-        addChatMessage(aiResponse, 'sensei-msg');
+        window.addChatMessage(aiResponse, 'sensei-msg');
         chatHistory.push(`Sensei: ${aiResponse}`);
     } else {
-        addChatMessage("Prepáč, stratil som niť. Skús to ešte raz, prosím. 🎋", 'sensei-msg');
+        window.addChatMessage("Prepáč, stratil som niť. Skús to ešte raz, prosím. 🎋", 'sensei-msg');
     }
-}
+};
 
-function addChatMessage(text, className, id = "") {
+window.addChatMessage = function(text, className, id = "") {
     const chatBox = document.getElementById('senseiChatMessages');
+    if (!chatBox) return;
     const msgDiv = document.createElement('div');
     msgDiv.className = `msg ${className}`;
     if (id) msgDiv.id = id;
     msgDiv.innerText = text;
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
-}
+};
