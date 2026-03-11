@@ -180,30 +180,40 @@
     <div id="grammarSetup">
         <h2 data-sk="Skladanie viet" data-en="Sentence Builder">Skladanie viet</h2>
         <div class="info-box">
-            <label style="font-size:12px; color:var(--text-muted);" data-sk="VYBER LEKCIU:" data-en="SELECT LESSON:">VYBER LEKCIU:</label>
+            <label style="font-size:12px; color:var(--text-muted);">REŽIM TESTU:</label>
+            <div style="display:flex; gap:5px; margin: 10px 0;">
+                <button class="btn-nav active" id="btnGrammarModeClick" onclick="setGrammarMode('click')" style="flex:1;">Bubliny</button>
+                <button class="btn-nav" id="btnGrammarModeWrite" onclick="setGrammarMode('write')" style="flex:1;">Písanie</button>
+            </div>
+
+            <label style="font-size:12px; color:var(--text-muted);">VYBER LEKCIU:</label>
             <select id="grammarLessonSelect" style="margin-top:5px;"></select>
-            <button class="btn btn-primary" onclick="startGrammarTest()" data-sk="Spustiť výzvu" data-en="Start Challenge">Spustiť výzvu</button>
+            <button class="btn btn-primary" onclick="startGrammarTest()">Spustiť výzvu</button>
         </div>
-        <p style="font-size: 13px; color: var(--text-muted); text-align: center;" data-sk="Musíš poskladať 5 viet bez jedinej chyby!" data-en="You must assemble 5 sentences without a single mistake!">Musíš poskladať 5 viet bez jedinej chyby!</p>
     </div>
 
     <div id="grammarRun" class="hidden">
         <div class="test-header">
-            <span id="grammarProgress">Veta 1 / 5</span>
+            <span id="grammarProgress"></span>
             <span id="grammarLives">❤️❤️❤️</span>
         </div>
-        <div id="grammarTask" class="word-display" style="font-size: 24px; margin-bottom: 30px;"></div>
+        <div id="grammarTask" class="word-display" style="font-size: 22px; margin-bottom: 20px;"></div>
         
-        <div id="grammarSolution" style="min-height: 60px; border-bottom: 2px solid var(--border); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 10px;"></div>
+        <div id="grammarClickArea">
+            <div id="grammarSolution" style="min-height: 60px; border-bottom: 2px solid var(--border); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 10px;"></div>
+            <div id="grammarOptions" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;"></div>
+        </div>
+
+        <div id="grammarWriteArea" class="hidden">
+            <input type="text" id="grammarInput" placeholder="Napíš vetu v rómadži..." autocomplete="off" style="text-align: center; font-size: 18px;">
+        </div>
         
-        <div id="grammarOptions" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px;"></div>
+        <div id="grammarFeedback" class="feedback-box"></div>
         
-        <div id="grammarFeedback" class="feedback-box" style="margin-top: 20px;"></div>
-        
-        <div style="margin-top: 30px; display: flex; gap: 10px;">
-            <button class="btn btn-outline" onclick="resetCurrentSentence()" data-sk="Reset" data-en="Reset">Reset</button>
-            <button class="btn btn-primary" id="btnCheckGrammar" onclick="checkGrammarAnswer()" data-sk="Skontrolovať" data-en="Check">Skontrolovať</button>
-            <button class="btn btn-success hidden" id="btnNextGrammar" onclick="nextGrammarSentence()" data-sk="Pokračovať" data-en="Continue">Pokračovať</button>
+        <div style="margin-top: 25px; display: flex; gap: 10px;">
+            <button class="btn btn-outline" onclick="loadGrammarSentence()">Reset</button>
+            <button class="btn btn-primary" id="btnCheckGrammar" onclick="checkGrammarAnswer()">Skontrolovať</button>
+            <button class="btn btn-success hidden" id="btnNextGrammar" onclick="nextGrammarSentence()">Pokračovať</button>
         </div>
     </div>
 </div>
@@ -295,4 +305,5 @@
     
 </body>
 </html>
+
 
