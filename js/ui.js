@@ -190,13 +190,11 @@ window.renderBadges = function() {
         grid.appendChild(div);
     });
 };
-// --- MÔJ SLOVNÍK (DYNAMICKÝ OVERLAY) ---
+// --- MÔJ SLOVNÍK (DYNAMICKÝ OVERLAY S TABUĽKOU) ---
 
-// Funkcia, ktorú zavoláš kliknutím na tlačidlo "Otvoriť môj slovník"
 window.openMyDictionary = function() {
     let dictOverlay = document.getElementById('overlayDictionary');
     
-    // Ak overlay ešte neexistuje, dynamicky ho vytvoríme
     if (!dictOverlay) {
         dictOverlay = document.createElement('div');
         dictOverlay.id = 'overlayDictionary';
@@ -204,93 +202,102 @@ window.openMyDictionary = function() {
         dictOverlay.style = 'display:none; align-items:center; justify-content:center;';
         
         dictOverlay.innerHTML = `
-            <div class="overlay-content" style="max-width: 600px; width: 90%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="overlay-content" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
                 <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
-                    📖 Môj Slovník
+                    <span data-sk="📖 Môj Slovník" data-en="📖 My Dictionary">📖 Môj Slovník</span>
                     <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
                 </h3>
                 
-                <input type="text" id="dictSearch" placeholder="Hľadať slovensky alebo japonsky..." 
+                <input type="text" id="dictSearch" placeholder="Hľadať / Search..." 
                        style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;"
                        onkeyup="window.filterDictionary()">
                 
-                <div id="dictList" style="overflow-y: auto; flex-grow: 1; border-radius: 8px;">
+                <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px;">
                     </div>
             </div>
         `;
         document.body.appendChild(dictOverlay);
     }
     
-    // Vykreslíme dáta a zobrazíme overlay
     window.renderDictionaryList();
     dictOverlay.style.display = 'flex';
-    document.getElementById('dictSearch').value = ''; // Vyčistíme hľadanie pri každom otvorení
+    document.getElementById('dictSearch').value = ''; 
 };
 
 window.renderDictionaryList = function(searchQuery = '') {
     const listContainer = document.getElementById('dictList');
     if (!listContainer || !window.db) return;
     
+    // Zistíme aktuálny jazyk
+    let isEn = window.currentLang === 'en';
+    
     // Zoberieme len odomknuté slovíčka
     let unlockedWords = window.db.filter(w => w.lekcia <= window.state.unlockedLesson);
     
-    // Aplikujeme filter, ak nejaký je
+    // Aplikujeme filter
     if (searchQuery) {
         const query = window.normalizeString(searchQuery);
-        unlockedWords = unlockedWords.filter(w => 
-            window.normalizeString(w.sk).includes(query) || 
-            window.normalizeString(w.romaji).includes(query) || 
-            w.kana.includes(searchQuery) || 
-            w.kanji.includes(searchQuery)
-        );
+        unlockedWords = unlockedWords.filter(w => {
+            let meaning = isEn && w.en ? w.en : w.sk;
+            return window.normalizeString(meaning).includes(query) || 
+                   window.normalizeString(w.romaji).includes(query) || 
+                   w.kana.includes(searchQuery) || 
+                   w.kanji.includes(searchQuery);
+        });
     }
     
     if (unlockedWords.length === 0) {
-        listContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 20px;">Žiadne slovíčka neboli nájdené.</p>`;
+        listContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 20px;">${isEn ? 'No words found.' : 'Žiadne slovíčka neboli nájdené.'}</p>`;
         return;
     }
-    
-    // Zoskupíme slovíčka podľa lekcií (od najvyššej po najnižšiu)
-    let grouped = {};
-    unlockedWords.forEach(w => {
-        if (!grouped[w.lekcia]) grouped[w.lekcia] = [];
-        grouped[w.lekcia].push(w);
-    });
-    
-    let html = '';
-    
-    Object.keys(grouped).sort((a,b) => b - a).forEach(lesson => {
-        html += `<div style="background: var(--primary); color: white; padding: 5px 10px; font-weight: bold; border-radius: 4px; margin: 15px 0 5px 0; font-size: 12px;">Lekcia ${lesson}</div>`;
-        
-        html += `<table style="width:100%; font-size:14px; border-spacing:0 5px;">`;
-        grouped[lesson].forEach(w => {
-            // Bezpečné získanie prvého platného audia z viacerých možností
-            let audioText = window.getPossibleAnswers ? window.getPossibleAnswers(w.romaji)[0] : w.romaji;
-            if (!audioText) audioText = w.romaji; // Fallback
-            
-            // Unikneme úvodzovky v audio texte, aby sa nerozbil HTML onClick handler
-            let safeAudioText = audioText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            
-            html += `
-                <tr style="background: rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s;" 
-                    onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')"
-                    onmouseover="this.style.background='rgba(255,255,255,0.1)'"
-                    onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-                    
-                    <td style="padding:12px; border-radius: 8px 0 0 8px; width: 40%;">
-                        <strong>${w.sk}</strong>
-                    </td>
-                    
-                    <td style="padding:12px; border-radius: 0 8px 8px 0; width: 60%; text-align: right;">
-                        <div style="font-weight: bold; color: var(--success); font-size: 16px;">${w.kanji !== '-' ? w.kanji : (w.kana !== '-' ? w.kana : '')}</div>
-                        <div style="font-size: 12px; color: var(--text-muted);">${w.romaji} 🔊</div>
-                    </td>
+
+    // Hlavičky tabuľky podľa jazyka
+    let hLekcia = isEn ? "Lesson" : "Lekcia";
+    let hVyzn = isEn ? "Meaning" : "Význam";
+
+    // Vytvoríme štruktúru tabuľky
+    let html = `
+        <table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px;">
+            <thead style="background: var(--bg-dark); position: sticky; top: 0; z-index: 1;">
+                <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+                    <th style="padding: 12px;">${hLekcia}</th>
+                    <th style="padding: 12px;">${hVyzn}</th>
+                    <th style="padding: 12px;">Romaji</th>
+                    <th style="padding: 12px;">Kana</th>
+                    <th style="padding: 12px;">Kanji</th>
                 </tr>
-            `;
-        });
-        html += `</table>`;
+            </thead>
+            <tbody>
+    `;
+    
+    // Zoradíme slovíčka podľa lekcie (od najmenšej po najväčšiu)
+    unlockedWords.sort((a, b) => a.lekcia - b.lekcia).forEach(w => {
+        
+        let audioText = window.getPossibleAnswers ? window.getPossibleAnswers(w.romaji)[0] : w.romaji;
+        if (!audioText) audioText = w.romaji;
+        let safeAudioText = audioText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        let meaning = isEn && w.en ? w.en : w.sk;
+        let kana = w.kana !== '-' ? w.kana : '';
+        let kanji = w.kanji !== '-' ? w.kanji : '';
+
+        html += `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; cursor: pointer;" 
+                onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')"
+                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                onmouseout="this.style.background='transparent'">
+                
+                <td style="padding:12px; font-weight: bold; color: var(--primary);">${w.lekcia}</td>
+                <td style="padding:12px; font-weight: bold;">${meaning}</td>
+                <td style="padding:12px; color: var(--text-muted);">${w.romaji} 🔊</td>
+                <td style="padding:12px; color: var(--success);">${kana}</td>
+                <td style="padding:12px; color: var(--warning); font-size: 16px;">${kanji}</td>
+                
+            </tr>
+        `;
     });
     
+    html += `</tbody></table>`;
     listContainer.innerHTML = html;
 };
 
