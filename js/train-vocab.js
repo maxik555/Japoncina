@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (S podporou viacerých odpovedí) ---");
+console.log("--- 2. train-vocab.js načítané (S opraveným časovačom) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -6,11 +6,10 @@ let quizOptions = [];
 window.quizTimerInterval = null;
 
 // Pomocná funkcia na rozdelenie možností (napr. "yon / shi" -> ["yon", "shi"])
-function getPossibleAnswers(str) {
+window.getPossibleAnswers = function(str) {
     if (!str || str === '-') return [];
-    // Rozdelí text podľa lomky alebo čiarky a odstráni medzery na krajoch
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
-}
+};
 
 // --- UI PREPÍNANIE REŽIMOV TESTU ---
 window.selectTestModeUI = function(m) {
@@ -101,12 +100,17 @@ window.loadTrainWord = function() {
     document.getElementById('twNextBtn').classList.add('hidden');
     window.updateScoreDisplay();
 
-    // Vždy pred načítaním zrušíme starý časovač
+    // Vyčistíme starý časovač
     clearInterval(window.quizTimerInterval);
+
+    let timerContainer = document.getElementById('quizTimerContainer');
 
     if (window.currentTestType === 'quiz') {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
+        
+        // ZOBRAZÍME časovač
+        if (timerContainer) timerContainer.classList.remove('hidden');
         
         let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
         quizOptions = [w, ...others].sort(()=>0.5-Math.random());
@@ -116,26 +120,28 @@ window.loadTrainWord = function() {
             btn.className = 'btn-quiz'; btn.disabled = false;
         }
         
-        // Spustíme odpočítavanie (napr. na 10 sekúnd)
-        window.startQuizTimer(5);
+        // Spustíme 10 sekundový odpočet
+        window.startQuizTimer(10);
         
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
+        
+        // SKRYJEME časovač pri klasickom písaní
+        if (timerContainer) timerContainer.classList.add('hidden');
+        
         document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false;
         document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden');
     }
 };
 
-// NOVÁ FUNKCIA: Časovač pre kvíz
 window.startQuizTimer = function(seconds) {
     let timeLeft = seconds;
-    // Skontrolujte si vo vašom index.html, či sa tento element volá "quizTimerBar"
     let timerBar = document.getElementById('quizTimerBar'); 
     
     if(timerBar) {
         timerBar.style.width = '100%';
-        timerBar.style.transition = 'none'; // Reset animácie
+        timerBar.style.transition = 'none'; 
     }
     
     window.quizTimerInterval = setInterval(() => {
@@ -145,7 +151,6 @@ window.startQuizTimer = function(seconds) {
             timerBar.style.width = (timeLeft / seconds * 100) + '%';
         }
         
-        // Ak čas vyprší
         if (timeLeft <= 0) {
             clearInterval(window.quizTimerInterval);
             window.handleQuizTimeout();
@@ -153,12 +158,10 @@ window.startQuizTimer = function(seconds) {
     }, 100);
 };
 
-// NOVÁ FUNKCIA: Čo sa stane, keď vyprší čas
 window.handleQuizTimeout = function() {
     let w = window.testQueue[window.currentIdx];
     window.mistakes++;
     
-    // Zápis do histórie
     window.currentFullResults.push({ q: w.sk, a: "⏱️ Čas vypršal", correct: w.romaji, isCorrect: false });
     
     let fb = document.getElementById('twFeedback');
@@ -168,41 +171,11 @@ window.handleQuizTimeout = function() {
     
     window.updateScoreDisplay();
     
-    // Zablokujeme tlačidlá
     for(let i=0; i<4; i++) {
         let btn = document.getElementById('qb'+i);
         if (btn) btn.disabled = true;
     }
     
-    // Ukážeme tlačidlo na pokračovanie
-    document.getElementById('twNextBtn').classList.remove('hidden');
-};
-
-// UPRAVENÁ FUNKCIA: Kontrola Kvízu (musí zastaviť časovač pri kliknutí)
-window.checkQuizAnswer = function(idx) {
-    // Okamžite zastavíme časovač, lebo používateľ odpovedal
-    clearInterval(window.quizTimerInterval);
-    
-    let w = window.testQueue[window.currentIdx];
-    let isCorrect = (quizOptions[idx].sk === w.sk);
-    
-    window.currentFullResults.push({ q: w.sk, a: quizOptions[idx].romaji, correct: w.romaji, isCorrect: isCorrect });
-    
-    let fb = document.getElementById('twFeedback');
-    fb.style.display = 'block';
-    if (isCorrect) { 
-        fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
-        let audioText = window.getPossibleAnswers ? window.getPossibleAnswers(w.romaji)[0] : w.romaji;
-        if (!audioText) audioText = w.romaji;
-        if (typeof playAudioText === 'function') playAudioText(audioText, 'ja-JP'); 
-    }
-    else { 
-        fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
-        window.mistakes++; 
-    }
-    window.updateScoreDisplay();
-    
-    for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true;
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
@@ -211,14 +184,12 @@ window.checkTrainAnswer = function() {
     let inputNorm = window.normalizeString(inputRaw);
     let w = window.testQueue[window.currentIdx];
     
-    // Získame všetky možné správne odpovede
-    let possibleRomaji = getPossibleAnswers(w.romaji).map(s => window.normalizeString(s));
-    let possibleKana = getPossibleAnswers(w.kana);
-    let possibleKanji = getPossibleAnswers(w.kanji);
+    let possibleRomaji = window.getPossibleAnswers(w.romaji).map(s => window.normalizeString(s));
+    let possibleKana = window.getPossibleAnswers(w.kana);
+    let possibleKanji = window.getPossibleAnswers(w.kanji);
 
     let isCorrect = false;
 
-    // 1. Kontrola Rómadži (pre každú možnosť skontrolujeme zhodu alebo 1 preklep)
     for (let r of possibleRomaji) {
         if (inputNorm === r || window.getLevenshteinDistance(inputNorm, r) <= 1) {
             isCorrect = true;
@@ -226,7 +197,6 @@ window.checkTrainAnswer = function() {
         }
     }
 
-    // 2. Kontrola pre Kanu a Kandži (presná zhoda s niektorou z možností)
     if (!isCorrect) {
         if (possibleKana.includes(inputRaw) || possibleKanji.includes(inputRaw) || inputRaw === w.kana.trim() || inputRaw === w.kanji.trim()) {
             isCorrect = true;
@@ -252,6 +222,8 @@ window.checkTrainAnswer = function() {
 };
 
 window.checkQuizAnswer = function(idx) {
+    clearInterval(window.quizTimerInterval);
+    
     let w = window.testQueue[window.currentIdx];
     let isCorrect = (quizOptions[idx].sk === w.sk);
     
@@ -261,8 +233,7 @@ window.checkQuizAnswer = function(idx) {
     fb.style.display = 'block';
     if (isCorrect) { 
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
-        // Pre audio vyberieme prvú možnosť, ak ich je viac
-        let audioText = getPossibleAnswers(w.romaji)[0] || w.romaji;
+        let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
         if (typeof playAudioText === 'function') playAudioText(audioText, 'ja-JP'); 
     }
     else { 
