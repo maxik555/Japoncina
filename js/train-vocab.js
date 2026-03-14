@@ -121,7 +121,7 @@ window.loadTrainWord = function() {
         }
         
         // Spustíme 10 sekundový odpočet
-        window.startQuizTimer(10);
+        window.startQuizTimer(5);
         
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
