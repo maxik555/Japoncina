@@ -252,13 +252,70 @@ window.nextTrainWord = function() {
 
 window.endTraining = function() {
     document.getElementById('trainRun').classList.add('hidden');
-    document.getElementById('trainResult').classList.remove('hidden');
-    let perc = Math.round(((window.testQueue.length - window.mistakes) / window.testQueue.length) * 100);
+    let resultContainer = document.getElementById('trainResult');
+    resultContainer.classList.remove('hidden');
+    
+    let total = window.testQueue.length;
+    let wrong = window.mistakes;
+    let correct = total - wrong;
+    let perc = Math.round((correct / total) * 100);
+    
     document.getElementById('trScore').innerText = `${perc}%`;
     
+    // --- NOVÁ ČASŤ: Dynamické zhrnutie testu ---
+    let summaryDiv = document.getElementById('testSummaryContainer');
+    if (!summaryDiv) {
+        summaryDiv = document.createElement('div');
+        summaryDiv.id = 'testSummaryContainer';
+        summaryDiv.style = 'margin: 20px auto; max-width: 500px; text-align: left;';
+        // Vložíme zhrnutie pred tlačidlo "Späť" (aby tlačidlo zostalo vždy na spodku)
+        let btn = resultContainer.querySelector('button');
+        if (btn) resultContainer.insertBefore(summaryDiv, btn);
+        else resultContainer.appendChild(summaryDiv);
+    }
+    
+    // Generovanie motivačnej správy podľa percent
+    let msg = "";
+    if (perc === 100) msg = "Perfektné! Úplne bez chýb. 🥷";
+    else if (perc >= 90) msg = "Skvelá práca! Len malinké zaváhania. 🔥";
+    else if (perc >= 80) msg = "Dobrý výkon! Ešte trochu tréningu a dáš to na 100%. 👍";
+    else msg = "Na chybách sa učíme! Pozri si ich nižšie a skús to znova. 💪";
+
+    let summaryHtml = `
+        <div style="text-align:center; margin-bottom: 20px; background: var(--bg-dark); padding: 15px; border-radius: 12px;">
+            <p style="font-size: 16px; color: var(--text-muted); margin-top: 0;">${msg}</p>
+            <div style="display:flex; justify-content:center; gap: 30px; font-size: 18px;">
+                <span style="color:var(--success); font-weight:bold;">✅ ${correct}</span>
+                <span style="color:var(--danger); font-weight:bold;">❌ ${wrong}</span>
+            </div>
+        </div>
+    `;
+
+    // Ak sú chyby, vygenerujeme len zoznam nesprávnych odpovedí
+    if (wrong > 0) {
+        summaryHtml += `<h4 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text-muted);">Čo ti ušlo:</h4>`;
+        summaryHtml += `<div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">`;
+        
+        let mistakesList = window.currentFullResults.filter(r => !r.isCorrect);
+        mistakesList.forEach(m => {
+            summaryHtml += `
+                <div style="background: rgba(255,0,0,0.05); padding: 12px; border-radius: 8px; border-left: 4px solid var(--danger);">
+                    <div style="font-weight:bold; margin-bottom:4px; font-size: 15px;">${m.q}</div>
+                    <div style="font-size:13px; color:var(--text-muted);">Tvoja odpoveď: <span style="text-decoration:line-through; color:var(--danger);">${m.a}</span></div>
+                    <div style="font-size:14px; color:var(--success); font-weight:bold; margin-top: 4px;">Správne: ${m.correct}</div>
+                </div>
+            `;
+        });
+        summaryHtml += `</div>`;
+    }
+    
+    summaryDiv.innerHTML = summaryHtml;
+    // --- KONIEC NOVEJ ČASTI ---
+
     let typeName = window.currentTestType === 'unlock' ? 'Odomknutie' : (window.currentTestType === 'quiz' ? 'Kvíz' : 'Slovíčka');
     window.saveToHistory(`Lekcia ${window.testQueue[0].lekcia}`, typeName, perc, perc >= 80, window.currentFullResults);
     
+    // Logika postupu na ďalšiu úroveň (90% a viac)
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
             window.state.unlockedLesson++;
@@ -278,6 +335,7 @@ window.endTraining = function() {
         if (typeof saveState === 'function') saveState();
     }
 };
+
 
 window.closeTraining = function() {
     document.getElementById('trainResult').classList.add('hidden');
