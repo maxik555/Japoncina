@@ -158,6 +158,27 @@
         <div id="trainResult" class="hidden" style="text-align:center;"><h1 id="trScore">0%</h1><p id="trMessage"></p><button id="btnRetryMistakes" class="btn btn-warning hidden" onclick="retryMistakes()" data-sk="🎯 Chyby" data-en="🎯 Mistakes">🎯 Chyby</button><button class="btn btn-primary" onclick="closeTraining()" data-sk="Späť" data-en="Back">Späť</button></div>
     </div>
 
+    <div id="trainSetup">
+    <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+        <button class="btn-nav active" id="btnModeQuiz" onclick="selectTestModeUI('quiz')">Kvíz</button>
+        <button class="btn-nav" id="btnModeClassic" onclick="selectTestModeUI('classic')">Písanie</button>
+        <button class="btn-nav" id="btnModeSmart" onclick="selectTestModeUI('smart')">🧠 Chytrý tréning</button>
+    </div>
+
+    <div id="setupSmart" class="setup-section hidden">
+        <div style="background: var(--bg-dark); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--primary);">
+            <h4 style="margin-top: 0; color: var(--primary);">🤖 Adaptívny algoritmus</h4>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 0;">
+                Sensei zanalyzuje tvoju históriu a namixuje ti 50 slovíčok na mieru: <br>
+                <strong>50%</strong> slovíčok, v ktorých robíš chyby<br>
+                <strong>30%</strong> slovíčok, ktoré si ešte netrénoval<br>
+                <strong>20%</strong> slovíčok na zopakovanie
+            </p>
+        </div>
+        <button class="btn-action" onclick="window.startSmartTraining()">SPUSTIŤ CHYTRÝ TRÉNING</button>
+    </div>
+</div>
+        
     <div id="tab-sensei" class="tab">
         <h2 data-sk="🧙‍♂️ AI Sensei" data-en="🧙‍♂️ AI Sensei">🧙‍♂️ AI Sensei</h2>
         <div id="senseiSetup" class="info-box">
