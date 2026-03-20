@@ -1,26 +1,22 @@
-console.log("--- 2. train-vocab.js načítané (S inteligentným SRS algoritmom) ---");
+console.log("--- 2. train-vocab.js načítané (Pop-up testy & SRS algoritmus) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
 let quizOptions = [];
 window.quizTimerInterval = null;
 
-// Pomocná funkcia na rozdelenie možností (napr. "yon / shi")
 window.getPossibleAnswers = function(str) {
     if (!str || str === '-') return [];
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
 };
 
-// --- POMOCNÁ FUNKCIA NA ULOŽENIE ŠTATISTIKY SLOVÍČKA ---
 window.recordWordStat = function(wordSk, isCorrect) {
     if (!window.state.wordStats) window.state.wordStats = {};
-    if (!window.state.wordStats[wordSk]) window.state.wordStats[wordSk] = { c: 0, w: 0 }; // c = correct, w = wrong
-    
+    if (!window.state.wordStats[wordSk]) window.state.wordStats[wordSk] = { c: 0, w: 0 };
     if (isCorrect) window.state.wordStats[wordSk].c++;
     else window.state.wordStats[wordSk].w++;
 };
 
-// --- UI PREPÍNANIE REŽIMOV TESTU ---
 window.selectTestModeUI = function(m) {
     document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
     const setupEl = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
@@ -31,15 +27,12 @@ window.selectTestModeUI = function(m) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- KARTIČKY (LEARN) ---
+// --- KARTIČKY ---
 window.startLearn = function(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
     fcQueue = window.db.filter(w => w.lekcia === parseInt(select.value));
-    if (fcQueue.length === 0) {
-        alert("Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
-        return;
-    }
+    if (fcQueue.length === 0) return alert("Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
@@ -68,7 +61,32 @@ window.closeLearn = function() {
 };
 window.playCurrentAudioFC = function() { if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); };
 
-// --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE) ---
+
+// --- VIZUÁLNE AKTUALIZÁCIE TESTU ---
+window.updateScoreDisplay = function() {
+    let scoreEl = document.getElementById('testScoreDisplay');
+    // Výpočet: Koľko sme už prešli (currentIdx) mínus chyby (mistakes)
+    let correct = window.currentIdx - window.mistakes;
+    if(correct < 0) correct = 0; 
+    if(scoreEl) scoreEl.innerText = `✅ ${correct} | ❌ ${window.mistakes}`;
+};
+
+// --- ZRUŠENIE TESTU (KRÍŽIK) ---
+window.abortTraining = function() {
+    clearInterval(window.quizTimerInterval);
+    document.getElementById('trainRun').classList.add('hidden');
+    // Obnovíme zobrazenie setupu, ak bolo predtým skryté (pre istotu)
+    document.getElementById('trainSetup').classList.remove('hidden');
+};
+
+// --- ZATVORENIE VÝSLEDKOV (TLAČIDLO SPÄŤ) ---
+window.closeTraining = function() {
+    document.getElementById('trainResult').classList.add('hidden');
+    document.getElementById('trainSetup').classList.remove('hidden');
+};
+
+
+// --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE / CHYTRÝ) ---
 window.startTraining = function(type) {
     window.currentTestType = type; 
     window.mistakes = 0; 
@@ -84,7 +102,6 @@ window.startTraining = function(type) {
         let from = parseInt(document.getElementById(type+'From')?.value || 1);
         let to = parseInt(document.getElementById(type+'To')?.value || window.state.unlockedLesson);
         let count = parseInt(document.getElementById(type+'Count')?.value || 10);
-        
         if (from > to) [from, to] = [to, from];
         pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
     }
@@ -92,12 +109,10 @@ window.startTraining = function(type) {
     window.testQueue = pool;
     if (window.testQueue.length === 0) return alert("Nenašli sa žiadne slovíčka.");
     
-    document.getElementById('trainSetup').classList.add('hidden');
     document.getElementById('trainRun').classList.remove('hidden');
     window.loadTrainWord();
 };
 
-// --- CHYTRÝ TRÉNING (ALGORITMUS) ---
 window.startSmartTraining = function() {
     window.currentTestType = 'smart'; 
     window.mistakes = 0; 
@@ -105,45 +120,33 @@ window.startSmartTraining = function() {
     window.currentFullResults = [];
     
     if (!window.state.wordStats) window.state.wordStats = {};
-    
     let unlockedWords = window.db.filter(w => w.lekcia <= window.state.unlockedLesson);
     if (unlockedWords.length === 0) return alert("Nemáš odomknuté žiadne lekcie.");
 
-    let badWords = [];
-    let newWords = [];
-    let goodWords = [];
+    let badWords = [], newWords = [], goodWords = [];
 
-    // Triedenie slov do kategórií na základe histórie
     unlockedWords.forEach(w => {
         let stats = window.state.wordStats[w.sk];
-        if (!stats) {
-            newWords.push(w); // Ešte netestované
-        } else if (stats.w > 0 && stats.w >= stats.c) {
-            badWords.push(w); // Viac chýb ako správnych odpovedí (alebo rovnako)
-        } else {
-            goodWords.push(w); // Zvládnuté slovíčka
-        }
+        if (!stats) newWords.push(w);
+        else if (stats.w > 0 && stats.w >= stats.c) badWords.push(w);
+        else goodWords.push(w);
     });
 
     const shuffle = arr => arr.sort(() => 0.5 - Math.random());
     shuffle(badWords); shuffle(newWords); shuffle(goodWords);
 
     let selected = [];
-    // 1. Zoberieme chybové slová (cieľ max 25)
     let takeBad = Math.min(25, badWords.length);
     selected.push(...badWords.slice(0, takeBad));
 
-    // 2. Zoberieme nové/netestované slová (cieľ max 15, alebo viac ak chýbajú chybové)
     let rem = 50 - selected.length;
     let takeNew = Math.min(Math.floor(rem * 0.6), newWords.length);
     selected.push(...newWords.slice(0, takeNew));
 
-    // 3. Zvyšok doplníme známymi slovami na opakovanie
     rem = 50 - selected.length;
     let takeGood = Math.min(rem, goodWords.length);
     selected.push(...goodWords.slice(0, takeGood));
 
-    // Ak nemáme 50 (málo slovíčok v databáze), doplníme čímkoľvek
     rem = 50 - selected.length;
     if (rem > 0) {
         let leftover = [...badWords.slice(takeBad), ...newWords.slice(takeNew), ...goodWords.slice(takeGood)];
@@ -151,10 +154,9 @@ window.startSmartTraining = function() {
         selected.push(...leftover.slice(0, rem));
     }
 
-    shuffle(selected); // Finálne zamiešanie testu
+    shuffle(selected);
     window.testQueue = selected;
 
-    document.getElementById('trainSetup').classList.add('hidden');
     document.getElementById('trainRun').classList.remove('hidden');
     window.loadTrainWord();
 };
@@ -170,7 +172,6 @@ window.loadTrainWord = function() {
     clearInterval(window.quizTimerInterval);
     let timerContainer = document.getElementById('quizTimerContainer');
 
-    // Ak sme v Kvíze, ukážeme tlačidlá a časovač. Chytrý tréning beží ako "Písanie".
     if (window.currentTestType === 'quiz') {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
@@ -209,7 +210,7 @@ window.handleQuizTimeout = function() {
     let w = window.testQueue[window.currentIdx];
     window.mistakes++;
     window.currentFullResults.push({ q: w.sk, a: "⏱️ Čas vypršal", correct: w.romaji, isCorrect: false });
-    window.recordWordStat(w.sk, false); // Zaznamená chybu do profilu
+    window.recordWordStat(w.sk, false);
     
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
@@ -239,7 +240,7 @@ window.checkTrainAnswer = function() {
     }
 
     window.currentFullResults.push({ q: w.sk, a: inputRaw || "(nič)", correct: w.romaji, isCorrect: isCorrect });
-    window.recordWordStat(w.sk, isCorrect); // Zaznamená úspech/chybu do profilu
+    window.recordWordStat(w.sk, isCorrect);
     
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
@@ -262,7 +263,7 @@ window.checkQuizAnswer = function(idx) {
     let isCorrect = (quizOptions[idx].sk === w.sk);
     
     window.currentFullResults.push({ q: w.sk, a: quizOptions[idx].romaji, correct: w.romaji, isCorrect: isCorrect });
-    window.recordWordStat(w.sk, isCorrect); // Zaznamená úspech/chybu do profilu
+    window.recordWordStat(w.sk, isCorrect);
     
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
@@ -280,8 +281,12 @@ window.checkQuizAnswer = function(idx) {
 };
 
 window.nextTrainWord = function() {
-    if (window.currentIdx < window.testQueue.length - 1) { window.currentIdx++; window.loadTrainWord(); }
-    else window.endTraining();
+    window.currentIdx++; 
+    if (window.currentIdx < window.testQueue.length) { 
+        window.loadTrainWord(); 
+    } else { 
+        window.endTraining(); 
+    }
 };
 
 window.endTraining = function() {
@@ -300,10 +305,11 @@ window.endTraining = function() {
     if (!summaryDiv) {
         summaryDiv = document.createElement('div');
         summaryDiv.id = 'testSummaryContainer';
-        summaryDiv.style = 'margin: 20px auto; max-width: 500px; text-align: left;';
-        let btn = resultContainer.querySelector('button');
-        if (btn) resultContainer.insertBefore(summaryDiv, btn);
-        else resultContainer.appendChild(summaryDiv);
+        summaryDiv.style = 'margin: 20px auto; width: 100%; text-align: left;';
+        // Nájdeme tlačidlo, aby sme zhrnutie vložili pred neho
+        let btn = resultContainer.querySelector('.btn-action');
+        if (btn) resultContainer.querySelector('.test-modal').insertBefore(summaryDiv, btn);
+        else resultContainer.querySelector('.test-modal').appendChild(summaryDiv);
     }
     
     let msg = "";
@@ -313,7 +319,7 @@ window.endTraining = function() {
     else msg = "Na chybách sa učíme! Pozri si ich nižšie a skús to znova. 💪";
 
     let summaryHtml = `
-        <div style="text-align:center; margin-bottom: 20px; background: var(--bg-dark); padding: 15px; border-radius: 12px;">
+        <div style="text-align:center; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
             <p style="font-size: 16px; color: var(--text-muted); margin-top: 0;">${msg}</p>
             <div style="display:flex; justify-content:center; gap: 30px; font-size: 18px;">
                 <span style="color:var(--success); font-weight:bold;">✅ ${correct}</span>
@@ -323,8 +329,8 @@ window.endTraining = function() {
     `;
 
     if (wrong > 0) {
-        summaryHtml += `<h4 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text-muted);">Čo ti ušlo:</h4>`;
-        summaryHtml += `<div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">`;
+        summaryHtml += `<h4 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text-muted); text-align: left;">Čo ti ušlo:</h4>`;
+        summaryHtml += `<div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; text-align: left;">`;
         let mistakesList = window.currentFullResults.filter(r => !r.isCorrect);
         mistakesList.forEach(m => {
             summaryHtml += `
@@ -359,6 +365,5 @@ window.endTraining = function() {
         if (typeof addXP === 'function') addXP(50); 
     }
     
-    // Uložíme štatistiky a XP na server
     if (typeof saveState === 'function') saveState();
 };
