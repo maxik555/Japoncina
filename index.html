@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Japonský Tréning - Verzia 2.4.2</title>
+    <title>Japonský Tréning - Verzia 2.5</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -18,7 +17,6 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* Štýly pre moderné Pop-up okná testov */
         .test-overlay { position: fixed; inset: 0; background: rgba(10, 15, 30, 0.90); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .test-overlay.hidden { display: none !important; }
         .test-modal { background: var(--bg-dark); padding: 30px 25px; border-radius: 16px; width: 90%; max-width: 500px; position: relative; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto; text-align: center; }
@@ -151,6 +149,13 @@
             </div>
             
             <div id="setupFree" class="setup-section hidden">
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:12px; color:var(--text-muted);" data-sk="SMER PREKLADU:" data-en="TRANSLATION DIRECTION:">SMER PREKLADU:</label>
+                    <select id="freeDirection" style="width:100%; margin-top:5px; padding:10px; border-radius:5px; background:var(--bg-dark); color:white; border:1px solid var(--border);">
+                        <option value="sk2ja">🇸🇰/🇬🇧 ➡️ 🇯🇵 (Píšem japonsky)</option>
+                        <option value="ja2sk">🇯🇵 ➡️ 🇸🇰/🇬🇧 (Píšem slov./angl.)</option>
+                    </select>
+                </div>
                 <div style="display:flex; gap:10px; margin-bottom:10px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
                 <input type="number" id="freeCount" value="20" style="margin-bottom:15px;">
                 <button class="btn btn-success" onclick="window.startTraining('free')" data-sk="Voľný tréning" data-en="Free training">Voľný tréning</button>
@@ -159,12 +164,15 @@
             <div id="setupSmart" class="setup-section hidden">
                 <div style="background: var(--bg-dark); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--primary);">
                     <h4 style="margin-top: 0; color: var(--primary);">🤖 Adaptívny algoritmus</h4>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 0;">
-                        Sensei zanalyzuje tvoju históriu a namixuje ti 50 slovíčok na mieru: <br>
-                        <strong>50%</strong> slovíčok, v ktorých robíš chyby<br>
-                        <strong>30%</strong> slovíčok, ktoré si ešte netrénoval<br>
-                        <strong>20%</strong> slovíčok na zopakovanie
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+                        Sensei zanalyzuje históriu a namixuje 50 slovíčok: <br>
+                        <strong>50%</strong> chyby | <strong>30%</strong> nové | <strong>20%</strong> opakovanie
                     </p>
+                    <label style="font-size:12px; color:var(--text-muted); font-weight:bold;" data-sk="SMER PREKLADU:" data-en="TRANSLATION DIRECTION:">SMER PREKLADU:</label>
+                    <select id="smartDirection" style="width:100%; margin-top:5px; padding:10px; border-radius:5px; background:var(--bg); color:white; border:1px solid var(--border);">
+                        <option value="sk2ja">🇸🇰/🇬🇧 ➡️ 🇯🇵 (Píšem japonsky)</option>
+                        <option value="ja2sk">🇯🇵 ➡️ 🇸🇰/🇬🇧 (Píšem slov./angl.)</option>
+                    </select>
                 </div>
                 <button class="btn-action" onclick="window.startSmartTraining()">SPUSTIŤ CHYTRÝ TRÉNING</button>
             </div>
@@ -303,7 +311,7 @@
         <div class="test-header" style="margin-top: 10px;"><span id="testProgress"></span><span id="testScoreDisplay">✅ 0 | ❌ 0</span></div>
         <div id="quizTimerContainer" class="timer-container hidden" style="margin-bottom: 15px;"><div id="quizTimerBar" class="timer-bar"></div></div>
         
-        <div id="twWord" class="word-display" style="margin: 20px 0; font-size: 2rem;"></div>
+        <div id="twWord" class="word-display" style="margin: 20px 0;"></div>
         <div id="twFeedback" class="feedback-box" style="text-align: left;"></div>
         
         <div id="classicInputArea">
