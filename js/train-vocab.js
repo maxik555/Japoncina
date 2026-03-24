@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Dualny Smer & Diakritika) ---");
+console.log("--- 2. train-vocab.js načítané (Agresívna normalizácia textu) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -12,10 +12,15 @@ window.getPossibleAnswers = function(str) {
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
 };
 
-// Funkcia na ignorovanie mäkčeňov a dĺžňov (napr. "Veľký" -> "velky")
+// Vylepšená funkcia na ignorovanie mäkčeňov, dĺžňov, zátvoriek a medzier
 window.removeDiacritics = function(str) {
     if (!str) return "";
-    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    return str.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // odstráni mäkčene a dĺžne
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // odstráni interpunkciu a zátvorky
+        .replace(/\s{2,}/g, " ") // zjednotí viacero medzier do jednej
+        .toLowerCase()
+        .trim();
 };
 
 window.recordWordStat = function(wordSk, isCorrect) {
@@ -180,9 +185,7 @@ window.loadTrainWord = function() {
     let isEn = window.currentLang === 'en';
     let meaning = isEn && w.en ? w.en : w.sk;
 
-    // --- ZOBRAZENIE PODĽA SMERU ---
     if (window.currentDirection === 'ja2sk') {
-        // Preklad do SK/EN: Kanji (veľké) -> Kana (stredná) -> Romaji (malé)
         let kanjiText = w.kanji !== '-' ? w.kanji : w.kana;
         let kanaText = w.kanji !== '-' && w.kana !== '-' ? w.kana : '';
         
@@ -192,7 +195,6 @@ window.loadTrainWord = function() {
             <div style="font-size: 1rem; color: var(--text-muted); margin-top: 5px;">${w.romaji}</div>
         `;
     } else {
-        // Preklad do Japončiny: Klasický text
         wordDiv.innerHTML = `<div style="font-size: 2rem;">${meaning}</div>`;
     }
 
@@ -257,7 +259,7 @@ window.handleQuizTimeout = function() {
 
 window.checkTrainAnswer = function() {
     let inputRaw = document.getElementById('twInput').value.trim();
-    let inputNorm = window.removeDiacritics(inputRaw); // Normalizácia (bez dĺžňov/mäkčeňov)
+    let inputNorm = window.removeDiacritics(inputRaw); 
     let w = window.testQueue[window.currentIdx];
     let isEn = window.currentLang === 'en';
     let meaning = isEn && w.en ? w.en : w.sk;
@@ -267,7 +269,6 @@ window.checkTrainAnswer = function() {
     let questionText = "";
 
     if (window.currentDirection === 'ja2sk') {
-        // --- PREKLADÁME DO SK/EN ---
         questionText = w.kanji !== '-' ? w.kanji : w.kana;
         expectedAnswer = meaning;
         
@@ -278,7 +279,6 @@ window.checkTrainAnswer = function() {
             }
         }
     } else {
-        // --- PREKLADÁME DO JAPONČINY ---
         questionText = meaning;
         expectedAnswer = w.romaji;
         
@@ -296,7 +296,6 @@ window.checkTrainAnswer = function() {
         }
     }
 
-    // Uložíme výsledok pre zhrnutie na konci (podľa toho, aký smer sme išli)
     window.currentFullResults.push({ q: questionText, a: inputRaw || "(nič)", correct: expectedAnswer, isCorrect: isCorrect });
     window.recordWordStat(w.sk, isCorrect);
     
@@ -306,7 +305,6 @@ window.checkTrainAnswer = function() {
     if (isCorrect) { 
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
         if (typeof playAudioText === 'function') {
-            // Vždy prehráme audio v japončine nezávisle na smere
             let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
             playAudioText(audioText, 'ja-JP'); 
         }
