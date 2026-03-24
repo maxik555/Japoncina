@@ -1,13 +1,21 @@
-console.log("--- 2. train-vocab.js načítané (Pop-up testy & SRS algoritmus) ---");
+console.log("--- 2. train-vocab.js načítané (Dualny Smer & Diakritika) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
 let quizOptions = [];
 window.quizTimerInterval = null;
+window.currentDirection = 'sk2ja'; // Predvolený smer
 
+// --- POMOCNÉ FUNKCIE ---
 window.getPossibleAnswers = function(str) {
     if (!str || str === '-') return [];
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
+};
+
+// Funkcia na ignorovanie mäkčeňov a dĺžňov (napr. "Veľký" -> "velky")
+window.removeDiacritics = function(str) {
+    if (!str) return "";
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 };
 
 window.recordWordStat = function(wordSk, isCorrect) {
@@ -61,30 +69,24 @@ window.closeLearn = function() {
 };
 window.playCurrentAudioFC = function() { if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); };
 
-
 // --- VIZUÁLNE AKTUALIZÁCIE TESTU ---
 window.updateScoreDisplay = function() {
     let scoreEl = document.getElementById('testScoreDisplay');
-    // Výpočet: Koľko sme už prešli (currentIdx) mínus chyby (mistakes)
     let correct = window.currentIdx - window.mistakes;
     if(correct < 0) correct = 0; 
     if(scoreEl) scoreEl.innerText = `✅ ${correct} | ❌ ${window.mistakes}`;
 };
 
-// --- ZRUŠENIE TESTU (KRÍŽIK) ---
 window.abortTraining = function() {
     clearInterval(window.quizTimerInterval);
     document.getElementById('trainRun').classList.add('hidden');
-    // Obnovíme zobrazenie setupu, ak bolo predtým skryté (pre istotu)
     document.getElementById('trainSetup').classList.remove('hidden');
 };
 
-// --- ZATVORENIE VÝSLEDKOV (TLAČIDLO SPÄŤ) ---
 window.closeTraining = function() {
     document.getElementById('trainResult').classList.add('hidden');
     document.getElementById('trainSetup').classList.remove('hidden');
 };
-
 
 // --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE / CHYTRÝ) ---
 window.startTraining = function(type) {
@@ -93,6 +95,13 @@ window.startTraining = function(type) {
     window.currentIdx = 0;
     window.currentFullResults = [];
     
+    // Zistíme smer prekladu (pri Odomknutí a Kvíze necháme predvolene sk2ja)
+    window.currentDirection = 'sk2ja';
+    if (type === 'free') {
+        let dirSelect = document.getElementById('freeDirection');
+        if (dirSelect) window.currentDirection = dirSelect.value;
+    }
+
     let pool = [];
 
     if (type === 'unlock') {
@@ -118,6 +127,10 @@ window.startSmartTraining = function() {
     window.mistakes = 0; 
     window.currentIdx = 0;
     window.currentFullResults = [];
+    
+    // Zistíme smer prekladu pre chytrý tréning
+    let dirSelect = document.getElementById('smartDirection');
+    window.currentDirection = dirSelect ? dirSelect.value : 'sk2ja';
     
     if (!window.state.wordStats) window.state.wordStats = {};
     let unlockedWords = window.db.filter(w => w.lekcia <= window.state.unlockedLesson);
@@ -163,7 +176,26 @@ window.startSmartTraining = function() {
 
 window.loadTrainWord = function() {
     let w = window.testQueue[window.currentIdx];
-    document.getElementById('twWord').innerText = w.sk;
+    let wordDiv = document.getElementById('twWord');
+    let isEn = window.currentLang === 'en';
+    let meaning = isEn && w.en ? w.en : w.sk;
+
+    // --- ZOBRAZENIE PODĽA SMERU ---
+    if (window.currentDirection === 'ja2sk') {
+        // Preklad do SK/EN: Kanji (veľké) -> Kana (stredná) -> Romaji (malé)
+        let kanjiText = w.kanji !== '-' ? w.kanji : w.kana;
+        let kanaText = w.kanji !== '-' && w.kana !== '-' ? w.kana : '';
+        
+        wordDiv.innerHTML = `
+            <div style="font-size: 3.5rem; font-weight: bold; color: var(--warning); line-height: 1.1;">${kanjiText}</div>
+            ${kanaText ? `<div style="font-size: 1.5rem; color: var(--success); margin-top: 5px;">${kanaText}</div>` : ''}
+            <div style="font-size: 1rem; color: var(--text-muted); margin-top: 5px;">${w.romaji}</div>
+        `;
+    } else {
+        // Preklad do Japončiny: Klasický text
+        wordDiv.innerHTML = `<div style="font-size: 2rem;">${meaning}</div>`;
+    }
+
     document.getElementById('testProgress').innerText = `${window.currentIdx + 1} / ${window.testQueue.length}`;
     document.getElementById('twFeedback').style.display = 'none';
     document.getElementById('twNextBtn').classList.add('hidden');
@@ -190,8 +222,11 @@ window.loadTrainWord = function() {
         document.getElementById('quizInputArea').classList.add('hidden');
         if (timerContainer) timerContainer.classList.add('hidden');
         
-        document.getElementById('twInput').value = ''; document.getElementById('twInput').disabled = false;
-        document.getElementById('twInput').focus(); document.getElementById('twSubmitBtn').classList.remove('hidden');
+        let inputEl = document.getElementById('twInput');
+        inputEl.value = ''; 
+        inputEl.disabled = false;
+        inputEl.focus(); 
+        document.getElementById('twSubmitBtn').classList.remove('hidden');
     }
 };
 
@@ -222,35 +257,64 @@ window.handleQuizTimeout = function() {
 
 window.checkTrainAnswer = function() {
     let inputRaw = document.getElementById('twInput').value.trim();
-    let inputNorm = window.normalizeString(inputRaw);
+    let inputNorm = window.removeDiacritics(inputRaw); // Normalizácia (bez dĺžňov/mäkčeňov)
     let w = window.testQueue[window.currentIdx];
+    let isEn = window.currentLang === 'en';
+    let meaning = isEn && w.en ? w.en : w.sk;
     
-    let possibleRomaji = window.getPossibleAnswers(w.romaji).map(s => window.normalizeString(s));
-    let possibleKana = window.getPossibleAnswers(w.kana);
-    let possibleKanji = window.getPossibleAnswers(w.kanji);
-
     let isCorrect = false;
-    for (let r of possibleRomaji) {
-        if (inputNorm === r || window.getLevenshteinDistance(inputNorm, r) <= 1) { isCorrect = true; break; }
-    }
-    if (!isCorrect) {
-        if (possibleKana.includes(inputRaw) || possibleKanji.includes(inputRaw) || inputRaw === w.kana.trim() || inputRaw === w.kanji.trim()) {
-            isCorrect = true;
+    let expectedAnswer = "";
+    let questionText = "";
+
+    if (window.currentDirection === 'ja2sk') {
+        // --- PREKLADÁME DO SK/EN ---
+        questionText = w.kanji !== '-' ? w.kanji : w.kana;
+        expectedAnswer = meaning;
+        
+        let possibleMeanings = window.getPossibleAnswers(meaning).map(s => window.removeDiacritics(s));
+        for (let m of possibleMeanings) {
+            if (inputNorm === m || window.getLevenshteinDistance(inputNorm, m) <= 1) {
+                isCorrect = true; break;
+            }
+        }
+    } else {
+        // --- PREKLADÁME DO JAPONČINY ---
+        questionText = meaning;
+        expectedAnswer = w.romaji;
+        
+        let possibleRomaji = window.getPossibleAnswers(w.romaji).map(s => window.removeDiacritics(s));
+        let possibleKana = window.getPossibleAnswers(w.kana);
+        let possibleKanji = window.getPossibleAnswers(w.kanji);
+
+        for (let r of possibleRomaji) {
+            if (inputNorm === r || window.getLevenshteinDistance(inputNorm, r) <= 1) { isCorrect = true; break; }
+        }
+        if (!isCorrect) {
+            if (possibleKana.includes(inputRaw) || possibleKanji.includes(inputRaw) || inputRaw === w.kana.trim() || inputRaw === w.kanji.trim()) {
+                isCorrect = true;
+            }
         }
     }
 
-    window.currentFullResults.push({ q: w.sk, a: inputRaw || "(nič)", correct: w.romaji, isCorrect: isCorrect });
+    // Uložíme výsledok pre zhrnutie na konci (podľa toho, aký smer sme išli)
+    window.currentFullResults.push({ q: questionText, a: inputRaw || "(nič)", correct: expectedAnswer, isCorrect: isCorrect });
     window.recordWordStat(w.sk, isCorrect);
     
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
+    
     if (isCorrect) { 
         fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
-        if (typeof playAudioText === 'function') playAudioText(possibleRomaji[0] || w.romaji, 'ja-JP'); 
+        if (typeof playAudioText === 'function') {
+            // Vždy prehráme audio v japončine nezávisle na smere
+            let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
+            playAudioText(audioText, 'ja-JP'); 
+        }
     } else { 
-        fb.innerHTML = `❌ Nesprávne! <br> ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
+        fb.innerHTML = `❌ Nesprávne! <br> ${expectedAnswer}`; fb.className = "feedback-box fb-wrong"; 
         window.mistakes++; 
     }
+    
     window.updateScoreDisplay();
     document.getElementById('twInput').disabled = true;
     document.getElementById('twSubmitBtn').classList.add('hidden');
@@ -306,7 +370,6 @@ window.endTraining = function() {
         summaryDiv = document.createElement('div');
         summaryDiv.id = 'testSummaryContainer';
         summaryDiv.style = 'margin: 20px auto; width: 100%; text-align: left;';
-        // Nájdeme tlačidlo, aby sme zhrnutie vložili pred neho
         let btn = resultContainer.querySelector('.btn-action');
         if (btn) resultContainer.querySelector('.test-modal').insertBefore(summaryDiv, btn);
         else resultContainer.querySelector('.test-modal').appendChild(summaryDiv);
