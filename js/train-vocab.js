@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Agresívna normalizácia textu) ---");
+console.log("--- 2. train-vocab.js načítané (Vizuálna odmena Kandži/Kana) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -16,9 +16,9 @@ window.getPossibleAnswers = function(str) {
 window.removeDiacritics = function(str) {
     if (!str) return "";
     return str.normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // odstráni mäkčene a dĺžne
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // odstráni interpunkciu a zátvorky
-        .replace(/\s{2,}/g, " ") // zjednotí viacero medzier do jednej
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") 
+        .replace(/\s{2,}/g, " ") 
         .toLowerCase()
         .trim();
 };
@@ -100,7 +100,6 @@ window.startTraining = function(type) {
     window.currentIdx = 0;
     window.currentFullResults = [];
     
-    // Zistíme smer prekladu (pri Odomknutí a Kvíze necháme predvolene sk2ja)
     window.currentDirection = 'sk2ja';
     if (type === 'free') {
         let dirSelect = document.getElementById('freeDirection');
@@ -133,7 +132,6 @@ window.startSmartTraining = function() {
     window.currentIdx = 0;
     window.currentFullResults = [];
     
-    // Zistíme smer prekladu pre chytrý tréning
     let dirSelect = document.getElementById('smartDirection');
     window.currentDirection = dirSelect ? dirSelect.value : 'sk2ja';
     
@@ -303,7 +301,18 @@ window.checkTrainAnswer = function() {
     fb.style.display = 'block';
     
     if (isCorrect) { 
-        fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
+        let extraVisual = "";
+        // Ak ideme zo SK/EN do JA, ukážeme veľký japonský znak ako vizuálnu odmenu
+        if (window.currentDirection === 'sk2ja') {
+            let displayChar = w.kanji !== '-' ? w.kanji : (w.kana !== '-' ? w.kana : '');
+            if (displayChar) {
+                extraVisual = `<div style="font-size: 2.5rem; color: var(--warning); margin-top: 8px; line-height: 1.1;">${displayChar}</div>`;
+            }
+        }
+        
+        fb.innerHTML = "✅ Správne!" + extraVisual; 
+        fb.className = "feedback-box fb-correct"; 
+        
         if (typeof playAudioText === 'function') {
             let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
             playAudioText(audioText, 'ja-JP'); 
@@ -329,14 +338,26 @@ window.checkQuizAnswer = function(idx) {
     
     let fb = document.getElementById('twFeedback');
     fb.style.display = 'block';
+    
     if (isCorrect) { 
-        fb.innerHTML = "✅ Správne!"; fb.className = "feedback-box fb-correct"; 
+        let extraVisual = "";
+        if (window.currentDirection === 'sk2ja') {
+            let displayChar = w.kanji !== '-' ? w.kanji : (w.kana !== '-' ? w.kana : '');
+            if (displayChar) {
+                extraVisual = `<div style="font-size: 2.5rem; color: var(--warning); margin-top: 8px; line-height: 1.1;">${displayChar}</div>`;
+            }
+        }
+        
+        fb.innerHTML = "✅ Správne!" + extraVisual; 
+        fb.className = "feedback-box fb-correct"; 
+        
         let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
         if (typeof playAudioText === 'function') playAudioText(audioText, 'ja-JP'); 
     } else { 
         fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
         window.mistakes++; 
     }
+    
     window.updateScoreDisplay();
     for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true;
     document.getElementById('twNextBtn').classList.remove('hidden');
