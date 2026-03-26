@@ -1,18 +1,17 @@
-console.log("--- ui.js načítané (Master v4.0 - Témy & JLPT) ---");
+console.log("--- ui.js načítané (Master v4.1 - Dictionary Fixed) ---");
 
 // --- HLAVNÁ NAVIGÁCIA ---
 window.switchTab = function(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
     
     const targetTab = document.getElementById('tab-' + t);
-    if (targetTab) targetTab.classList.remove('hidden'); // Ošetrené nové skrývanie
+    if (targetTab) targetTab.classList.remove('hidden'); 
     if (targetTab) targetTab.classList.add('active');
     
     const btnId = 'btnTab' + t.charAt(0).toUpperCase() + t.slice(1);
     const btn = document.getElementById(btnId);
     if (btn) btn.classList.add('active');
     
-    // Skrytie ostatných tabov
     document.querySelectorAll('.tab').forEach(el => {
         if (el.id !== 'tab-' + t) el.classList.add('hidden');
     });
@@ -24,7 +23,7 @@ window.switchTab = function(t) {
     if (t === 'profile') { 
         if (typeof window.renderHistory === 'function') window.renderHistory(); 
         if (typeof window.updateProfileStats === 'function') window.updateProfileStats(); 
-        window.checkThemeLocks(); // Skontroluje odomknutie tém
+        if (typeof window.checkThemeLocks === 'function') window.checkThemeLocks();
     }
 
     if (t !== 'live' && window.isLiveActive) {
@@ -56,6 +55,11 @@ window.setLang = function(lang) {
     if (window.db && window.db.length > 0) {
         if (typeof window.populateSelects === 'function') window.populateSelects();
     }
+
+    // Ak je otvorený slovník, prekreslíme ho v novom jazyku
+    if (document.getElementById('overlayDictionary') && document.getElementById('overlayDictionary').style.display !== 'none') {
+        window.openMyDictionary();
+    }
 };
 
 // --- POMOCNÉ UI FUNKCIE ---
@@ -84,6 +88,110 @@ window.switchProfileTab = function(tabId) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
+// --- MÔJ SLOVNÍK (VRÁTENÝ KÓD) ---
+window.openMyDictionary = function() {
+    let dictOverlay = document.getElementById('overlayDictionary');
+    let isEn = window.currentLang === 'en';
+    let titleText = isEn ? "📖 My Dictionary" : "📖 Môj Slovník";
+    let searchPlaceholder = isEn ? "Search..." : "Hľadať / Search...";
+
+    if (!dictOverlay) {
+        dictOverlay = document.createElement('div');
+        dictOverlay.id = 'overlayDictionary';
+        dictOverlay.className = 'overlay';
+        dictOverlay.style = 'display:none; align-items:center; justify-content:center;';
+        
+        dictOverlay.innerHTML = `
+            <div class="overlay-content" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+                <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="dictTitle">${titleText}</span>
+                    <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+                </h3>
+                <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;" onkeyup="window.filterDictionary()">
+                <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px;"></div>
+            </div>
+        `;
+        document.body.appendChild(dictOverlay);
+    } else {
+        document.getElementById('dictTitle').innerText = titleText;
+        document.getElementById('dictSearch').placeholder = searchPlaceholder;
+    }
+    
+    window.renderDictionaryList();
+    dictOverlay.style.display = 'flex';
+    document.getElementById('dictSearch').value = ''; 
+};
+
+window.renderDictionaryList = function(searchQuery = '') {
+    const listContainer = document.getElementById('dictList');
+    if (!listContainer || !window.db) return;
+    
+    let isEn = window.currentLang === 'en';
+    let unlockedWords = window.db.filter(w => w.lekcia <= (window.state.unlockedLesson || 1));
+    
+    if (searchQuery) {
+        const query = searchQuery.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        unlockedWords = unlockedWords.filter(w => {
+            let meaning = (isEn && w.en) ? w.en : w.sk;
+            return meaning.toLowerCase().includes(query) || 
+                   w.romaji.toLowerCase().includes(query) || 
+                   w.kana.includes(searchQuery) || 
+                   w.kanji.includes(searchQuery);
+        });
+    }
+    
+    if (unlockedWords.length === 0) {
+        listContainer.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding: 20px;">${isEn ? "No words found." : "Žiadne slovíčka neboli nájdené."}</p>`;
+        return;
+    }
+
+    let hLekcia = isEn ? "Lesson" : "Lekcia";
+    let hVyzn = isEn ? "Meaning" : "Význam";
+
+    let html = `
+        <table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px;">
+            <thead style="background: var(--bg-dark); position: sticky; top: 0; z-index: 1;">
+                <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+                    <th style="padding: 12px;">${hLekcia}</th>
+                    <th style="padding: 12px;">${hVyzn}</th>
+                    <th style="padding: 12px;">Romaji</th>
+                    <th style="padding: 12px;">Kana</th>
+                    <th style="padding: 12px;">Kanji</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    unlockedWords.sort((a, b) => a.lekcia - b.lekcia).forEach(w => {
+        let audioText = w.romaji;
+        let safeAudioText = audioText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        let meaning = (isEn && w.en) ? w.en : w.sk;
+        let kana = w.kana !== '-' ? w.kana : '';
+        let kanji = w.kanji !== '-' ? w.kanji : '';
+
+        html += `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; cursor: pointer;" 
+                onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')"
+                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                onmouseout="this.style.background='transparent'">
+                <td style="padding:12px; font-weight: bold; color: var(--primary);">${w.lekcia}</td>
+                <td style="padding:12px; font-weight: bold;">${meaning}</td>
+                <td style="padding:12px; color: var(--text-muted);">${w.romaji} 🔊</td>
+                <td style="padding:12px; color: var(--success);">${kana}</td>
+                <td style="padding:12px; color: var(--warning); font-size: 16px;">${kanji}</td>
+            </tr>
+        `;
+    });
+    
+    html += `</tbody></table>`;
+    listContainer.innerHTML = html;
+};
+
+window.filterDictionary = function() {
+    const input = document.getElementById('dictSearch');
+    if (input) window.renderDictionaryList(input.value);
+};
+
 // --- TÉMY (NASTAVENIA VZHĽADU) ---
 window.checkThemeLocks = function() {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
@@ -99,10 +207,11 @@ window.checkThemeLocks = function() {
 
 window.setTheme = function(themeName) {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
+    let isEn = window.currentLang === 'en';
     
-    if (themeName === 'konoha' && lvl < 5) return alert("Musíš dosiahnuť Level 5!");
-    if (themeName === 'sharingan' && lvl < 10) return alert("Musíš dosiahnuť Level 10!");
-    if (themeName === 'nara' && lvl < 15) return alert("Musíš dosiahnuť Level 15!");
+    if (themeName === 'konoha' && lvl < 5) return alert(isEn ? "You need to reach Level 5!" : "Musíš dosiahnuť Level 5!");
+    if (themeName === 'sharingan' && lvl < 10) return alert(isEn ? "You need to reach Level 10!" : "Musíš dosiahnuť Level 10!");
+    if (themeName === 'nara' && lvl < 15) return alert(isEn ? "You need to reach Level 15!" : "Musíš dosiahnuť Level 15!");
 
     document.body.setAttribute('data-theme', themeName);
     window.state.theme = themeName;
@@ -113,7 +222,7 @@ window.setTheme = function(themeName) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- ŠTATISTIKY A JLPT PROGRES (OPRAVENÉ) ---
+// --- ŠTATISTIKY A JLPT PROGRES ---
 window.updateProfileStats = function() {
     if (!window.state) return;
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
@@ -123,7 +232,6 @@ window.updateProfileStats = function() {
     if(document.getElementById('profXpText')) document.getElementById('profXpText').innerText = `${curXp} / 500 XP`;
     if(document.getElementById('profXpBar')) document.getElementById('profXpBar').style.width = `${(curXp/500)*100}%`;
 
-    // Aplikujeme uloženú tému
     if (window.state.theme) {
         document.body.setAttribute('data-theme', window.state.theme);
         document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
@@ -131,7 +239,6 @@ window.updateProfileStats = function() {
         if (activeBtn) activeBtn.classList.add('active');
     }
 
-    // Výpočet JLPT (N5 a N4)
     if (window.db && window.db.length > 0) {
         let n5Total = window.db.filter(w => (w.jlpt || 'N5').trim().toUpperCase() === 'N5').length;
         let n4Total = window.db.filter(w => (w.jlpt || 'N5').trim().toUpperCase() === 'N4').length;
