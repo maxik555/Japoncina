@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Japonský Tréning - Giga Master v2.9</title>
+    <title>Japonský Tréning - Master Edition</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -11,46 +11,53 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <link rel="stylesheet" href="style.css">
-
     <style>
+        /* Tieto štýly opravujú drobný posun a prekrývanie */
         .test-overlay { position: fixed; inset: 0; background: rgba(10, 15, 30, 0.96); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .test-overlay.hidden { display: none !important; }
-        .test-modal { background: var(--bg-dark); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; text-align: center; }
+        .test-modal { background: var(--bg-card); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; text-align: center; }
         .btn-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 32px; cursor: pointer; }
         
         .mic-btn { width: 75px; height: 75px; border-radius: 50%; border: none; background: var(--primary); color: white; font-size: 30px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; margin: 20px auto; }
         .mic-btn.active { background: var(--danger); box-shadow: 0 0 25px var(--danger); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-        .nav { gap: 6px; overflow-x: auto; padding: 10px; display: flex; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border); }
-        .btn-nav { padding: 10px 18px; font-size: 13px; white-space: nowrap; flex-shrink: 0; border-radius: 12px; }
-        .setup-section.hidden { display: none; }
-        .prof-tab.hidden { display: none; }
+        .setup-section.hidden, .prof-tab.hidden, .tab.hidden { display: none !important; }
         
         /* Furigana styling */
         ruby rt { font-size: 0.55em; color: var(--success); }
+
+        /* Mriežka pre Nastavenia Tém */
+        .theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
+        .theme-btn { padding: 10px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; position: relative; overflow: hidden; }
+        .theme-btn:hover:not(.locked) { transform: translateY(-2px); border-color: var(--primary); }
+        .theme-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+        .theme-btn.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
+        .theme-btn.locked::after { content: '🔒 LVL ' attr(data-lvl); position: absolute; bottom: 2px; right: 5px; font-size: 10px; color: var(--danger); }
     </style>
 </head>
 <body data-theme="dark">
 
 <div id="loadingOverlay">
     <div class="spinner"></div>
-    <h2 id="loadingText">Načítavam dódžó...</h2>
+    <h2 id="loadingText" data-sk="Načítavam dódžó..." data-en="Loading Dojo...">Načítavam dódžó...</h2>
 </div>
 
 <div id="auth-container" class="app-container" style="display:none; max-width:400px; margin-top: 50px;">
     <h2 style="text-align:center; font-size: 38px;">🏯 Dódžó</h2>
     <button class="btn" style="background:white; color:black; margin-bottom:20px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold;" onclick="window.loginWithGoogle()">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width:20px;"> Prihlásiť cez Google
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width:20px;" alt="Google"> <span data-sk="Prihlásiť cez Google" data-en="Login with Google">Prihlásiť cez Google</span>
     </button>
-    <div style="text-align:center; color:var(--text-muted); margin-bottom:20px;">— alebo —</div>
-    <input type="email" id="authEmail" placeholder="Email">
-    <input type="password" id="authPass" placeholder="Heslo">
-    <button class="btn btn-primary" onclick="window.loginUser()">Vstúpiť</button>
-    <button class="btn btn-outline" style="margin-top:10px;" onclick="window.registerUser()">Vytvoriť účet</button>
+    <div style="text-align:center; color:var(--text-muted); margin-bottom:20px;" data-sk="— alebo —" data-en="— or —">— alebo —</div>
+    <input type="email" id="authEmail" placeholder="Email" data-sk="Email" data-en="Email">
+    <input type="password" id="authPass" placeholder="Heslo" data-sk="Heslo" data-en="Password">
+    <button class="btn btn-primary" onclick="window.loginUser()" data-sk="Vstúpiť" data-en="Enter">Vstúpiť</button>
+    <button class="btn btn-outline" style="margin-top:10px;" onclick="window.registerUser()" data-sk="Vytvoriť účet" data-en="Create Account">Vytvoriť účet</button>
+    <p id="authError" style="color:var(--danger); text-align:center; margin-top:15px; font-weight: bold;"></p>
 </div>
 
 <div id="main-app" class="app-container" style="display:none;">
+    
     <div class="topbar">
         <div style="flex:1;">
             <div style="display:flex; gap:15px; margin-bottom:8px;">
@@ -66,108 +73,182 @@
         </div>
     </div>
 
-    <div class="nav">
-    <button class="btn-nav active" onclick="window.switchTab('map')" id="btnTabMap" data-sk="🗺️ Mapa" data-en="🗺️ Map">🗺️ Mapa</button>
-    <button class="btn-nav" onclick="window.switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
-    <button class="btn-nav" onclick="window.switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
-    <button class="btn-nav" onclick="window.switchTab('stories')" id="btnTabStories" data-sk="⛩️ Čitáreň" data-en="⛩️ Stories">⛩️ Čitáreň</button>
-    <button class="btn-nav" onclick="window.switchTab('live')" id="btnTabLive" data-sk="🎙️ Hovory" data-en="🎙️ Live">🎙️ Hovory</button>
-    <button class="btn-nav" onclick="window.switchTab('grammar')" id="btnTabGrammar" data-sk="⛩️ Gram." data-en="⛩️ Gram.">⛩️ Gram.</button>
-    <button class="btn-nav" onclick="window.switchTab('translate')" id="btnTabTranslate" data-sk="🈯 Preklad" data-en="🈯 Trans.">🈯 Preklad</button>
-    <button class="btn-nav" onclick="window.switchTab('sensei')" id="btnTabSensei" data-sk="🧙‍♂️ Sensei" data-en="🧙‍♂️ Sensei">🧙‍♂️ Sensei</button>
-    <button class="btn-nav" onclick="window.switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
-</div>
+    <div class="nav main-nav">
+        <button class="btn-nav active" onclick="window.switchTab('map')" id="btnTabMap" data-sk="🗺️ Mapa" data-en="🗺️ Map">🗺️ Mapa</button>
+        <button class="btn-nav" onclick="window.switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
+        <button class="btn-nav" onclick="window.switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
+        <button class="btn-nav" onclick="window.switchTab('stories')" id="btnTabStories" data-sk="⛩️ Čitáreň" data-en="⛩️ Stories">⛩️ Čitáreň</button>
+        <button class="btn-nav" onclick="window.switchTab('live')" id="btnTabLive" data-sk="🎙️ Hovory" data-en="🎙️ Live">🎙️ Hovory</button>
+        <button class="btn-nav" onclick="window.switchTab('grammar')" id="btnTabGrammar" data-sk="⛩️ Gram." data-en="⛩️ Gram.">⛩️ Gram.</button>
+        <button class="btn-nav" onclick="window.switchTab('translate')" id="btnTabTranslate" data-sk="🈯 Preklad" data-en="🈯 Translate">🈯 Preklad</button>
+        <button class="btn-nav" onclick="window.switchTab('sensei')" id="btnTabSensei" data-sk="🧙‍♂️ Sensei" data-en="🧙‍♂️ Sensei">🧙‍♂️ Sensei</button>
+        <button class="btn-nav" onclick="window.switchTab('profile')" id="btnTabProfile" data-sk="👤 Profil" data-en="👤 Profile">👤 Profil</button>
+    </div>
 
     <div id="tab-map" class="tab active">
         <h2 data-sk="Tvoja cesta" data-en="Your Path">Tvoja cesta</h2>
         <div id="lessonMap" class="map-grid"></div>
     </div>
 
-    <div id="tab-train" class="tab">
+    <div id="tab-learn" class="tab hidden">
+        <h2 data-sk="Učenie" data-en="Learning">Učenie</h2>
+        <div id="learnSetup" class="info-box">
+            <select id="learnLessonSelect" style="margin-bottom:15px;"></select>
+            <button class="btn btn-primary" onclick="window.startLearn('cards')" data-sk="SPUSTIŤ KARTIČKY" data-en="START FLASHCARDS">SPUSTIŤ KARTIČKY</button>
+            <button class="btn btn-outline" style="margin-top:10px;" onclick="window.openMyDictionary()" data-sk="MÔJ SLOVNÍK" data-en="MY DICTIONARY">MÔJ SLOVNÍK</button>
+        </div>
+        <div id="learnCardsRun" class="hidden">
+            <div class="test-header"><span id="fcProgress"></span></div>
+            <div class="flashcard-container" onclick="window.flipCard()">
+                <div class="flashcard" id="fcElement">
+                    <div class="card-face card-front">
+                        <div id="fcImg" style="font-size:60px; margin-bottom: 10px;"></div>
+                        <div id="fcFrontSk" style="font-size:32px; font-weight: 800;"></div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div id="fcBackRomaji" style="font-size:26px; color:var(--primary); font-weight:bold; margin-bottom:10px;"></div>
+                        <div id="fcBackKana" style="font-size:20px; color:var(--success);"></div>
+                        <div id="fcBackKanji" style="font-size:40px; margin-top:15px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-outline" onclick="window.prevFc()" data-sk="Späť" data-en="Back">Späť</button>
+                <button class="btn btn-success" onclick="window.nextFc()" style="flex:2;" data-sk="Ďalšia ➔" data-en="Next ➔">Ďalšia ➔</button>
+            </div>
+            <button class="btn btn-outline" style="margin-top:15px; border:none; opacity:0.6;" onclick="window.closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button>
+        </div>
+    </div>
+
+    <div id="tab-train" class="tab hidden">
         <h2 data-sk="Tréningová aréna" data-en="Training Arena">Tréningová aréna</h2>
-        <div class="nav" style="border:none; padding:0; margin-bottom:20px; justify-content:center;">
-            <button class="btn-nav active" id="btnModeUnlock" onclick="window.selectTestModeUI('unlock')">🔓 Postup</button>
-            <button class="btn-nav" id="btnModeQuiz" onclick="window.selectTestModeUI('quiz')">⏱️ Kvíz</button>
-            <button class="btn-nav" id="btnModeFree" onclick="window.selectTestModeUI('free')">📝 Písanie</button>
-            <button class="btn-nav" id="btnModeSmart" onclick="window.selectTestModeUI('smart')">🧠 Chytrý</button>
+        
+        <div class="nav test-nav" style="border:none; padding:0; margin-bottom:20px; justify-content:center;">
+            <button class="btn-nav active" id="btnModeUnlock" onclick="window.selectTestModeUI('unlock')" data-sk="🔓 Postup" data-en="🔓 Unlock">🔓 Postup</button>
+            <button class="btn-nav" id="btnModeQuiz" onclick="window.selectTestModeUI('quiz')" data-sk="⏱️ Kvíz" data-en="⏱️ Quiz">⏱️ Kvíz</button>
+            <button class="btn-nav" id="btnModeFree" onclick="window.selectTestModeUI('free')" data-sk="📝 Písanie" data-en="📝 Typing">📝 Písanie</button>
+            <button class="btn-nav" id="btnModeSmart" onclick="window.selectTestModeUI('smart')" data-sk="🧠 Chytrý" data-en="🧠 Smart">🧠 Chytrý</button>
         </div>
 
         <div id="setupUnlock" class="setup-section info-box">
-            <p data-sk="Skúška na odomknutie novej lekcie." data-en="Exam to unlock next lesson.">Skúška na odomknutie novej lekcie.</p>
-            <button class="btn btn-primary" onclick="window.startTraining('unlock')">SPUSTIŤ SKÚŠKU</button>
+            <p style="text-align:center; margin-bottom:20px; color:var(--text-muted);" data-sk="Skúška vedomostí pre odomknutie ďalšej cesty." data-en="Exam to unlock the next path.">Skúška vedomostí pre odomknutie ďalšej cesty.</p>
+            <button class="btn btn-primary" onclick="window.startTraining('unlock')" data-sk="SKÚŠKA NA NOVÚ ÚROVEŇ" data-en="EXAM FOR NEW LEVEL">SKÚŠKA NA NOVÚ ÚROVEŇ</button>
         </div>
 
         <div id="setupQuiz" class="setup-section hidden info-box">
             <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="quizFrom"></select><select id="quizTo"></select></div>
-            <input type="number" id="quizCount" value="10" placeholder="Počet slov">
-            <button class="btn btn-warning" onclick="window.startTraining('quiz')">SPUSTIŤ KVÍZ</button>
+            <input type="number" id="quizCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count">
+            <button class="btn btn-warning" onclick="window.startTraining('quiz')" data-sk="SPUSTIŤ KVÍZ" data-en="START QUIZ">SPUSTIŤ KVÍZ</button>
         </div>
 
         <div id="setupFree" class="setup-section hidden info-box">
             <select id="freeDirection" style="margin-bottom:15px;">
-                <option value="sk2ja">SK ➡️ JA</option>
-                <option value="ja2sk">JA ➡️ SK</option>
+                <option value="sk2ja" data-sk="Slovenčina ➡️ Japončina" data-en="English ➡️ Japanese">Slovenčina ➡️ Japončina</option>
+                <option value="ja2sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ English">Japončina ➡️ Slovenčina</option>
             </select>
             <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
-            <button class="btn btn-success" onclick="window.startTraining('free')">SPUSTIŤ PÍSANIE</button>
+            <button class="btn btn-success" onclick="window.startTraining('free')" data-sk="SPUSTIŤ PÍSANIE" data-en="START TYPING">SPUSTIŤ PÍSANIE</button>
         </div>
 
         <div id="setupSmart" class="setup-section hidden info-box">
-            <p data-sk="AI vyberie slová, ktoré ti nejdú." data-en="AI picks words you struggle with.">AI vyberie slová, ktoré ti nejdú.</p>
-            <button class="btn-action" onclick="window.startSmartTraining()">SPUSTIŤ CHYTRÝ TEST</button>
+            <p style="text-align:center; margin-bottom:20px; color:var(--text-muted);" data-sk="AI vyberie slovíčka, ktoré ti nejdú a namixuje ich s novými." data-en="AI selects words you struggle with and mixes them.">AI vyberie slovíčka, ktoré ti nejdú a namixuje ich s novými.</p>
+            <button class="btn-ai" onclick="window.startSmartTraining()" data-sk="SPUSTIŤ CHYTRÝ TEST" data-en="START SMART TEST">SPUSTIŤ CHYTRÝ TEST</button>
         </div>
     </div>
 
-    <div id="tab-translate" class="tab">
+    <div id="tab-stories" class="tab hidden">
+        <h2 data-sk="⛩️ AI Čitáreň" data-en="⛩️ AI Stories">⛩️ AI Čitáreň</h2>
+        <button class="btn-ai" onclick="window.generateAIStory()" data-sk="GENEROVAŤ NOVÝ PRÍBEH" data-en="GENERATE NEW STORY">GENEROVAŤ NOVÝ PRÍBEH</button>
+        <div id="storyContainer" class="hidden">
+            <div class="story-box" id="storyContent"></div>
+            <div id="storyTranslation" style="margin-top:20px; padding:20px; background:rgba(255,255,255,0.05); border-radius:12px; font-style:italic; color: var(--primary); border-left: 4px solid var(--primary);"></div>
+        </div>
+    </div>
+
+    <div id="tab-live" class="tab hidden">
+        <h2 data-sk="🎙️ Sensei Live" data-en="🎙️ Sensei Live">🎙️ Sensei Live</h2>
+        <div class="info-box" style="text-align:center; padding: 30px;">
+            <p id="liveStatus" style="font-weight:bold; color:var(--text-muted);" data-sk="Pripravený na rozhovor..." data-en="Ready to talk...">Pripravený na rozhovor...</p>
+            <button id="micBtn" class="mic-btn" onclick="window.toggleLiveSensei()">🎤</button>
+            <div id="liveTranscript" style="margin-top:25px; text-align:left; font-size:16px; max-height:250px; overflow-y:auto; padding:15px; background:rgba(0,0,0,0.4); border-radius:12px; border: 1px solid var(--border);"></div>
+        </div>
+    </div>
+
+    <div id="tab-grammar" class="tab hidden">
+        <h2 data-sk="⛩️ Skladanie viet" data-en="⛩️ Sentence Building">⛩️ Skladanie viet</h2>
+        <div id="grammarSetup" class="info-box" style="padding: 30px; text-align: center;">
+            <label style="display:block; margin-bottom: 10px; color: var(--text-muted);" data-sk="VYBER LEKCIU:" data-en="SELECT LESSON:">VYBER LEKCIU:</label>
+            <select id="grammarLessonSelect" style="margin-bottom: 20px;"></select>
+            <button class="btn btn-primary" onclick="window.startGrammarTest()" data-sk="SPUSTIŤ VÝZVU" data-en="START CHALLENGE">SPUSTIŤ VÝZVU</button>
+        </div>
+    </div>
+
+    <div id="tab-translate" class="tab hidden">
         <h2 data-sk="AI Prekladač" data-en="AI Translator">AI Prekladač</h2>
         <div class="info-box">
-            <select id="transDirection" style="margin-bottom:15px;"><option value="sk|ja">SK ➡️ JA</option><option value="ja|sk">JA ➡️ SK</option></select>
-            <textarea id="transInput" rows="3" placeholder="Zadaj text..."></textarea>
-            <button class="btn btn-primary" style="margin-top:10px;" onclick="window.translateText()">PRELOŽIŤ</button>
+            <select id="transDirection" style="margin-bottom:15px;">
+                <option value="sk|ja" data-sk="Slovenčina ➡️ Japončina" data-en="English ➡️ Japanese">Slovenčina ➡️ Japončina</option>
+                <option value="ja|sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ English">Japončina ➡️ Slovenčina</option>
+            </select>
+            <textarea id="transInput" rows="3" placeholder="Zadaj text..." data-sk="Zadaj text..." data-en="Enter text..."></textarea>
+            <button class="btn btn-primary" style="margin-top:10px;" onclick="window.translateText()" data-sk="PRELOŽIŤ" data-en="TRANSLATE">PRELOŽIŤ</button>
             <div id="transOutput" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; min-height:50px;"></div>
         </div>
     </div>
 
-    <div id="tab-sensei" class="tab">
+    <div id="tab-sensei" class="tab hidden">
         <h2 data-sk="Sensei Úlohy" data-en="Sensei Tasks">Sensei Úlohy</h2>
         <div id="senseiSetup" class="info-box">
-            <p data-sk="Nechaj si zadať tému na písanie." data-en="Get a writing topic from Sensei.">Nechaj si zadať tému na písanie.</p>
-            <button class="btn btn-primary" onclick="window.startSenseiSession()">POPROSIŤ O ZADANIE</button>
+            <p style="text-align:center; margin-bottom:15px; color:var(--text-muted);" data-sk="Sensei ti zadá preklad viet zameraný na tvoje problémové slovíčka." data-en="Sensei will assign sentences based on your weak words.">Sensei ti zadá preklad viet zameraný na tvoje problémové slovíčka.</p>
+            <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="senseiFrom"></select><select id="senseiTo"></select></div>
+            <input type="number" id="senseiCount" value="3" placeholder="Počet viet (Max 5)" data-sk="Počet viet" data-en="Number of sentences" max="5">
+            <button class="btn btn-ai" style="margin-top:15px;" onclick="window.startSenseiSession()" data-sk="POPROSIŤ O ZADANIE" data-en="REQUEST TASK">POPROSIŤ O ZADANIE</button>
         </div>
+        
         <div id="senseiRun" class="hidden">
-            <div id="senseiTaskText" class="info-box" style="font-weight:bold;"></div>
-            <textarea id="senseiUserInput" rows="5" placeholder="Píš tu..."></textarea>
-            <button class="btn btn-success" style="margin-top:15px;" onclick="window.submitToSensei()">ODOVZDAŤ SENSEIOVI</button>
+            <div id="senseiTaskText" class="info-box" style="font-weight:bold; line-height: 1.6; font-size: 16px;"></div>
+            <textarea id="senseiUserInput" rows="5" placeholder="Tvoj japonský preklad napíš sem..." data-sk="Tvoj japonský preklad napíš sem..." data-en="Write your Japanese translation here..."></textarea>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn btn-outline" onclick="window.closeSenseiSession()" data-sk="Zrušiť" data-en="Cancel">Zrušiť</button>
+                <button id="btnSenseiSubmit" class="btn btn-success" style="flex:2;" onclick="window.submitToSensei()" data-sk="ODOVZDAŤ SENSEIOVI" data-en="SUBMIT TO SENSEI">ODOVZDAŤ SENSEIOVI</button>
+            </div>
+        </div>
+
+        <div id="senseiEvaluation" class="hidden">
+            <div id="senseiEvalText" class="info-box" style="font-size: 16px; line-height: 1.6; border-left: 4px solid var(--primary);"></div>
+            <button class="btn btn-primary" onclick="window.closeSenseiSession()" data-sk="ZAVRIEŤ A VYHODNOTIŤ ĎALŠIE" data-en="CLOSE AND EVALUATE ANOTHER">ZAVRIEŤ A VYHODNOTIŤ ĎALŠIE</button>
         </div>
     </div>
 
-    <div id="tab-profile" class="tab">
+    <div id="tab-profile" class="tab hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2 data-sk="Môj progres" data-en="My Progress">Môj progres</h2>
-            <button class="btn btn-danger" style="width:auto; padding:8px 15px;" onclick="window.logoutUser()">ODHLÁSIŤ</button>
+            <button class="btn btn-danger" style="width:auto; padding:8px 15px; border-radius:10px;" onclick="window.logoutUser()" data-sk="ODHLÁSIŤ" data-en="LOGOUT">ODHLÁSIŤ</button>
         </div>
 
-        <div class="nav" style="border:none; padding:0; margin-bottom:20px;">
-            <button class="btn-nav active" id="btnProfOverview" onclick="window.switchProfileTab('overview')">📊 Prehľad</button>
-            <button class="btn-nav" id="btnProfHistory" onclick="window.switchProfileTab('history')">📜 História</button>
-            <button class="btn-nav" id="btnProfCerts" onclick="window.switchProfileTab('certs')">🏆 Certifikáty</button>
+        <div class="nav prof-nav" style="border:none; padding:0; margin-bottom:20px;">
+            <button class="btn-nav active" id="btnProfOverview" onclick="window.switchProfileTab('overview')" data-sk="📊 Prehľad" data-en="📊 Overview">📊 Prehľad</button>
+            <button class="btn-nav" id="btnProfHistory" onclick="window.switchProfileTab('history')" data-sk="📜 História" data-en="📜 History">📜 História</button>
+            <button class="btn-nav" id="btnProfSettings" onclick="window.switchProfileTab('settings')" data-sk="⚙️ Nastavenia" data-en="⚙️ Settings">⚙️ Nastavenia</button>
         </div>
 
         <div id="prof-overview" class="prof-tab">
             <div class="info-box">
-                <label data-sk="TVOJA PREZÝVKA:" data-en="YOUR NICKNAME:">TVOJA PREZÝVKA:</label>
-                <input type="text" id="profileNickname" onblur="window.updateNickname()">
+                <label style="font-size: 12px; color: var(--text-muted);" data-sk="TVOJA PREZÝVKA:" data-en="YOUR NICKNAME:">TVOJA PREZÝVKA:</label>
+                <input type="text" id="profileNickname" onblur="window.updateNickname()" style="margin-top: 5px;">
             </div>
-            <div class="progress-box" style="margin-top:20px;">
-                <div style="display:flex; justify-content:space-between;"><span id="profLevelText" style="font-weight:bold; color:var(--primary);">Level 1</span><span id="profXpText">0/500 XP</span></div>
-                <div class="xp-bar-container" style="height:12px; margin-top:5px;"><div id="profXpBar" class="xp-bar-fill"></div></div>
+            <div class="progress-box">
+                <div style="display:flex; justify-content:space-between;"><span id="profLevelText" style="font-weight:bold; color:var(--primary); font-size:18px;">Level 1</span><span id="profXpText" style="color:var(--text-muted);">0/500 XP</span></div>
+                <div class="xp-bar-container" style="height:12px; margin-top:8px;"><div id="profXpBar" class="xp-bar-fill"></div></div>
             </div>
+            
             <div class="info-box" style="margin-top:20px;">
-                <h4 style="margin:0 0 10px 0;">JLPT Progress</h4>
-                <div style="font-size:12px; margin-bottom:5px;">N5 (Základy) - <span id="profN5Text">0%</span></div>
-                <div class="xp-bar-container" style="height:8px; margin-bottom:15px;"><div id="profN5Bar" class="xp-bar-fill" style="background:var(--success);"></div></div>
-                <div style="font-size:12px; margin-bottom:5px;">N4 (Pokročilý) - <span id="profN4Text">0%</span></div>
-                <div class="xp-bar-container" style="height:8px;"><div id="profN4Bar" class="xp-bar-fill" style="background:var(--warning);"></div></div>
+                <h4 style="margin:0 0 15px 0;">JLPT Progress</h4>
+                <div style="font-size:13px; margin-bottom:5px; display:flex; justify-content:space-between;"><span>N5 (Základy)</span> <span id="profN5Text" style="font-weight:bold; color:var(--success);">0%</span></div>
+                <div class="xp-bar-container" style="height:10px; margin-bottom:20px;"><div id="profN5Bar" class="xp-bar-fill" style="background:var(--success);"></div></div>
+                
+                <div style="font-size:13px; margin-bottom:5px; display:flex; justify-content:space-between;"><span>N4 (Pokročilý)</span> <span id="profN4Text" style="font-weight:bold; color:var(--warning);">0%</span></div>
+                <div class="xp-bar-container" style="height:10px;"><div id="profN4Bar" class="xp-bar-fill" style="background:var(--warning);"></div></div>
             </div>
         </div>
 
@@ -175,67 +256,54 @@
             <div id="historyList"></div>
         </div>
         
-        <div id="prof-certs" class="prof-tab hidden">
-            <div id="badgesGrid" class="badges-grid"></div>
-        </div>
-    </div>
-
-    <div id="tab-learn" class="tab">
-        <h2 data-sk="Učenie" data-en="Learning">Učenie</h2>
-        <div id="learnSetup" class="info-box">
-            <select id="learnLessonSelect" style="margin-bottom:15px;"></select>
-            <button class="btn btn-primary" onclick="window.startLearn('cards')">SPUSTIŤ KARTIČKY</button>
-            <button class="btn btn-outline" style="margin-top:10px;" onclick="window.openMyDictionary()">MOJ SLOVNÍK</button>
-        </div>
-        <div id="learnCardsRun" class="hidden">
-            <div class="flashcard-container" onclick="window.flipCard()">
-                <div class="flashcard" id="fcElement">
-                    <div class="card-face card-front"><div id="fcImg" style="font-size:50px;"></div><div id="fcFrontSk" style="font-size:28px;"></div></div>
-                    <div class="card-face card-back"><div id="fcBackRomaji"></div><div id="fcBackKana"></div><div id="fcBackKanji"></div></div>
+        <div id="prof-settings" class="prof-tab hidden">
+            <div class="info-box">
+                <h4 style="margin: 0 0 10px 0; border-bottom: 1px solid var(--border); padding-bottom: 10px;" data-sk="Vzhľad Dódžó" data-en="Dojo Theme">Vzhľad Dódžó</h4>
+                <div class="theme-grid">
+                    <button class="theme-btn active" id="theme-dark" onclick="window.setTheme('dark')">Noc (Dark)</button>
+                    <button class="theme-btn" id="theme-light" onclick="window.setTheme('light')">Deň (Light)</button>
+                    <button class="theme-btn locked" id="theme-konoha" data-lvl="5" onclick="window.setTheme('konoha')">Konoha 🍃</button>
+                    <button class="theme-btn locked" id="theme-sharingan" data-lvl="10" onclick="window.setTheme('sharingan')">Sharingan 👁️</button>
+                    <button class="theme-btn locked" id="theme-nara" data-lvl="15" onclick="window.setTheme('nara')">Tiene (Nara) 🦌</button>
                 </div>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 15px; text-align: center;" data-sk="Hraj, získavaj XP, zvyšuj Level a odomkni si nové vzhľady." data-en="Play, get XP, level up and unlock new themes.">Hraj, získavaj XP, zvyšuj Level a odomkni si nové vzhľady.</p>
             </div>
-            <div style="display:flex; gap:10px; margin-top:20px;"><button class="btn" onclick="window.prevFc()">⬅️</button><button class="btn btn-success" onclick="window.nextFc()">➡️</button></div>
         </div>
-    </div>
-
-    <div id="tab-stories" class="tab">
-        <h2>⛩️ AI Čitáreň</h2>
-        <button class="btn-action" onclick="window.generateAIStory()">GENEROVAŤ PRÍBEH</button>
-        <div id="storyContainer" class="hidden"><div class="story-box" id="storyContent"></div><div id="storyTranslation" style="margin-top:15px; color:var(--primary);"></div></div>
-    </div>
-
-    <div id="tab-live" class="tab">
-        <h2>🎙️ Sensei Live</h2>
-        <div class="info-box" style="text-align:center;">
-            <p id="liveStatus">Pripravený...</p>
-            <button id="micBtn" class="mic-btn" onclick="window.toggleLiveSensei()">🎤</button>
-            <div id="liveTranscript" style="margin-top:20px; text-align:left; background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; max-height:200px; overflow-y:auto;"></div>
-        </div>
-    </div>
-
-    <div id="tab-grammar" class="tab">
-        <h2>⛩️ Gramatika</h2>
-        <div id="grammarSetup" class="info-box"><select id="grammarLessonSelect"></select><button class="btn btn-primary" style="margin-top:15px;" onclick="window.startGrammarTest()">ŠTART</button></div>
     </div>
 </div>
 
 <div id="trainRun" class="test-overlay hidden">
     <div class="test-modal">
         <button class="btn-close" onclick="window.abortTraining()">&times;</button>
-        <div class="test-header"><span id="testProgress"></span><span id="testScoreDisplay"></span></div>
-        <div id="twWord" class="word-display" style="margin:20px 0; font-size:32px;"></div>
-        <div id="twFeedback" class="feedback-box"></div>
+        <div class="test-header" style="margin-bottom: 20px;"><span id="testProgress" style="font-weight: bold; font-size: 16px;"></span><span id="testScoreDisplay" style="float:right;"></span></div>
+        <div id="twWord" class="word-display" style="margin:30px 0; font-size:36px; font-weight:bold;"></div>
+        <div id="twFeedback" class="feedback-box" style="margin-bottom:20px;"></div>
         <div id="classicInputArea">
-            <input type="text" id="twInput" autocomplete="off" placeholder="Tvoja odpoveď...">
-            <button class="btn btn-primary" style="margin-top:10px;" id="twSubmitBtn" onclick="window.checkTrainAnswer()">POTVRDIŤ</button>
+            <input type="text" id="twInput" autocomplete="off" placeholder="Tvoja odpoveď..." style="width: 100%; padding: 18px; border-radius: 16px; font-size: 20px; text-align: center; margin-bottom: 20px;">
+            <button class="btn btn-primary" id="twSubmitBtn" onclick="window.checkTrainAnswer()" data-sk="POTVRDIŤ" data-en="SUBMIT">POTVRDIŤ</button>
         </div>
-        <div id="quizInputArea" class="hidden" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
+        <div id="quizInputArea" class="hidden quiz-grid" style="margin-top:20px;">
             <button class="btn-quiz" id="qb0" onclick="window.checkQuizAnswer(0)"></button>
             <button class="btn-quiz" id="qb1" onclick="window.checkQuizAnswer(1)"></button>
             <button class="btn-quiz" id="qb2" onclick="window.checkQuizAnswer(2)"></button>
             <button class="btn-quiz" id="qb3" onclick="window.checkQuizAnswer(3)"></button>
         </div>
-        <button class="btn btn-success hidden" id="twNextBtn" onclick="window.nextTrainWord()" style="margin-top:15px; width:100%;">ĎALŠIE SLOVO</button>
+        <button class="btn btn-success hidden" id="twNextBtn" onclick="window.nextTrainWord()" style="margin-top:15px;" data-sk="ĎALŠIE SLOVO ➔" data-en="NEXT WORD ➔">ĎALŠIE SLOVO ➔</button>
+    </div>
+</div>
+
+<div id="senseiChatBtn" onclick="window.toggleSenseiChat()">💬 Sensei</div>
+<div id="senseiChatWindow" class="hidden">
+    <div class="chat-header">
+        <span>AI Sensei</span>
+        <button onclick="window.toggleSenseiChat()">&times;</button>
+    </div>
+    <div class="chat-messages" id="senseiChatMessages">
+        <div class="msg sensei-msg" data-sk="Konnichiwa! Potrebuješ s niečím pomôcť?" data-en="Konnichiwa! Need any help?">Konnichiwa! Potrebuješ s niečím pomôcť?</div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="senseiChatInput" placeholder="Spýtaj sa..." onkeypress="if(event.key === 'Enter') window.sendChatMessage()">
+        <button onclick="window.sendChatMessage()">🚀</button>
     </div>
 </div>
 
