@@ -381,17 +381,20 @@ window.nextTrainWord = function() {
 };
 
 window.endTraining = function() {
-    window.abortTraining();
+    clearInterval(window.quizTimerInterval);
+
+    let isEn = window.currentLang === 'en';
     let total = window.testQueue.length;
     let wrong = window.mistakes;
     let correct = total - wrong;
     let perc = Math.round((correct / total) * 100);
-    
-    let typeName = window.currentTestType === 'unlock' ? 'Odomknutie' : (window.currentTestType === 'smart' ? 'Chytrý test' : 'Slovíčka');
-    if (window.currentTestType === 'quiz') typeName = 'Kvíz';
-    
-    let lessonInfo = window.currentTestType === 'smart' ? `Mix (1-${window.state.unlockedLesson})` : `Lekcia ${window.testQueue[0].lekcia}`;
-    
+
+    // 1. Zápis do histórie
+    let typeName = window.currentTestType === 'unlock' ? (isEn ? 'Unlock' : 'Odomknutie') : (window.currentTestType === 'smart' ? (isEn ? 'Smart Test' : 'Chytrý test') : (isEn ? 'Vocab' : 'Slovíčka'));
+    if (window.currentTestType === 'quiz') typeName = isEn ? 'Quiz' : 'Kvíz';
+
+    let lessonInfo = window.currentTestType === 'smart' ? `Mix (1-${window.state.unlockedLesson})` : `${isEn ? 'Lesson' : 'Lekcia'} ${window.testQueue[0].lekcia}`;
+
     if (!window.state.history) window.state.history = [];
     window.state.history.push({
         date: new Date().toISOString(),
@@ -401,19 +404,91 @@ window.endTraining = function() {
         passed: perc >= 80,
         details: window.currentFullResults
     });
-    
+
+    // 2. Odomykanie a XP
+    let unlockedNew = false;
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
             window.state.unlockedLesson++;
-            if (typeof addXP === 'function') addXP(100); 
-            setTimeout(() => alert(window.currentLang === 'en' ? "🎉 Excellent! You unlocked a new lesson!" : "🎉 Výborne! Odomkol si novú lekciu!"), 300);
+            unlockedNew = true;
+            if (typeof window.addXP === 'function') window.addXP(100); 
         } else {
-            if (typeof addXP === 'function') addXP(100); 
+            if (typeof window.addXP === 'function') window.addXP(100); 
         }
     } else if (perc >= 80) {
-        if (typeof addXP === 'function') addXP(50); 
+        if (typeof window.addXP === 'function') window.addXP(50); 
     }
+
+    if (typeof window.saveState === 'function') window.saveState();
+    if (typeof window.updateUI === 'function') window.updateUI();
+
+    // 3. Vykreslenie Zhrnutia priamo do aktívneho okna
+    let modal = document.querySelector('#trainRun .test-modal');
+
+    // Skryjeme hracie prvky
+    document.getElementById('twWord').style.display = 'none';
+    document.getElementById('twFeedback').style.display = 'none';
+    document.getElementById('classicInputArea').style.display = 'none';
+    document.getElementById('quizInputArea').style.display = 'none';
+    document.getElementById('twNextBtn').style.display = 'none';
+    document.querySelector('.test-header').style.display = 'none';
+
+    // Odstránime staré zhrnutie, ak tam visí z predošlého testu
+    let oldSummary = document.getElementById('testSummaryContainer');
+    if (oldSummary) oldSummary.remove();
+
+    let msg = "";
+    if (perc === 100) msg = isEn ? "Perfect! Flawless victory. 🥷" : "Perfektné! Úplne bez chýb. 🥷";
+    else if (perc >= 90) msg = isEn ? "Great job! Just minor mistakes. 🔥" : "Skvelá práca! Len malinké zaváhania. 🔥";
+    else if (perc >= 80) msg = isEn ? "Good effort! A bit more practice. 👍" : "Dobrý výkon! Ešte trochu tréningu. 👍";
+    else msg = isEn ? "Learn from mistakes! Review below. 💪" : "Na chybách sa učíme! Pozri si ich nižšie. 💪";
+
+    let summaryHtml = `
+        <div id="testSummaryContainer" style="margin-top: 10px;">
+            <h2 style="margin-top: 0; color: var(--primary); font-size: 40px; margin-bottom: 10px;">${perc}%</h2>
+            <div style="text-align:center; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
+                <p style="font-size: 16px; color: var(--text-muted); margin-top: 0;">${msg}</p>
+                <div style="display:flex; justify-content:center; gap: 30px; font-size: 18px;">
+                    <span style="color:var(--success); font-weight:bold;">✅ ${correct}</span>
+                    <span style="color:var(--danger); font-weight:bold;">❌ ${wrong}</span>
+                </div>
+            </div>
+    `;
+
+    if (wrong > 0) {
+        summaryHtml += `<h4 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text-muted); text-align: left; margin-bottom: 10px;">${isEn ? 'Mistakes:' : 'Čo ti ušlo:'}</h4>`;
+        summaryHtml += `<div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; text-align: left;">`;
+        let mistakesList = window.currentFullResults.filter(r => !r.isCorrect);
+        mistakesList.forEach(m => {
+            summaryHtml += `
+                <div style="background: rgba(239, 68, 68, 0.08); padding: 12px; border-radius: 8px; border-left: 4px solid var(--danger);">
+                    <div style="font-weight:bold; margin-bottom:4px; font-size: 15px;">${m.q}</div>
+                    <div style="font-size:13px; color:var(--text-muted);">${isEn ? 'Your answer' : 'Tvoja odpoveď'}: <span style="text-decoration:line-through; color:var(--danger);">${m.a}</span></div>
+                    <div style="font-size:14px; color:var(--success); font-weight:bold; margin-top: 4px;">${isEn ? 'Correct' : 'Správne'}: ${m.correct}</div>
+                </div>
+            `;
+        });
+        summaryHtml += `</div>`;
+    }
+
+    // Uložíme si info o odomknutí priamo do tlačidla, aby sme mohli zavolať alert po zavretí
+    summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
+
+    modal.insertAdjacentHTML('beforeend', summaryHtml);
+};
+
+// Pomocná funkcia na upratanie modalu po zavretí zhrnutia
+window.closeSummaryAndReset = function(showUnlockAlert) {
+    document.getElementById('trainRun').classList.add('hidden');
     
-    if (typeof saveState === 'function') window.saveState();
-    if (typeof updateUI === 'function') window.updateUI();
+    // Vrátime UI testovacieho okna do pôvodného stavu pre ďalšie testy
+    document.getElementById('twWord').style.display = 'block';
+    document.querySelector('.test-header').style.display = 'flex';
+    
+    let oldSummary = document.getElementById('testSummaryContainer');
+    if (oldSummary) oldSummary.remove();
+
+    if (showUnlockAlert) {
+        setTimeout(() => alert(window.currentLang === 'en' ? "🎉 Excellent! You unlocked a new lesson!" : "🎉 Výborne! Odomkol si novú lekciu!"), 300);
+    }
 };
