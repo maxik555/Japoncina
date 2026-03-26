@@ -11,8 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <link rel="stylesheet" href="style.css">
+    
     <style>
-        /* Tieto štýly opravujú drobný posun a prekrývanie */
         .test-overlay { position: fixed; inset: 0; background: rgba(10, 15, 30, 0.96); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .test-overlay.hidden { display: none !important; }
         .test-modal { background: var(--bg-card); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; text-align: center; }
@@ -147,6 +147,7 @@
                 <option value="ja2sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ English">Japončina ➡️ Slovenčina</option>
             </select>
             <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
+            <input type="number" id="freeCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count" style="margin-bottom:15px;">
             <button class="btn btn-success" onclick="window.startTraining('free')" data-sk="SPUSTIŤ PÍSANIE" data-en="START TYPING">SPUSTIŤ PÍSANIE</button>
         </div>
 
