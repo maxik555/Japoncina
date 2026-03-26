@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Vizuálna odmena Kandži/Kana) ---");
+console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -12,7 +12,6 @@ window.getPossibleAnswers = function(str) {
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
 };
 
-// Vylepšená funkcia na ignorovanie mäkčeňov, dĺžňov, zátvoriek a medzier
 window.removeDiacritics = function(str) {
     if (!str) return "";
     return str.normalize("NFD")
@@ -255,6 +254,88 @@ window.handleQuizTimeout = function() {
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
+// --- AI SENSEI ODVOLACÍ SÚD ---
+window.appealToSensei = async function() {
+    // Skúsime získať API kľúč z lokálneho úložiska, alebo zo state objektu
+    let apiKey = localStorage.getItem('gemini_api_key') || localStorage.getItem('geminiApiKey') || (window.state && window.state.geminiApiKey);
+    
+    if (!apiKey) {
+        apiKey = prompt("Pre použitie AI Senseia prosím zadaj svoj Gemini API kľúč:");
+        if (!apiKey) return;
+        localStorage.setItem('gemini_api_key', apiKey);
+    }
+
+    let appealBtn = document.getElementById('btnAppeal');
+    if (appealBtn) {
+        appealBtn.innerText = "⏳ Sensei analyzuje...";
+        appealBtn.disabled = true;
+    }
+
+    let w = window.testQueue[window.currentIdx];
+    let inputRaw = document.getElementById('twInput').value.trim();
+    let isEn = window.currentLang === 'en';
+    let meaning = isEn && w.en ? w.en : w.sk;
+    
+    let expectedAnswer = window.currentDirection === 'ja2sk' ? meaning : w.romaji;
+    let questionText = window.currentDirection === 'ja2sk' ? (w.kanji !== '-' ? w.kanji : w.kana) : meaning;
+
+    let promptText = `Si prísny, ale spravodlivý učiteľ japončiny.
+Otázka v teste bola: "${questionText}".
+Očakávaná správna odpoveď: "${expectedAnswer}".
+Používateľ napísal: "${inputRaw}".
+
+Rozhodni, či je odpoveď používateľa akceptovateľná. Zohľadni: synonymá, iný vid slovesa (napr. napiť sa vs. piť), drobný preklep bez zmeny významu, alebo chýbajúce častice.
+Odpovedz striktne v tomto formáte:
+Ak uznávaš: "ANO: <jedna veta vysvetlenia v slovenčine>"
+Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
+
+    try {
+        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+        let data = await response.json();
+        
+        if (data.error) {
+            if (appealBtn) { appealBtn.innerText = "❌ Neplatný API kľúč"; appealBtn.disabled = false; }
+            return;
+        }
+
+        let aiText = data.candidates[0].content.parts[0].text.trim();
+        let fb = document.getElementById('twFeedback');
+
+        if (aiText.toUpperCase().startsWith("ANO")) {
+            // REVERZÁCIA SKÓRE!
+            window.mistakes--;
+            let lastResult = window.currentFullResults[window.currentFullResults.length - 1];
+            if (lastResult) lastResult.isCorrect = true;
+            
+            if (window.state.wordStats && window.state.wordStats[w.sk]) {
+                window.state.wordStats[w.sk].w--;
+                window.state.wordStats[w.sk].c++;
+            }
+
+            let explanation = aiText.substring(aiText.indexOf(':') + 1).trim();
+            fb.innerHTML = `✅ <b>Správne! (Sensei uznal)</b><br><span style="font-size: 13px; color: #fff;">${explanation}</span>`;
+            fb.className = "feedback-box fb-correct";
+            window.updateScoreDisplay();
+            
+        } else {
+            // ZAMIETNUTÉ
+            let explanation = aiText.includes(':') ? aiText.substring(aiText.indexOf(':') + 1).trim() : aiText;
+            fb.innerHTML = `❌ <b>Nesprávne!</b> <br> ${expectedAnswer} <br><div style="margin-top: 10px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #ffcccc;"><b>Sensei:</b> ${explanation}</div>`;
+            fb.className = "feedback-box fb-wrong";
+        }
+    } catch (error) {
+        console.error("AI Error:", error);
+        if (appealBtn) {
+            appealBtn.innerText = "❌ Chyba spojenia";
+            appealBtn.disabled = false;
+        }
+    }
+};
+
 window.checkTrainAnswer = function() {
     let inputRaw = document.getElementById('twInput').value.trim();
     let inputNorm = window.removeDiacritics(inputRaw); 
@@ -302,7 +383,6 @@ window.checkTrainAnswer = function() {
     
     if (isCorrect) { 
         let extraVisual = "";
-        // Ak ideme zo SK/EN do JA, ukážeme veľký japonský znak ako vizuálnu odmenu
         if (window.currentDirection === 'sk2ja') {
             let displayChar = w.kanji !== '-' ? w.kanji : (w.kana !== '-' ? w.kana : '');
             if (displayChar) {
@@ -318,7 +398,10 @@ window.checkTrainAnswer = function() {
             playAudioText(audioText, 'ja-JP'); 
         }
     } else { 
-        fb.innerHTML = `❌ Nesprávne! <br> ${expectedAnswer}`; fb.className = "feedback-box fb-wrong"; 
+        // PRIDANÉ TLAČIDLO NA ODVOLANIE
+        fb.innerHTML = `❌ Nesprávne! <br> ${expectedAnswer} 
+        <button id="btnAppeal" class="btn btn-outline" style="margin-top: 15px; font-size: 12px; padding: 6px 12px; width: 100%; border-color: var(--warning); color: var(--warning);" onclick="window.appealToSensei()">⚖️ Uznaj mi to (AI Sensei)</button>`; 
+        fb.className = "feedback-box fb-wrong"; 
         window.mistakes++; 
     }
     
