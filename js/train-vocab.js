@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.0) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.2) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -74,6 +74,11 @@ window.updateScoreDisplay = function() {
 window.abortTraining = function() {
     clearInterval(window.quizTimerInterval);
     document.getElementById('trainRun').classList.add('hidden');
+    // Obnovíme testovacie okno, keby ho niekto zrušil v strede Zhrnutia
+    document.getElementById('twWord').style.display = 'block';
+    document.querySelector('.test-header').style.display = 'flex';
+    let oldSummary = document.getElementById('testSummaryContainer');
+    if (oldSummary) oldSummary.remove();
 };
 
 // --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE / CHYTRÝ) ---
@@ -389,7 +394,6 @@ window.endTraining = function() {
     let correct = total - wrong;
     let perc = Math.round((correct / total) * 100);
 
-    // 1. Zápis do histórie
     let typeName = window.currentTestType === 'unlock' ? (isEn ? 'Unlock' : 'Odomknutie') : (window.currentTestType === 'smart' ? (isEn ? 'Smart Test' : 'Chytrý test') : (isEn ? 'Vocab' : 'Slovíčka'));
     if (window.currentTestType === 'quiz') typeName = isEn ? 'Quiz' : 'Kvíz';
 
@@ -405,7 +409,6 @@ window.endTraining = function() {
         details: window.currentFullResults
     });
 
-    // 2. Odomykanie a XP
     let unlockedNew = false;
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
@@ -422,10 +425,8 @@ window.endTraining = function() {
     if (typeof window.saveState === 'function') window.saveState();
     if (typeof window.updateUI === 'function') window.updateUI();
 
-    // 3. Vykreslenie Zhrnutia priamo do aktívneho okna
     let modal = document.querySelector('#trainRun .test-modal');
 
-    // Skryjeme hracie prvky
     document.getElementById('twWord').style.display = 'none';
     document.getElementById('twFeedback').style.display = 'none';
     document.getElementById('classicInputArea').style.display = 'none';
@@ -433,7 +434,6 @@ window.endTraining = function() {
     document.getElementById('twNextBtn').style.display = 'none';
     document.querySelector('.test-header').style.display = 'none';
 
-    // Odstránime staré zhrnutie, ak tam visí z predošlého testu
     let oldSummary = document.getElementById('testSummaryContainer');
     if (oldSummary) oldSummary.remove();
 
@@ -471,17 +471,15 @@ window.endTraining = function() {
         summaryHtml += `</div>`;
     }
 
-    // Uložíme si info o odomknutí priamo do tlačidla, aby sme mohli zavolať alert po zavretí
     summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
 
+    let modal = document.querySelector('#trainRun .test-modal');
     modal.insertAdjacentHTML('beforeend', summaryHtml);
 };
 
-// Pomocná funkcia na upratanie modalu po zavretí zhrnutia
 window.closeSummaryAndReset = function(showUnlockAlert) {
     document.getElementById('trainRun').classList.add('hidden');
     
-    // Vrátime UI testovacieho okna do pôvodného stavu pre ďalšie testy
     document.getElementById('twWord').style.display = 'block';
     document.querySelector('.test-header').style.display = 'flex';
     
