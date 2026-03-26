@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd v2) ---");
+console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd v3 - AutoReset kľúča) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -256,15 +256,15 @@ window.handleQuizTimeout = function() {
 
 // --- AI SENSEI ODVOLACÍ SÚD ---
 window.appealToSensei = async function() {
-    // Rozšírené hľadanie kľúča (prioritne z Firebase 'state', potom z LocalStorage)
     let apiKey = (window.state && (window.state.geminiApiKey || window.state.apiKey || window.state.geminiKey || window.state.gemini_api_key)) 
                  || localStorage.getItem('gemini_api_key') 
                  || localStorage.getItem('geminiApiKey');
     
     if (!apiKey) {
-        apiKey = prompt("Pre použitie AI Senseia prosím zadaj svoj Gemini API kľúč:");
+        apiKey = prompt("Pre použitie AI Senseia prosím zadaj svoj Gemini API kľúč (bez medzier):");
         if (!apiKey) return;
-        localStorage.setItem('gemini_api_key', apiKey); // Uloží sa pre budúce použitie
+        apiKey = apiKey.trim(); // Automaticky odstránime medzery, ak by tam nejaké boli
+        localStorage.setItem('gemini_api_key', apiKey); 
     }
 
     let appealBtn = document.getElementById('btnAppeal');
@@ -299,8 +299,17 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
         });
         let data = await response.json();
         
+        // Ak API vráti chybu (neplatný kľúč, limit atď.)
         if (data.error) {
-            if (appealBtn) { appealBtn.innerText = "❌ Neplatný API kľúč"; appealBtn.disabled = false; }
+            console.error("Gemini API Error:", data.error);
+            if (appealBtn) { 
+                appealBtn.innerText = "❌ Skús znova (Neplatný kľúč)"; 
+                appealBtn.disabled = false; 
+            }
+            // ZMAZANIE CHYBNÉHO KĽÚČA Z PAMÄTE!
+            localStorage.removeItem('gemini_api_key');
+            localStorage.removeItem('geminiApiKey');
+            alert(`Google API odmietlo tvoj kľúč. Zrejme obsahuje preklep. Pri ďalšom kliknutí si ho appka vypýta nanovo.\n\nDetail chyby: ${data.error.message}`);
             return;
         }
 
@@ -308,7 +317,6 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
         let fb = document.getElementById('twFeedback');
 
         if (aiText.toUpperCase().startsWith("ANO")) {
-            // REVERZÁCIA SKÓRE!
             window.mistakes--;
             let lastResult = window.currentFullResults[window.currentFullResults.length - 1];
             if (lastResult) lastResult.isCorrect = true;
@@ -324,7 +332,6 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
             window.updateScoreDisplay();
             
         } else {
-            // ZAMIETNUTÉ
             let explanation = aiText.includes(':') ? aiText.substring(aiText.indexOf(':') + 1).trim() : aiText;
             fb.innerHTML = `❌ <b>Nesprávne!</b> <br> ${expectedAnswer} <br><div style="margin-top: 10px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #ffcccc;"><b>Sensei:</b> ${explanation}</div>`;
             fb.className = "feedback-box fb-wrong";
@@ -332,7 +339,7 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
     } catch (error) {
         console.error("AI Error:", error);
         if (appealBtn) {
-            appealBtn.innerText = "❌ Chyba spojenia";
+            appealBtn.innerText = "❌ Chyba pripojenia";
             appealBtn.disabled = false;
         }
     }
