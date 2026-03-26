@@ -1,50 +1,87 @@
 // --- PRIHLASOVANIE A SYNCHRONIZÁCIA ---
 
 // Sledovanie stavu prihlásenia (Firebase Observer)
-auth.onAuthStateChanged(async (user) => {
+window.auth.onAuthStateChanged(async (user) => {
     const authContainer = document.getElementById('auth-container');
     const mainApp = document.getElementById('main-app');
     const loader = document.getElementById('loadingOverlay');
 
     if (user) {
-        currentUser = user;
+        window.currentUser = user;
         if (authContainer) authContainer.style.display = 'none';
         if (mainApp) mainApp.style.display = 'flex';
         await loadUserData();
     } else {
-        currentUser = null;
+        window.currentUser = null;
         if (authContainer) authContainer.style.display = 'block';
         if (mainApp) mainApp.style.display = 'none';
         if (loader) loader.style.display = 'none';
     }
 });
 
-// Načítanie dát používateľa z Firestore
+// --- GOOGLE PRIHLÁSENIE (Nové) ---
+window.loginWithGoogle = async function() {
+    const errEl = document.getElementById('authError');
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await window.auth.signInWithPopup(provider);
+        // Ak je prihlásenie úspešné, onAuthStateChanged sa o zvyšok postará
+    } catch (e) {
+        console.error("Chyba pri Google prihlásení:", e);
+        if (errEl) errEl.innerText = "Prihlásenie cez Google zlyhalo.";
+    }
+};
+
+// --- PREHĽADNÉ NAČÍTANIE (Šuplíky) ---
 async function loadUserData() {
-    if (!currentUser) return;
+    if (!window.currentUser) return;
 
     try {
-        const docRef = dbFirestore.collection('users').doc(currentUser.uid);
-        const snap = await docRef.get();
+        const userRef = window.dbFirestore.collection('users').doc(window.currentUser.uid);
         
-        if (snap.exists) {
-            // Zlúčenie predvoleného stavu s dátami z cloudu
-            state = { ...state, ...snap.data() };
-        } else {
-            // Ak je to nový používateľ, vytvoríme mu prvý záznam
-            console.log("Vytváram nový profil v dódžó...");
-            await saveState();
+        // Načítame všetky "šuplíky" z Firebase
+        const profileSnap = await userRef.collection('data').doc('profile').get();
+        const progressSnap = await userRef.collection('data').doc('progress').get();
+        const statsSnap = await userRef.collection('data').doc('stats').get();
+        const historySnap = await userRef.collection('data').doc('history').get();
+
+        // 1. Ošetrenie: Má už používateľ uprataný nový systém (šuplíky)?
+        if (profileSnap.exists) {
+            console.log("Načítavam upratané dáta z dódžó...");
+            window.state = { 
+                ...window.state, 
+                ...profileSnap.data(), 
+                ...(progressSnap.exists ? progressSnap.data() : {}),
+                wordStats: statsSnap.exists ? statsSnap.data() : {},
+                history: historySnap.exists ? historySnap.data().records : []
+            };
+        } 
+        // 2. Ošetrenie: Je to starý používateľ so všetkým v jednom veľkom dokumente?
+        else {
+            const oldSnap = await userRef.get();
+            if (oldSnap.exists) {
+                console.log("Migrujem staré dáta do nových šuplíkov...");
+                window.state = { ...window.state, ...oldSnap.data() };
+                // Hneď mu to uložíme do nového, uprataného formátu
+                await saveState(); 
+            } else {
+                // 3. Úplne nový používateľ
+                console.log("Vytváram nový profil v dódžó...");
+                await saveState();
+            }
         }
         
         // Synchronizácia UI s načítanými dátami
         const nickInput = document.getElementById('profileNickname');
-        if (nickInput) nickInput.value = state.nickname || '';
+        if (nickInput) nickInput.value = window.state.nickname || '';
         
-        setLang(currentLang);
+        window.setLang(window.currentLang);
         updateUI();
         
         // Až po načítaní používateľa ťaháme slovíčka
-        await fetchDatabaseFromCloud();
+        if (typeof fetchDatabaseFromCloud === 'function') {
+            await fetchDatabaseFromCloud();
+        }
 
     } catch (e) {
         console.error("Chyba pri načítaní dát používateľa:", e);
@@ -58,45 +95,74 @@ async function loadUserData() {
     }
 }
 
-// Uloženie aktuálneho stavu do Firestore
-async function saveState() {
-    if (!currentUser) return;
+// --- PREHĽADNÉ UKLADANIE (Šuplíky) ---
+window.saveState = async function() {
+    if (!window.currentUser) return;
 
     try {
-        // Ukladáme celý objekt 'state'
-        await dbFirestore.collection('users').doc(currentUser.uid).set(state);
+        const userRef = window.dbFirestore.collection('users').doc(window.currentUser.uid);
+        
+        // Rozdelíme 'state' objekt na logické celky
+        const profileData = {
+            xp: window.state.xp || 0,
+            streak: window.state.streak || 0,
+            lastDate: window.state.lastDate || '',
+            nickname: window.state.nickname || '',
+            geminiKey: window.state.geminiKey || '' // API kľúč patrí do profilu
+        };
+
+        const progressData = {
+            unlockedLesson: window.state.unlockedLesson || 1,
+            unlockedGrammar: window.state.unlockedGrammar || 1
+        };
+
+        const wordStatsData = window.state.wordStats || {};
+        const historyData = { records: window.state.history || [] };
+
+        // Uložíme to do krásne oddelených dokumentov (šuplíkov)
+        await userRef.collection('data').doc('profile').set(profileData, { merge: true });
+        await userRef.collection('data').doc('progress').set(progressData, { merge: true });
+        
+        // Štatistiky a históriu ukladáme, len ak tam reálne nejaké dáta sú (šetríme databázu)
+        if (Object.keys(wordStatsData).length > 0) {
+            await userRef.collection('data').doc('stats').set(wordStatsData);
+        }
+        if (historyData.records.length > 0) {
+            await userRef.collection('data').doc('history').set(historyData);
+        }
+
     } catch(e) {
-        console.error("Chyba pri ukladaní do Firestore:", e);
+        console.error("Chyba pri ukladaní do Firestore (Šuplíky):", e);
     }
-}
+};
 
 // Funkcia na pridávanie XP s kontrolou streaku
-function addXP(amount) {
-    state.xp = (state.xp || 0) + amount;
+window.addXP = function(amount) {
+    window.state.xp = (window.state.xp || 0) + amount;
     
     // Logika pre denný streak
     const today = new Date().toDateString();
-    if (state.lastDate !== today) {
+    if (window.state.lastDate !== today) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         
-        if (state.lastDate === yesterday.toDateString()) {
-            state.streak++;
+        if (window.state.lastDate === yesterday.toDateString()) {
+            window.state.streak++;
         } else {
-            state.streak = 1; // Prvý deň po pauze
+            window.state.streak = 1; // Prvý deň po pauze
         }
-        state.lastDate = today;
+        window.state.lastDate = today;
     }
     
     updateUI();
-    saveState();
-}
+    window.saveState();
+};
 
 // Komplexná aktualizácia UI prvkov
-function updateUI() {
+window.updateUI = function() {
     // Výpočet levelu (1 level = 500 XP)
-    let level = Math.floor((state.xp || 0) / 500) + 1;
-    let currentLevelXp = state.xp % 500;
+    let level = Math.floor((window.state.xp || 0) / 500) + 1;
+    let currentLevelXp = (window.state.xp || 0) % 500;
     let progress = (currentLevelXp / 500) * 100;
     
     // Hlavná horná lišta
@@ -106,16 +172,16 @@ function updateUI() {
     
     if (lvlEl) lvlEl.innerText = level;
     if (xpBar) xpBar.style.width = Math.max(0, Math.min(100, progress)) + "%";
-    if (streakEl) streakEl.innerText = (state.streak || 0) + " 🔥";
+    if (streakEl) streakEl.innerText = (window.state.streak || 0) + " 🔥";
     
     // Prevolanie renderovania v ostatných moduloch, ak existujú
-    if (typeof renderHistory === 'function') renderHistory();
-    if (typeof renderMap === 'function') renderMap();
-    if (typeof updateProfileStats === 'function') updateProfileStats();
-}
+    if (typeof window.renderHistory === 'function') window.renderHistory();
+    if (typeof window.renderMap === 'function') window.renderMap();
+    if (typeof window.updateProfileStats === 'function') window.updateProfileStats();
+};
 
-// Autentifikačné akcie
-async function loginUser() { 
+// Autentifikačné akcie (Email + Heslo)
+window.loginUser = async function() { 
     const errEl = document.getElementById('authError');
     const email = document.getElementById('authEmail').value.trim();
     const pass = document.getElementById('authPass').value;
@@ -126,13 +192,13 @@ async function loginUser() {
     }
 
     try { 
-        await auth.signInWithEmailAndPassword(email, pass); 
+        await window.auth.signInWithEmailAndPassword(email, pass); 
     } catch(e) { 
         if (errEl) errEl.innerText = "Nesprávny email alebo heslo."; 
     } 
-}
+};
 
-async function registerUser() { 
+window.registerUser = async function() { 
     const errEl = document.getElementById('authError');
     const email = document.getElementById('authEmail').value.trim();
     const pass = document.getElementById('authPass').value;
@@ -143,24 +209,24 @@ async function registerUser() {
     }
 
     try { 
-        await auth.createUserWithEmailAndPassword(email, pass); 
+        await window.auth.createUserWithEmailAndPassword(email, pass); 
     } catch(e) { 
         if (errEl) errEl.innerText = "Tento email už niekto používa."; 
     } 
-}
+};
 
-function updateNickname() { 
+window.updateNickname = function() { 
     const nickInput = document.getElementById('profileNickname');
     if (nickInput) { 
-        state.nickname = nickInput.value.trim(); 
-        saveState(); 
+        window.state.nickname = nickInput.value.trim(); 
+        window.saveState(); 
         updateUI();
     }
-}
+};
 
-function logoutUser() { 
-    const confirmMsg = currentLang === 'sk' ? "Naozaj sa chceš odhlásiť?" : "Logout?";
+window.logoutUser = function() { 
+    const confirmMsg = window.currentLang === 'sk' ? "Naozaj sa chceš odhlásiť?" : "Logout?";
     if (confirm(confirmMsg)) {
-        auth.signOut(); 
+        window.auth.signOut(); 
     }
-}
+};
