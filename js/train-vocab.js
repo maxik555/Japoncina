@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Gemini 2.5 Flash Edition) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.0) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -6,7 +6,6 @@ let quizOptions = [];
 window.quizTimerInterval = null;
 window.currentDirection = 'sk2ja'; 
 
-// --- POMOCNÉ FUNKCIE ---
 window.getPossibleAnswers = function(str) {
     if (!str || str === '-') return [];
     return str.split(/[\/,]+/).map(s => s.trim()).filter(s => s.length > 0);
@@ -29,22 +28,12 @@ window.recordWordStat = function(wordSk, isCorrect) {
     else window.state.wordStats[wordSk].w++;
 };
 
-window.selectTestModeUI = function(m) {
-    document.querySelectorAll('.setup-section').forEach(s => s.classList.add('hidden'));
-    const setupEl = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
-    if (setupEl) setupEl.classList.remove('hidden');
-    
-    document.querySelectorAll('#trainSetup .btn-nav').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById('btnMode' + m.charAt(0).toUpperCase() + m.slice(1));
-    if (activeBtn) activeBtn.classList.add('active');
-};
-
 // --- KARTIČKY ---
 window.startLearn = function(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
     fcQueue = window.db.filter(w => w.lekcia === parseInt(select.value));
-    if (fcQueue.length === 0) return alert("Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
+    if (fcQueue.length === 0) return alert(window.currentLang === 'en' ? "No words in this lesson yet." : "Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
@@ -55,8 +44,9 @@ window.loadFc = function() {
     let w = fcQueue[fcIdx];
     document.getElementById('fcElement').classList.remove('is-flipped');
     setTimeout(() => {
+        let isEn = window.currentLang === 'en';
         document.getElementById('fcProgress').innerText = `${fcIdx + 1} / ${fcQueue.length}`;
-        document.getElementById('fcFrontSk').innerText = w.sk;
+        document.getElementById('fcFrontSk').innerText = (isEn && w.en) ? w.en : w.sk;
         document.getElementById('fcImg').innerText = w.img || '🇯🇵';
         document.getElementById('fcBackRomaji').innerText = w.romaji;
         document.getElementById('fcBackKana').innerText = w.kana !== '-' ? w.kana : '';
@@ -84,12 +74,6 @@ window.updateScoreDisplay = function() {
 window.abortTraining = function() {
     clearInterval(window.quizTimerInterval);
     document.getElementById('trainRun').classList.add('hidden');
-    document.getElementById('trainSetup').classList.remove('hidden');
-};
-
-window.closeTraining = function() {
-    document.getElementById('trainResult').classList.add('hidden');
-    document.getElementById('trainSetup').classList.remove('hidden');
 };
 
 // --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE / CHYTRÝ) ---
@@ -119,7 +103,7 @@ window.startTraining = function(type) {
     }
 
     window.testQueue = pool;
-    if (window.testQueue.length === 0) return alert("Nenašli sa žiadne slovíčka.");
+    if (window.testQueue.length === 0) return alert(window.currentLang === 'en' ? "No words found." : "Nenašli sa žiadne slovíčka.");
     
     document.getElementById('trainRun').classList.remove('hidden');
     window.loadTrainWord();
@@ -130,13 +114,11 @@ window.startSmartTraining = function() {
     window.mistakes = 0; 
     window.currentIdx = 0;
     window.currentFullResults = [];
-    
-    let dirSelect = document.getElementById('smartDirection');
-    window.currentDirection = dirSelect ? dirSelect.value : 'sk2ja';
+    window.currentDirection = 'sk2ja';
     
     if (!window.state.wordStats) window.state.wordStats = {};
     let unlockedWords = window.db.filter(w => w.lekcia <= window.state.unlockedLesson);
-    if (unlockedWords.length === 0) return alert("Nemáš odomknuté žiadne lekcie.");
+    if (unlockedWords.length === 0) return alert(window.currentLang === 'en' ? "No unlocked lessons." : "Nemáš odomknuté žiadne lekcie.");
 
     let badWords = [], newWords = [], goodWords = [];
 
@@ -162,13 +144,6 @@ window.startSmartTraining = function() {
     let takeGood = Math.min(rem, goodWords.length);
     selected.push(...goodWords.slice(0, takeGood));
 
-    rem = 50 - selected.length;
-    if (rem > 0) {
-        let leftover = [...badWords.slice(takeBad), ...newWords.slice(takeNew), ...goodWords.slice(takeGood)];
-        shuffle(leftover);
-        selected.push(...leftover.slice(0, rem));
-    }
-
     shuffle(selected);
     window.testQueue = selected;
 
@@ -180,7 +155,7 @@ window.loadTrainWord = function() {
     let w = window.testQueue[window.currentIdx];
     let wordDiv = document.getElementById('twWord');
     let isEn = window.currentLang === 'en';
-    let meaning = isEn && w.en ? w.en : w.sk;
+    let meaning = (isEn && w.en) ? w.en : w.sk;
 
     if (window.currentDirection === 'ja2sk') {
         let kanjiText = w.kanji !== '-' ? w.kanji : w.kana;
@@ -200,26 +175,20 @@ window.loadTrainWord = function() {
     document.getElementById('twNextBtn').classList.add('hidden');
     window.updateScoreDisplay();
 
-    clearInterval(window.quizTimerInterval);
-    let timerContainer = document.getElementById('quizTimerContainer');
-
     if (window.currentTestType === 'quiz') {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
-        if (timerContainer) timerContainer.classList.remove('hidden');
         
         let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
         quizOptions = [w, ...others].sort(()=>0.5-Math.random());
         for(let i=0; i<4; i++) {
             let btn = document.getElementById('qb'+i);
-            btn.innerText = quizOptions[i].romaji;
+            btn.innerText = (window.currentDirection === 'ja2sk') ? ((isEn && quizOptions[i].en) ? quizOptions[i].en : quizOptions[i].sk) : quizOptions[i].romaji;
             btn.className = 'btn-quiz'; btn.disabled = false;
         }
-        window.startQuizTimer(10);
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
-        if (timerContainer) timerContainer.classList.add('hidden');
         
         let inputEl = document.getElementById('twInput');
         inputEl.value = ''; 
@@ -229,32 +198,6 @@ window.loadTrainWord = function() {
     }
 };
 
-window.startQuizTimer = function(seconds) {
-    let timeLeft = seconds;
-    let timerBar = document.getElementById('quizTimerBar'); 
-    if(timerBar) { timerBar.style.width = '100%'; timerBar.style.transition = 'none'; }
-    window.quizTimerInterval = setInterval(() => {
-        timeLeft -= 0.1; 
-        if (timerBar) timerBar.style.width = (timeLeft / seconds * 100) + '%';
-        if (timeLeft <= 0) { clearInterval(window.quizTimerInterval); window.handleQuizTimeout(); }
-    }, 100);
-};
-
-window.handleQuizTimeout = function() {
-    let w = window.testQueue[window.currentIdx];
-    window.mistakes++;
-    window.currentFullResults.push({ q: w.sk, a: "⏱️ Čas vypršal", correct: w.romaji, isCorrect: false });
-    window.recordWordStat(w.sk, false);
-    
-    let fb = document.getElementById('twFeedback');
-    fb.style.display = 'block';
-    fb.innerHTML = `❌ Čas vypršal! <br> Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
-    window.updateScoreDisplay();
-    for(let i=0; i<4; i++) { let btn = document.getElementById('qb'+i); if (btn) btn.disabled = true; }
-    document.getElementById('twNextBtn').classList.remove('hidden');
-};
-
-// --- AI SENSEI ODVOLACÍ SÚD (Gemini 2.5 Flash) ---
 window.appealToSensei = async function() {
     let apiKey = window.state && window.state.geminiKey;
     let appealBtn = document.getElementById('btnAppeal');
@@ -264,49 +207,35 @@ window.appealToSensei = async function() {
         return;
     }
 
+    let isEn = window.currentLang === 'en';
     if (appealBtn) {
-        appealBtn.innerText = "⏳ Sensei analyzuje...";
+        appealBtn.innerText = isEn ? "⏳ Sensei is analyzing..." : "⏳ Sensei analyzuje...";
         appealBtn.disabled = true;
     }
 
     let w = window.testQueue[window.currentIdx];
     let inputRaw = document.getElementById('twInput').value.trim();
-    let isEn = window.currentLang === 'en';
-    let meaning = isEn && w.en ? w.en : w.sk;
+    let meaning = (isEn && w.en) ? w.en : w.sk;
     
     let expectedAnswer = window.currentDirection === 'ja2sk' ? meaning : w.romaji;
     let questionText = window.currentDirection === 'ja2sk' ? (w.kanji !== '-' ? w.kanji : w.kana) : meaning;
 
-    let promptText = `Si prísny, ale spravodlivý učiteľ japončiny.
-Otázka v teste bola: "${questionText}".
-Očakávaná správna odpoveď: "${expectedAnswer}".
-Používateľ napísal: "${inputRaw}".
-
-Rozhodni, či je odpoveď používateľa akceptovateľná (synonymá, iný vid slovesa, drobný preklep).
-Odpovedz striktne:
-Ak uznávaš: "ANO: <veta vysvetlenia>"
-Ak neuznávaš: "NIE: <veta vysvetlenia>"`;
+    let promptText = isEn 
+        ? `You are a strict but fair Japanese teacher. The test question was: "${questionText}". Expected correct answer: "${expectedAnswer}". The user wrote: "${inputRaw}". Decide if the answer is acceptable (synonym, typo). Answer strictly: If acceptable: "YES: <explanation>". If not: "NO: <explanation>".`
+        : `Si prísny, ale spravodlivý učiteľ japončiny. Otázka v teste bola: "${questionText}". Očakávaná správna odpoveď: "${expectedAnswer}". Používateľ napísal: "${inputRaw}". Rozhodni, či je odpoveď akceptovateľná. Odpovedz striktne: Ak uznávaš: "ANO: <vysvetlenie>". Ak neuznávaš: "NIE: <vysvetlenie>".`;
 
     try {
-        // AKTUALIZOVANÁ URL NA MODEL 2.5 FLASH
         let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
         let data = await response.json();
-        
-        if (data.error) {
-            console.error("Gemini Error:", data.error);
-            if (appealBtn) { appealBtn.innerText = "❌ Chyba modelu"; appealBtn.disabled = false; }
-            alert(`Model 2.5 Flash vyhodil chybu: ${data.error.message}`);
-            return;
-        }
 
         let aiText = data.candidates[0].content.parts[0].text.trim();
         let fb = document.getElementById('twFeedback');
 
-        if (aiText.toUpperCase().startsWith("ANO")) {
+        if (aiText.toUpperCase().startsWith("ANO") || aiText.toUpperCase().startsWith("YES")) {
             window.mistakes--;
             let lastResult = window.currentFullResults[window.currentFullResults.length - 1];
             if (lastResult) lastResult.isCorrect = true;
@@ -317,17 +246,17 @@ Ak neuznávaš: "NIE: <veta vysvetlenia>"`;
             }
 
             let explanation = aiText.substring(aiText.indexOf(':') + 1).trim();
-            fb.innerHTML = `✅ <b>Správne! (Sensei uznal)</b><br><span style="font-size: 13px; color: #fff;">${explanation}</span>`;
+            fb.innerHTML = `✅ <b>${isEn ? 'Correct! (Sensei accepted)' : 'Správne! (Sensei uznal)'}</b><br><span style="font-size: 13px; color: #fff;">${explanation}</span>`;
             fb.className = "feedback-box fb-correct";
             window.updateScoreDisplay();
         } else {
             let explanation = aiText.includes(':') ? aiText.substring(aiText.indexOf(':') + 1).trim() : aiText;
-            fb.innerHTML = `❌ <b>Nesprávne!</b> <br> ${expectedAnswer} <br><div style="margin-top: 10px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #ffcccc;"><b>Sensei:</b> ${explanation}</div>`;
+            fb.innerHTML = `❌ <b>${isEn ? 'Incorrect!' : 'Nesprávne!'}</b> <br> ${expectedAnswer} <br><div style="margin-top: 10px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #ffcccc;"><b>Sensei:</b> ${explanation}</div>`;
             fb.className = "feedback-box fb-wrong";
         }
     } catch (error) {
         console.error("Connection Error:", error);
-        if (appealBtn) { appealBtn.innerText = "❌ Chyba spojenia"; appealBtn.disabled = false; }
+        if (appealBtn) { appealBtn.innerText = "❌ Error"; appealBtn.disabled = false; }
     }
 };
 
@@ -336,7 +265,7 @@ window.checkTrainAnswer = function() {
     let inputNorm = window.removeDiacritics(inputRaw); 
     let w = window.testQueue[window.currentIdx];
     let isEn = window.currentLang === 'en';
-    let meaning = isEn && w.en ? w.en : w.sk;
+    let meaning = (isEn && w.en) ? w.en : w.sk;
     
     let isCorrect = false;
     let expectedAnswer = "";
@@ -385,7 +314,7 @@ window.checkTrainAnswer = function() {
             }
         }
         
-        fb.innerHTML = "✅ Správne!" + extraVisual; 
+        fb.innerHTML = `✅ ${isEn ? 'Correct!' : 'Správne!'}` + extraVisual; 
         fb.className = "feedback-box fb-correct"; 
         
         if (typeof playAudioText === 'function') {
@@ -393,8 +322,9 @@ window.checkTrainAnswer = function() {
             playAudioText(audioText, 'ja-JP'); 
         }
     } else { 
-        fb.innerHTML = `❌ Nesprávne! <br> ${expectedAnswer} 
-        <button id="btnAppeal" class="btn btn-outline" style="margin-top: 15px; font-size: 12px; padding: 6px 12px; width: 100%; border-color: var(--warning); color: var(--warning);" onclick="window.appealToSensei()">⚖️ Uznaj mi to (AI Sensei)</button>`; 
+        let appealText = isEn ? "⚖️ Appeal to Sensei (AI)" : "⚖️ Uznaj mi to (AI Sensei)";
+        fb.innerHTML = `❌ ${isEn ? 'Incorrect!' : 'Nesprávne!'} <br> ${expectedAnswer} 
+        <button id="btnAppeal" class="btn btn-outline" style="margin-top: 15px; font-size: 12px; padding: 6px 12px; width: 100%; border-color: var(--warning); color: var(--warning);" onclick="window.appealToSensei()">${appealText}</button>`; 
         fb.className = "feedback-box fb-wrong"; 
         window.mistakes++; 
     }
@@ -406,9 +336,9 @@ window.checkTrainAnswer = function() {
 };
 
 window.checkQuizAnswer = function(idx) {
-    clearInterval(window.quizTimerInterval);
     let w = window.testQueue[window.currentIdx];
     let isCorrect = (quizOptions[idx].sk === w.sk);
+    let isEn = window.currentLang === 'en';
     
     window.currentFullResults.push({ q: w.sk, a: quizOptions[idx].romaji, correct: w.romaji, isCorrect: isCorrect });
     window.recordWordStat(w.sk, isCorrect);
@@ -425,13 +355,14 @@ window.checkQuizAnswer = function(idx) {
             }
         }
         
-        fb.innerHTML = "✅ Správne!" + extraVisual; 
+        fb.innerHTML = `✅ ${isEn ? 'Correct!' : 'Správne!'}` + extraVisual; 
         fb.className = "feedback-box fb-correct"; 
         
         let audioText = window.getPossibleAnswers(w.romaji)[0] || w.romaji;
         if (typeof playAudioText === 'function') playAudioText(audioText, 'ja-JP'); 
     } else { 
-        fb.innerHTML = `❌ Chyba! Je to: ${w.romaji}`; fb.className = "feedback-box fb-wrong"; 
+        let correctTxt = window.currentDirection === 'ja2sk' ? ((isEn && w.en) ? w.en : w.sk) : w.romaji;
+        fb.innerHTML = `❌ ${isEn ? 'Wrong! It is:' : 'Chyba! Je to:'} ${correctTxt}`; fb.className = "feedback-box fb-wrong"; 
         window.mistakes++; 
     }
     
@@ -450,75 +381,32 @@ window.nextTrainWord = function() {
 };
 
 window.endTraining = function() {
-    document.getElementById('trainRun').classList.add('hidden');
-    let resultContainer = document.getElementById('trainResult');
-    resultContainer.classList.remove('hidden');
-    
+    window.abortTraining();
     let total = window.testQueue.length;
     let wrong = window.mistakes;
     let correct = total - wrong;
     let perc = Math.round((correct / total) * 100);
     
-    document.getElementById('trScore').innerText = `${perc}%`;
-    
-    let summaryDiv = document.getElementById('testSummaryContainer');
-    if (!summaryDiv) {
-        summaryDiv = document.createElement('div');
-        summaryDiv.id = 'testSummaryContainer';
-        summaryDiv.style = 'margin: 20px auto; width: 100%; text-align: left;';
-        let btn = resultContainer.querySelector('.btn-action');
-        if (btn) resultContainer.querySelector('.test-modal').insertBefore(summaryDiv, btn);
-        else resultContainer.querySelector('.test-modal').appendChild(summaryDiv);
-    }
-    
-    let msg = "";
-    if (perc === 100) msg = "Perfektné! Úplne bez chýb. 🥷";
-    else if (perc >= 90) msg = "Skvelá práca! Len malinké zaváhania. 🔥";
-    else if (perc >= 80) msg = "Dobrý výkon! Ešte trochu tréningu a dáš to na 100%. 👍";
-    else msg = "Na chybách sa učíme! Pozri si ich nižšie a skús to znova. 💪";
-
-    let summaryHtml = `
-        <div style="text-align:center; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-            <p style="font-size: 16px; color: var(--text-muted); margin-top: 0;">${msg}</p>
-            <div style="display:flex; justify-content:center; gap: 30px; font-size: 18px;">
-                <span style="color:var(--success); font-weight:bold;">✅ ${correct}</span>
-                <span style="color:var(--danger); font-weight:bold;">❌ ${wrong}</span>
-            </div>
-        </div>
-    `;
-
-    if (wrong > 0) {
-        summaryHtml += `<h4 style="border-bottom: 1px solid var(--border); padding-bottom: 5px; color: var(--text-muted); text-align: left;">Čo ti ušlo:</h4>`;
-        summaryHtml += `<div style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; text-align: left;">`;
-        let mistakesList = window.currentFullResults.filter(r => !r.isCorrect);
-        mistakesList.forEach(m => {
-            summaryHtml += `
-                <div style="background: rgba(255,0,0,0.05); padding: 12px; border-radius: 8px; border-left: 4px solid var(--danger);">
-                    <div style="font-weight:bold; margin-bottom:4px; font-size: 15px;">${m.q}</div>
-                    <div style="font-size:13px; color:var(--text-muted);">Tvoja odpoveď: <span style="text-decoration:line-through; color:var(--danger);">${m.a}</span></div>
-                    <div style="font-size:14px; color:var(--success); font-weight:bold; margin-top: 4px;">Správne: ${m.correct}</div>
-                </div>
-            `;
-        });
-        summaryHtml += `</div>`;
-    }
-    summaryDiv.innerHTML = summaryHtml;
-
     let typeName = window.currentTestType === 'unlock' ? 'Odomknutie' : (window.currentTestType === 'smart' ? 'Chytrý test' : 'Slovíčka');
     if (window.currentTestType === 'quiz') typeName = 'Kvíz';
     
-    let lessonInfo = window.currentTestType === 'smart' ? `Mix Lekcií (1-${window.state.unlockedLesson})` : `Lekcia ${window.testQueue[0].lekcia}`;
-    if (typeof window.saveToHistory === 'function') {
-        window.saveToHistory(lessonInfo, typeName, perc, perc >= 80, window.currentFullResults);
-    }
+    let lessonInfo = window.currentTestType === 'smart' ? `Mix (1-${window.state.unlockedLesson})` : `Lekcia ${window.testQueue[0].lekcia}`;
+    
+    if (!window.state.history) window.state.history = [];
+    window.state.history.push({
+        date: new Date().toISOString(),
+        lesson: lessonInfo,
+        type: typeName,
+        score: perc,
+        passed: perc >= 80,
+        details: window.currentFullResults
+    });
     
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
             window.state.unlockedLesson++;
             if (typeof addXP === 'function') addXP(100); 
-            if (typeof renderMap === 'function') renderMap();
-            if (typeof populateSelects === 'function') populateSelects();
-            setTimeout(() => alert("🎉 Výborne! Odomkol si novú lekciu!"), 300);
+            setTimeout(() => alert(window.currentLang === 'en' ? "🎉 Excellent! You unlocked a new lesson!" : "🎉 Výborne! Odomkol si novú lekciu!"), 300);
         } else {
             if (typeof addXP === 'function') addXP(100); 
         }
@@ -526,5 +414,6 @@ window.endTraining = function() {
         if (typeof addXP === 'function') addXP(50); 
     }
     
-    if (typeof saveState === 'function') saveState();
+    if (typeof saveState === 'function') window.saveState();
+    if (typeof updateUI === 'function') window.updateUI();
 };
