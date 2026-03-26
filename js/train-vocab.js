@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Odvolací Súd - Čisto cez Firebase) ---");
+console.log("--- 2. train-vocab.js načítané (Gemini 2.5 Flash Edition) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -254,19 +254,13 @@ window.handleQuizTimeout = function() {
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
-// --- AI SENSEI ODVOLACÍ SÚD (Čisto Firebase logika) ---
+// --- AI SENSEI ODVOLACÍ SÚD (Gemini 2.5 Flash) ---
 window.appealToSensei = async function() {
-    // Kľúč ťaháme výhradne z Firebase profilu (objektu state)
     let apiKey = window.state && window.state.geminiKey;
-    
     let appealBtn = document.getElementById('btnAppeal');
 
     if (!apiKey) {
-        alert("Pre použitie AI Senseia si musíš najprv uložiť svoj Gemini API kľúč do svojho profilu (databázy)!");
-        if (appealBtn) {
-            appealBtn.innerText = "❌ Chýba API kľúč v profile";
-            appealBtn.disabled = true;
-        }
+        alert("API kľúč sa nepodarilo načítať z profilu!");
         return;
     }
 
@@ -288,27 +282,24 @@ Otázka v teste bola: "${questionText}".
 Očakávaná správna odpoveď: "${expectedAnswer}".
 Používateľ napísal: "${inputRaw}".
 
-Rozhodni, či je odpoveď používateľa akceptovateľná. Zohľadni: synonymá, iný vid slovesa (napr. napiť sa vs. piť), drobný preklep bez zmeny významu, alebo chýbajúce častice.
-Odpovedz striktne v tomto formáte:
-Ak uznávaš: "ANO: <jedna veta vysvetlenia v slovenčine>"
-Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
+Rozhodni, či je odpoveď používateľa akceptovateľná (synonymá, iný vid slovesa, drobný preklep).
+Odpovedz striktne:
+Ak uznávaš: "ANO: <veta vysvetlenia>"
+Ak neuznávaš: "NIE: <veta vysvetlenia>"`;
 
     try {
-        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // AKTUALIZOVANÁ URL NA MODEL 2.5 FLASH
+        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
         let data = await response.json();
         
-        // Ak API vráti chybu (neplatný kľúč priamo z Firebase)
         if (data.error) {
-            console.error("Gemini API Error:", data.error);
-            if (appealBtn) { 
-                appealBtn.innerText = "❌ Neplatný API kľúč v profile"; 
-                appealBtn.disabled = false; 
-            }
-            alert(`Tvoj API kľúč uložený vo Firebase je neplatný alebo obsahuje preklep.\nProsím, skontroluj si ho v profile.\n\nDetail: ${data.error.message}`);
+            console.error("Gemini Error:", data.error);
+            if (appealBtn) { appealBtn.innerText = "❌ Chyba modelu"; appealBtn.disabled = false; }
+            alert(`Model 2.5 Flash vyhodil chybu: ${data.error.message}`);
             return;
         }
 
@@ -329,18 +320,14 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
             fb.innerHTML = `✅ <b>Správne! (Sensei uznal)</b><br><span style="font-size: 13px; color: #fff;">${explanation}</span>`;
             fb.className = "feedback-box fb-correct";
             window.updateScoreDisplay();
-            
         } else {
             let explanation = aiText.includes(':') ? aiText.substring(aiText.indexOf(':') + 1).trim() : aiText;
             fb.innerHTML = `❌ <b>Nesprávne!</b> <br> ${expectedAnswer} <br><div style="margin-top: 10px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 5px; color: #ffcccc;"><b>Sensei:</b> ${explanation}</div>`;
             fb.className = "feedback-box fb-wrong";
         }
     } catch (error) {
-        console.error("AI Error:", error);
-        if (appealBtn) {
-            appealBtn.innerText = "❌ Chyba pripojenia";
-            appealBtn.disabled = false;
-        }
+        console.error("Connection Error:", error);
+        if (appealBtn) { appealBtn.innerText = "❌ Chyba spojenia"; appealBtn.disabled = false; }
     }
 };
 
@@ -521,7 +508,9 @@ window.endTraining = function() {
     if (window.currentTestType === 'quiz') typeName = 'Kvíz';
     
     let lessonInfo = window.currentTestType === 'smart' ? `Mix Lekcií (1-${window.state.unlockedLesson})` : `Lekcia ${window.testQueue[0].lekcia}`;
-    window.saveToHistory(lessonInfo, typeName, perc, perc >= 80, window.currentFullResults);
+    if (typeof window.saveToHistory === 'function') {
+        window.saveToHistory(lessonInfo, typeName, perc, perc >= 80, window.currentFullResults);
+    }
     
     if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
