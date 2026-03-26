@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd) ---");
+console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd v2) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -256,13 +256,15 @@ window.handleQuizTimeout = function() {
 
 // --- AI SENSEI ODVOLACÍ SÚD ---
 window.appealToSensei = async function() {
-    // Skúsime získať API kľúč z lokálneho úložiska, alebo zo state objektu
-    let apiKey = localStorage.getItem('gemini_api_key') || localStorage.getItem('geminiApiKey') || (window.state && window.state.geminiApiKey);
+    // Rozšírené hľadanie kľúča (prioritne z Firebase 'state', potom z LocalStorage)
+    let apiKey = (window.state && (window.state.geminiApiKey || window.state.apiKey || window.state.geminiKey || window.state.gemini_api_key)) 
+                 || localStorage.getItem('gemini_api_key') 
+                 || localStorage.getItem('geminiApiKey');
     
     if (!apiKey) {
         apiKey = prompt("Pre použitie AI Senseia prosím zadaj svoj Gemini API kľúč:");
         if (!apiKey) return;
-        localStorage.setItem('gemini_api_key', apiKey);
+        localStorage.setItem('gemini_api_key', apiKey); // Uloží sa pre budúce použitie
     }
 
     let appealBtn = document.getElementById('btnAppeal');
@@ -398,7 +400,6 @@ window.checkTrainAnswer = function() {
             playAudioText(audioText, 'ja-JP'); 
         }
     } else { 
-        // PRIDANÉ TLAČIDLO NA ODVOLANIE
         fb.innerHTML = `❌ Nesprávne! <br> ${expectedAnswer} 
         <button id="btnAppeal" class="btn btn-outline" style="margin-top: 15px; font-size: 12px; padding: 6px 12px; width: 100%; border-color: var(--warning); color: var(--warning);" onclick="window.appealToSensei()">⚖️ Uznaj mi to (AI Sensei)</button>`; 
         fb.className = "feedback-box fb-wrong"; 
