@@ -1,24 +1,23 @@
 // --- NAČÍTANIE DÁT Z EXCELU ---
 
 async function fetchDatabaseFromCloud() {
-    // Kľúč cache, aby sme mali istotu čerstvých dát
-    const cached = localStorage.getItem('cached_db_v2');
-    const cachedGrammar = localStorage.getItem('cached_grammar_v2');
+    // Zmenil som kľúč na v3, aby si aplikácia VYNÚTILA stiahnutie novej verzie s angličtinou
+    const cached = localStorage.getItem('cached_db_v3');
+    const cachedGrammar = localStorage.getItem('cached_grammar_v3');
     
     if (cached && cachedGrammar) {
         window.db = JSON.parse(cached);
         window.grammarDb = JSON.parse(cachedGrammar);
         
         if (window.db.length > 0) {
-            console.log("Dáta úspešne načítané z cache.");
-            // Dôležité: najprv naplniť dáta, potom volať UI
+            console.log("Dáta úspešne načítané z cache v3.");
             finalizeDatabaseLoad();
             return;
         }
     }
     
     try {
-        console.log("Sťahujem čerstvú databázu...");
+        console.log("Sťahujem čerstvú databázu (s podporou EN)...");
         const res = await fetch('./Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(new Uint8Array(ab), {type: 'array'});
@@ -29,6 +28,7 @@ async function fetchDatabaseFromCloud() {
             id: i + 1, 
             lekcia: parseInt(r['Lekcia']) || 0, 
             sk: r['Slovenský'], 
+            en: r['Anglický'] || r['English'] || '', // OPRAVA: Pridané ťahanie EN jazyka
             romaji: String(r['Rómadži']), 
             kana: r['Hiragana / Katakana'] || '-', 
             kanji: r['Kandži'] || '-', 
@@ -43,13 +43,14 @@ async function fetchDatabaseFromCloud() {
                 id: i + 1,
                 lekcia: parseInt(r['Lekcia']) || 0,
                 sk: r['Slovenský'],
+                en: r['Anglický'] || r['English'] || '', // OPRAVA
                 romaji: String(r['Rómadži']).trim(), 
                 ja: (r['Kandži'] && r['Kandži'] !== '-') ? r['Kandži'] : r['Hiragana / Katakana']
             })).filter(g => g.sk && g.romaji && g.lekcia > 0);
         }
         
-        localStorage.setItem('cached_db_v2', JSON.stringify(window.db));
-        localStorage.setItem('cached_grammar_v2', JSON.stringify(window.grammarDb));
+        localStorage.setItem('cached_db_v3', JSON.stringify(window.db));
+        localStorage.setItem('cached_grammar_v3', JSON.stringify(window.grammarDb));
         
         finalizeDatabaseLoad();
 
@@ -59,10 +60,11 @@ async function fetchDatabaseFromCloud() {
 }
 
 function finalizeDatabaseLoad() {
-    // Voláme funkcie na vykreslenie až keď sú globálne premenné window.db plné
     renderMap(); 
     populateSelects();
     if (typeof updateProfileStats === 'function') updateProfileStats();
+    // Ak bol jazyk už nastavený na EN, pre-renderujeme s novými dátami
+    if (typeof setLang === 'function') setLang(window.currentLang);
 }
 
 function renderMap() {
@@ -70,13 +72,12 @@ function renderMap() {
     if (!map) return;
     map.innerHTML = '';
     
-    // Ak ešte nemáme dáta, nebudeme vypisovať chybu, ale počkáme
     if (!window.db || window.db.length === 0) return;
     
     const lessons = [...new Set(window.db.map(w => w.lekcia))].sort((a,b)=>a-b);
     
     lessons.forEach(l => {
-        let unlocked = l <= state.unlockedLesson;
+        let unlocked = l <= window.state.unlockedLesson;
         let div = document.createElement('div');
         div.className = `lesson-node ${unlocked ? 'node-unlocked' : 'node-locked'}`;
         div.innerHTML = `L${l}`;
@@ -97,8 +98,11 @@ function populateSelects() {
     ids.forEach(id => { const el = document.getElementById(id); if (el) currentValues[id] = el.value; });
 
     let opts = "";
-    for (let i = 1; i <= state.unlockedLesson; i++) {
-        opts += `<option value="${i}">Lekcia ${i}</option>`;
+    // Pridáme preklad pre slovo "Lekcia"
+    let lessonText = window.currentLang === 'en' ? 'Lesson' : 'Lekcia';
+    
+    for (let i = 1; i <= window.state.unlockedLesson; i++) {
+        opts += `<option value="${i}">${lessonText} ${i}</option>`;
     }
     
     ids.forEach(id => {
@@ -109,6 +113,5 @@ function populateSelects() {
         }
     });
 
-    // Aktivujeme Unlock mód ako predvolený
     if (typeof window.selectTestModeUI === 'function') window.selectTestModeUI('unlock');
 }
