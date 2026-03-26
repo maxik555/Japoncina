@@ -56,10 +56,18 @@
 <div id="auth-container" class="app-container" style="display:none; max-width:400px;">
     <h2 style="text-align:center; font-size:32px;">🏯 Dódžó</h2>
     <p style="color:var(--text-muted); text-align:center; margin-bottom:20px;" data-sk="Prihlás sa pre ukladanie postupu." data-en="Sign in to save progress.">Prihlás sa pre ukladanie postupu.</p>
+    
+    <button style="margin-bottom:20px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: black; border: none; font-weight: bold; padding: 12px; border-radius: 8px; cursor: pointer;" onclick="window.loginWithGoogle()">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" style="width: 20px;">
+        <span data-sk="Prihlásiť cez Google" data-en="Sign in with Google">Prihlásiť cez Google</span>
+    </button>
+
+    <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-bottom: 20px;">— alebo —</div>
+
     <input type="email" id="authEmail" placeholder="Email" data-sk="Email" data-en="Email">
     <input type="password" id="authPass" placeholder="Heslo" data-sk="Heslo" data-en="Password">
-    <button class="btn btn-primary" onclick="loginUser()" data-sk="Vstúpiť" data-en="Enter">Vstúpiť</button>
-    <button class="btn btn-outline" style="margin-top:10px;" onclick="registerUser()" data-sk="Vytvoriť účet" data-en="Create Account">Vytvoriť účet</button>
+    <button class="btn btn-primary" onclick="window.loginUser()" data-sk="Vstúpiť" data-en="Enter">Vstúpiť</button>
+    <button class="btn btn-outline" style="margin-top:10px;" onclick="window.registerUser()" data-sk="Vytvoriť účet" data-en="Create Account">Vytvoriť účet</button>
     <p id="authError" style="color:var(--danger); text-align:center; margin-top:15px; font-weight:bold;"></p>
 </div>
 
@@ -253,7 +261,7 @@
     <div id="tab-profile" class="tab">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2 style="margin:0;" data-sk="Môj progres" data-en="My Progress">Môj progres</h2>
-            <button class="btn btn-danger" style="width:auto; padding:8px 15px;" onclick="logoutUser()" data-sk="Odhlásiť" data-en="Logout">Odhlásiť</button>
+            <button class="btn btn-danger" style="width:auto; padding:8px 15px;" onclick="window.logoutUser()" data-sk="Odhlásiť" data-en="Logout">Odhlásiť</button>
         </div>
 
         <div class="nav" style="margin-bottom: 15px;">
@@ -265,7 +273,7 @@
         <div id="prof-overview" class="prof-tab active">
             <div class="info-box">
                 <label style="font-size:12px; color:var(--text-muted);" data-sk="TVOJA PREZÝVKA:" data-en="YOUR NICKNAME:">TVOJA PREZÝVKA:</label>
-                <input type="text" id="profileNickname" placeholder="Zadaj meno..." onblur="updateNickname()" style="margin-bottom:0; margin-top:5px; padding: 10px; width: 100%;">
+                <input type="text" id="profileNickname" placeholder="Zadaj meno..." onblur="window.updateNickname()" style="margin-bottom:0; margin-top:5px; padding: 10px; width: 100%;">
             </div>
 
             <div class="progress-box">
