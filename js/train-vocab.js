@@ -1,10 +1,10 @@
-console.log("--- 2. train-vocab.js načítané (Integrovaný AI Sensei Odvolací Súd v3 - AutoReset kľúča) ---");
+console.log("--- 2. train-vocab.js načítané (Odvolací Súd - Čisto cez Firebase) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
 let quizOptions = [];
 window.quizTimerInterval = null;
-window.currentDirection = 'sk2ja'; // Predvolený smer
+window.currentDirection = 'sk2ja'; 
 
 // --- POMOCNÉ FUNKCIE ---
 window.getPossibleAnswers = function(str) {
@@ -254,20 +254,22 @@ window.handleQuizTimeout = function() {
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
-// --- AI SENSEI ODVOLACÍ SÚD ---
+// --- AI SENSEI ODVOLACÍ SÚD (Čisto Firebase logika) ---
 window.appealToSensei = async function() {
-    let apiKey = (window.state && (window.state.geminiApiKey || window.state.apiKey || window.state.geminiKey || window.state.gemini_api_key)) 
-                 || localStorage.getItem('gemini_api_key') 
-                 || localStorage.getItem('geminiApiKey');
+    // Kľúč ťaháme výhradne z Firebase profilu (objektu state)
+    let apiKey = window.state && window.state.geminiKey;
     
+    let appealBtn = document.getElementById('btnAppeal');
+
     if (!apiKey) {
-        apiKey = prompt("Pre použitie AI Senseia prosím zadaj svoj Gemini API kľúč (bez medzier):");
-        if (!apiKey) return;
-        apiKey = apiKey.trim(); // Automaticky odstránime medzery, ak by tam nejaké boli
-        localStorage.setItem('gemini_api_key', apiKey); 
+        alert("Pre použitie AI Senseia si musíš najprv uložiť svoj Gemini API kľúč do svojho profilu (databázy)!");
+        if (appealBtn) {
+            appealBtn.innerText = "❌ Chýba API kľúč v profile";
+            appealBtn.disabled = true;
+        }
+        return;
     }
 
-    let appealBtn = document.getElementById('btnAppeal');
     if (appealBtn) {
         appealBtn.innerText = "⏳ Sensei analyzuje...";
         appealBtn.disabled = true;
@@ -299,17 +301,14 @@ Ak neuznávaš: "NIE: <jedna veta vysvetlenia v slovenčine prečo je to zle>"`;
         });
         let data = await response.json();
         
-        // Ak API vráti chybu (neplatný kľúč, limit atď.)
+        // Ak API vráti chybu (neplatný kľúč priamo z Firebase)
         if (data.error) {
             console.error("Gemini API Error:", data.error);
             if (appealBtn) { 
-                appealBtn.innerText = "❌ Skús znova (Neplatný kľúč)"; 
+                appealBtn.innerText = "❌ Neplatný API kľúč v profile"; 
                 appealBtn.disabled = false; 
             }
-            // ZMAZANIE CHYBNÉHO KĽÚČA Z PAMÄTE!
-            localStorage.removeItem('gemini_api_key');
-            localStorage.removeItem('geminiApiKey');
-            alert(`Google API odmietlo tvoj kľúč. Zrejme obsahuje preklep. Pri ďalšom kliknutí si ho appka vypýta nanovo.\n\nDetail chyby: ${data.error.message}`);
+            alert(`Tvoj API kľúč uložený vo Firebase je neplatný alebo obsahuje preklep.\nProsím, skontroluj si ho v profile.\n\nDetail: ${data.error.message}`);
             return;
         }
 
