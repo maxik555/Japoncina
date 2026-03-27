@@ -2,7 +2,7 @@
 // PWA: Japonský Tréning - Dódžó
 // Súbor: js/ai-content.js
 // Úloha: AI Čitáreň a Sensei Live (Hovory)
-// Verzia: 4.0 (Plná integrácia na index.html)
+// Verzia: 4.1 (Interactive Translation Bubble)
 // ==========================================
 
 let mediaRecorder = null;
@@ -99,8 +99,8 @@ async function processRecordedAudio() {
             // Aktualizácia používateľskej bubliny s prepisom hlasu
             updateTranscriptBubble(userBubbleId, response.transcription);
 
-            // Pridanie odpovede Senseia a jej prečítanie nahlas
-            addTranscriptBubble(response.senseiResponse, 'sensei-msg');
+            // Pridanie odpovede Senseia (spolu s prekladom) a jej prečítanie nahlas
+            addTranscriptBubble(response.senseiResponse, 'sensei-msg', '', response.translation);
             speakResponse(response.senseiResponse);
 
             updateLiveStatus(isEn ? "Ready to talk..." : "Pripravený na rozhovor...");
@@ -141,9 +141,10 @@ async function callGeminiWithAudio(base64Audio) {
     const API_KEY = window.state.geminiKey;
     const isEnglish = window.currentLang === 'en';
 
+    // Aktualizovaný prompt pre vyžiadanie prekladu
     const promptText = isEnglish
-        ? `You are Sensei, a Japanese learning app guide. Listen to the user's audio. Transcribe their spoken words in Japanese (Kanji/Kana), and then provide a friendly, encouraging Japanese response (Kanji/Kana). Format the response strictly as a valid JSON object: { "transcription": "...", "senseiResponse": "..." }. Maintain a natural flow of conversation for beginner to intermediate learners.`
-        : `Si Sensei, sprievodca v aplikácii na učenie sa japončiny. Vypočuj si audio používateľa. Prepis ich hovorené slová do japončiny (Kandži/Kana) a potom poskytni priateľskú, povzbudivú japonskú odpoveď (Kandži/Kana). Odpoveď naformátuj striktne ako platný JSON objekt: { "transcription": "...", "senseiResponse": "..." }. Udržuj prirodzený tok konverzácie pre začínajúcich až mierne pokročilých študentov.`;
+        ? `You are Sensei, a Japanese learning app guide. Listen to the user's audio. Transcribe their spoken words in Japanese (Kanji/Kana), and then provide a friendly, encouraging Japanese response (Kanji/Kana). Format the response strictly as a valid JSON object: { "transcription": "...", "senseiResponse": "...", "translation": "..." } where 'translation' is the English translation of your senseiResponse. Maintain a natural flow of conversation for beginner to intermediate learners.`
+        : `Si Sensei, sprievodca v aplikácii na učenie sa japončiny. Vypočuj si audio používateľa. Prepis ich hovorené slová do japončiny (Kandži/Kana) a potom poskytni priateľskú, povzbudivú japonskú odpoveď (Kandži/Kana). Odpoveď naformátuj striktne ako platný JSON objekt: { "transcription": "...", "senseiResponse": "...", "translation": "..." } kde 'translation' je presný slovenský preklad tvojej senseiResponse. Udržuj prirodzený tok konverzácie pre začínajúcich až mierne pokročilých študentov.`;
 
     const requestBody = {
         contents: [{
@@ -216,7 +217,8 @@ function updateLiveStatus(text) {
     }
 }
 
-function addTranscriptBubble(text, className, id = "") {
+// Aktualizovaná funkcia pre podporu interaktívneho prekladu
+function addTranscriptBubble(text, className, id = "", translation = "") {
     const transcriptWindow = document.getElementById('liveTranscript');
     if (!transcriptWindow) return;
 
@@ -229,7 +231,24 @@ function addTranscriptBubble(text, className, id = "") {
     bubble.style.float = className === 'user-msg' ? 'right' : 'left';
     
     if (id) bubble.id = id;
-    bubble.innerHTML = text;
+
+    // Ak ide o odpoveď Senseia a máme preklad, vytvoríme klikateľnú štruktúru
+    if (translation && className === 'sensei-msg') {
+        bubble.style.cursor = "pointer";
+        bubble.innerHTML = `
+            <div style="font-size: 16px;">${text}</div>
+            <div class="sensei-translation hidden" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.2); font-size: 14px; color: var(--success);">
+                ${translation}
+            </div>
+        `;
+        // Po kliknutí prepneme triedu 'hidden' (tá je definovaná v tvojom style.css)
+        bubble.onclick = function() {
+            const transDiv = this.querySelector('.sensei-translation');
+            if (transDiv) transDiv.classList.toggle('hidden');
+        };
+    } else {
+        bubble.innerHTML = text;
+    }
 
     // Vytvoríme obal, ktorý drží clear pre správne zarovnanie (float fix)
     const wrapper = document.createElement('div');
