@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.3 - Fixed UI Reset) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.4 - Fixed Syntax Error) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -492,7 +492,7 @@ window.endTraining = function() {
 
     summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
 
-    let modal = document.querySelector('#trainRun .test-modal');
+    // Už použijeme len existujúcu premennú modal
     modal.insertAdjacentHTML('beforeend', summaryHtml);
 };
 
