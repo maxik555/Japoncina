@@ -65,6 +65,8 @@ input, select, textarea { width: 100%; padding: 15px; border-radius: 12px; borde
 .card-back { background: var(--card-back); transform: rotateY(180deg); border-color: var(--primary); }
 
 .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
+#testScoreDisplay { margin-right: 40px; } /* OPRAVA PREKRÝVANIA SKÓRE A KRÍŽIKA */
+
 .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
 .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
 .fb-correct { background: rgba(16, 185, 129, 0.2); color: var(--success); display: block; border: 1px solid var(--success); }
