@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.2) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.3 - Fixed UI Reset) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -74,9 +74,14 @@ window.updateScoreDisplay = function() {
 window.abortTraining = function() {
     clearInterval(window.quizTimerInterval);
     document.getElementById('trainRun').classList.add('hidden');
-    // Obnovíme testovacie okno, keby ho niekto zrušil v strede Zhrnutia
-    document.getElementById('twWord').style.display = 'block';
-    document.querySelector('.test-header').style.display = 'flex';
+    
+    // Kompletný reset UI pri zrušení testu
+    document.getElementById('twWord').style.display = '';
+    document.querySelector('.test-header').style.display = '';
+    document.getElementById('classicInputArea').style.display = '';
+    document.getElementById('quizInputArea').style.display = '';
+    document.getElementById('twNextBtn').style.display = '';
+    
     let oldSummary = document.getElementById('testSummaryContainer');
     if (oldSummary) oldSummary.remove();
 };
@@ -157,6 +162,12 @@ window.startSmartTraining = function() {
 };
 
 window.loadTrainWord = function() {
+    // Reset inline štýlov, ak by sme test spúšťali hneď po zobrazení predošlého zhrnutia
+    document.getElementById('classicInputArea').style.display = '';
+    document.getElementById('quizInputArea').style.display = '';
+    document.getElementById('twNextBtn').style.display = '';
+    document.getElementById('twFeedback').style.display = 'none';
+
     let w = window.testQueue[window.currentIdx];
     let wordDiv = document.getElementById('twWord');
     let isEn = window.currentLang === 'en';
@@ -176,7 +187,6 @@ window.loadTrainWord = function() {
     }
 
     document.getElementById('testProgress').innerText = `${window.currentIdx + 1} / ${window.testQueue.length}`;
-    document.getElementById('twFeedback').style.display = 'none';
     document.getElementById('twNextBtn').classList.add('hidden');
     window.updateScoreDisplay();
 
@@ -184,12 +194,21 @@ window.loadTrainWord = function() {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
         
-        let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random()).slice(0, 3);
-        quizOptions = [w, ...others].sort(()=>0.5-Math.random());
+        // Zabezpečenie proti pádu, ak je v databáze menej ako 4 slov
+        let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random());
+        let availableOthers = others.slice(0, 3);
+        quizOptions = [w, ...availableOthers].sort(()=>0.5-Math.random());
+        
         for(let i=0; i<4; i++) {
             let btn = document.getElementById('qb'+i);
-            btn.innerText = (window.currentDirection === 'ja2sk') ? ((isEn && quizOptions[i].en) ? quizOptions[i].en : quizOptions[i].sk) : quizOptions[i].romaji;
-            btn.className = 'btn-quiz'; btn.disabled = false;
+            if(quizOptions[i]) {
+                btn.style.visibility = 'visible';
+                btn.innerText = (window.currentDirection === 'ja2sk') ? ((isEn && quizOptions[i].en) ? quizOptions[i].en : quizOptions[i].sk) : quizOptions[i].romaji;
+                btn.className = 'btn-quiz'; 
+                btn.disabled = false;
+            } else {
+                btn.style.visibility = 'hidden'; // Skryjeme tlačidlo, ak slová chýbajú
+            }
         }
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
@@ -480,8 +499,13 @@ window.endTraining = function() {
 window.closeSummaryAndReset = function(showUnlockAlert) {
     document.getElementById('trainRun').classList.add('hidden');
     
-    document.getElementById('twWord').style.display = 'block';
-    document.querySelector('.test-header').style.display = 'flex';
+    // Kompletný reset inline štýlov, aby bol test pripravený na ďalšie spustenie
+    document.getElementById('twWord').style.display = '';
+    document.querySelector('.test-header').style.display = '';
+    document.getElementById('classicInputArea').style.display = '';
+    document.getElementById('quizInputArea').style.display = '';
+    document.getElementById('twNextBtn').style.display = '';
+    document.getElementById('twFeedback').style.display = 'none';
     
     let oldSummary = document.getElementById('testSummaryContainer');
     if (oldSummary) oldSummary.remove();
