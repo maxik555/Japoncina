@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v4.1 - Dictionary Fixed) ---");
+console.log("--- ui.js načítané (Master v4.5 - History Details & UI Fixes) ---");
 
 // --- HLAVNÁ NAVIGÁCIA ---
 window.switchTab = function(t) {
@@ -56,10 +56,14 @@ window.setLang = function(lang) {
         if (typeof window.populateSelects === 'function') window.populateSelects();
     }
 
-    // Ak je otvorený slovník, prekreslíme ho v novom jazyku
+    // Ak je otvorený slovník alebo história, prekreslíme ich v novom jazyku
     if (document.getElementById('overlayDictionary') && document.getElementById('overlayDictionary').style.display !== 'none') {
         window.openMyDictionary();
     }
+    
+    // Zatvoríme otvorený detail histórie pri zmene jazyka, aby sa predišlo mixovaniu textov
+    const historyOverlay = document.getElementById('overlayHistoryDetails');
+    if (historyOverlay) historyOverlay.style.display = 'none';
 };
 
 // --- POMOCNÉ UI FUNKCIE ---
@@ -88,7 +92,7 @@ window.switchProfileTab = function(tabId) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- MÔJ SLOVNÍK (VRÁTENÝ KÓD) ---
+// --- MÔJ SLOVNÍK ---
 window.openMyDictionary = function() {
     let dictOverlay = document.getElementById('overlayDictionary');
     let isEn = window.currentLang === 'en';
@@ -99,13 +103,13 @@ window.openMyDictionary = function() {
         dictOverlay = document.createElement('div');
         dictOverlay.id = 'overlayDictionary';
         dictOverlay.className = 'overlay';
-        dictOverlay.style = 'display:none; align-items:center; justify-content:center;';
+        dictOverlay.style = 'display:none; align-items:center; justify-content:center; z-index: 4000;';
         
         dictOverlay.innerHTML = `
             <div class="overlay-content" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
                 <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
                     <span id="dictTitle">${titleText}</span>
-                    <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+                    <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
                 </h3>
                 <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;" onkeyup="window.filterDictionary()">
                 <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px;"></div>
@@ -257,16 +261,96 @@ window.updateProfileStats = function() {
     }
 };
 
+// --- HISTÓRIA A JEJ DETAILY ---
 window.renderHistory = function() {
     const cont = document.getElementById('historyList');
     if (!cont || !window.state || !window.state.history) return;
     cont.innerHTML = '';
     
-    [...window.state.history].reverse().slice(0, 10).forEach((h) => {
+    // Namapujeme si históriu s pôvodnými indexmi, aby sme pri .reverse() nestratili referenciu na správny test
+    const historyWithIndex = window.state.history.map((h, i) => ({ ...h, originalIndex: i }));
+    
+    historyWithIndex.reverse().slice(0, 10).forEach((h) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 13px;`;
-        div.innerHTML = `<b>${h.type}</b> (${h.lesson}) <span style="float:right;">${h.score}%</span>`;
+        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.05); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
+        
+        // Hover efekty pre lepšie UX
+        div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.1)'; div.style.transform = 'translateY(-2px)'; };
+        div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.05)'; div.style.transform = 'translateY(0)'; };
+        
+        // Kliknutím sa otvorí detail testu
+        div.onclick = () => window.openHistoryDetails(h.originalIndex);
+        
+        div.innerHTML = `<b>${h.type}</b> <span style="color:var(--text-muted); font-size: 12px; margin-left: 5px;">(${h.lesson})</span> <span style="float:right; font-weight:bold; color:${h.passed ? 'var(--success)' : 'var(--danger)'};">${h.score}%</span>`;
         cont.appendChild(div);
     });
+};
+
+window.openHistoryDetails = function(index) {
+    const h = window.state.history[index];
+    if (!h) return;
+
+    let overlay = document.getElementById('overlayHistoryDetails');
+    let isEn = window.currentLang === 'en';
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'overlayHistoryDetails';
+        overlay.className = 'overlay';
+        overlay.style = 'display:none; align-items:center; justify-content:center; z-index: 4000;';
+        document.body.appendChild(overlay);
+    }
+
+    let titleText = isEn ? "Test Details" : "Detaily testu";
+    let qText = isEn ? "Question" : "Otázka";
+    let aText = isEn ? "Your Answer" : "Tvoja odpoveď";
+    let cText = isEn ? "Correct" : "Správne";
+
+    let detailsHtml = '';
+    
+    if (h.details && h.details.length > 0) {
+        detailsHtml = `
+            <table style="width:100%; border-collapse: collapse; font-size: 14px; text-align: left;">
+                <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 1;">
+                    <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+                        <th style="padding: 10px;">${qText}</th>
+                        <th style="padding: 10px;">${aText}</th>
+                        <th style="padding: 10px;">${cText}</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        h.details.forEach(d => {
+            let isCorrect = d.isCorrect;
+            let answerColor = isCorrect ? 'var(--success)' : 'var(--danger)';
+            let answerStyle = isCorrect ? '' : 'text-decoration: line-through; opacity: 0.8;';
+            detailsHtml += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 10px; font-weight: bold;">${d.q}</td>
+                    <td style="padding: 10px; color: ${answerColor}; ${answerStyle}">${d.a}</td>
+                    <td style="padding: 10px; color: var(--success); font-weight: bold;">${d.correct}</td>
+                </tr>
+            `;
+        });
+        
+        detailsHtml += `</tbody></table>`;
+    } else {
+        detailsHtml = `<p style="text-align:center; color: var(--text-muted); padding: 30px 0;">${isEn ? "No detailed history available for this older test." : "Pre tento starší test nie sú uložené detailné záznamy."}</p>`;
+    }
+
+    overlay.innerHTML = `
+        <div class="overlay-content" style="max-width: 650px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 25px;">
+            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+                <span>${titleText} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal; margin-left: 10px;">${h.type} (${h.score}%)</span></span>
+                <button onclick="document.getElementById('overlayHistoryDetails').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
+            </h3>
+            <div style="overflow-y: auto; flex-grow: 1; margin-top: 10px;">
+                ${detailsHtml}
+            </div>
+        </div>
+    `;
+
+    overlay.style.display = 'flex';
 };
