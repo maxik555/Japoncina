@@ -1,7 +1,6 @@
 // --- NAČÍTANIE DÁT Z EXCELU ---
 
 async function fetchDatabaseFromCloud() {
-    // Zmenil som kľúč na v3, aby si aplikácia VYNÚTILA stiahnutie novej verzie s angličtinou
     const cached = localStorage.getItem('cached_db_v3');
     const cachedGrammar = localStorage.getItem('cached_grammar_v3');
     
@@ -28,7 +27,7 @@ async function fetchDatabaseFromCloud() {
             id: i + 1, 
             lekcia: parseInt(r['Lekcia']) || 0, 
             sk: r['Slovenský'], 
-            en: r['Anglický'] || r['English'] || '', // OPRAVA: Pridané ťahanie EN jazyka
+            en: r['Anglický'] || r['English'] || '', 
             romaji: String(r['Rómadži']), 
             kana: r['Hiragana / Katakana'] || '-', 
             kanji: r['Kandži'] || '-', 
@@ -43,7 +42,7 @@ async function fetchDatabaseFromCloud() {
                 id: i + 1,
                 lekcia: parseInt(r['Lekcia']) || 0,
                 sk: r['Slovenský'],
-                en: r['Anglický'] || r['English'] || '', // OPRAVA
+                en: r['Anglický'] || r['English'] || '',
                 romaji: String(r['Rómadži']).trim(), 
                 ja: (r['Kandži'] && r['Kandži'] !== '-') ? r['Kandži'] : r['Hiragana / Katakana']
             })).filter(g => g.sk && g.romaji && g.lekcia > 0);
@@ -63,7 +62,6 @@ function finalizeDatabaseLoad() {
     renderMap(); 
     populateSelects();
     if (typeof updateProfileStats === 'function') updateProfileStats();
-    // Ak bol jazyk už nastavený na EN, pre-renderujeme s novými dátami
     if (typeof setLang === 'function') setLang(window.currentLang);
 }
 
@@ -93,15 +91,15 @@ function renderMap() {
 }
 
 function populateSelects() {
-    const ids = ['learnLessonSelect', 'quizFrom', 'quizTo', 'freeFrom', 'freeTo', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
+    const ids = ['learnLessonSelect', 'quizFrom', 'quizTo', 'quizSingle', 'freeFrom', 'freeTo', 'freeSingle', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
     const currentValues = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) currentValues[id] = el.value; });
 
     let opts = "";
-    // Pridáme preklad pre slovo "Lekcia"
     let lessonText = window.currentLang === 'en' ? 'Lesson' : 'Lekcia';
+    let maxLvl = window.state.unlockedLesson || 1;
     
-    for (let i = 1; i <= window.state.unlockedLesson; i++) {
+    for (let i = 1; i <= maxLvl; i++) {
         opts += `<option value="${i}">${lessonText} ${i}</option>`;
     }
     
