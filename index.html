@@ -136,7 +136,12 @@
         </div>
 
         <div id="setupQuiz" class="setup-section hidden info-box">
-            <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="quizFrom"></select><select id="quizTo"></select></div>
+            <div class="toggle-group">
+                <button class="btn-toggle active" id="btnQuizSingle" onclick="window.setLessonMode('single', 'quiz')" data-sk="Jedna lekcia" data-en="Single Lesson">Jedna lekcia</button>
+                <button class="btn-toggle" id="btnQuizRange" onclick="window.setLessonMode('range', 'quiz')" data-sk="Viac lekcií" data-en="Multiple Lessons">Viac lekcií</button>
+            </div>
+            <div id="quizSingleBox" style="margin-bottom:15px;"><select id="quizSingle"></select></div>
+            <div id="quizRangeBox" class="hidden" style="display:flex; gap:10px; margin-bottom:15px;"><select id="quizFrom"></select><select id="quizTo"></select></div>
             <input type="number" id="quizCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count">
             <button class="btn btn-warning" onclick="window.startTraining('quiz')" data-sk="SPUSTIŤ KVÍZ" data-en="START QUIZ">SPUSTIŤ KVÍZ</button>
         </div>
@@ -146,7 +151,12 @@
                 <option value="sk2ja" data-sk="Slovenčina ➡️ Japončina" data-en="English ➡️ Japanese">Slovenčina ➡️ Japončina</option>
                 <option value="ja2sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ English">Japončina ➡️ Slovenčina</option>
             </select>
-            <div style="display:flex; gap:10px; margin-bottom:15px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
+            <div class="toggle-group">
+                <button class="btn-toggle active" id="btnFreeSingle" onclick="window.setLessonMode('single', 'free')" data-sk="Jedna lekcia" data-en="Single Lesson">Jedna lekcia</button>
+                <button class="btn-toggle" id="btnFreeRange" onclick="window.setLessonMode('range', 'free')" data-sk="Viac lekcií" data-en="Multiple Lessons">Viac lekcií</button>
+            </div>
+            <div id="freeSingleBox" style="margin-bottom:15px;"><select id="freeSingle"></select></div>
+            <div id="freeRangeBox" class="hidden" style="display:flex; gap:10px; margin-bottom:15px;"><select id="freeFrom"></select><select id="freeTo"></select></div>
             <input type="number" id="freeCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count" style="margin-bottom:15px;">
             <button class="btn btn-success" onclick="window.startTraining('free')" data-sk="SPUSTIŤ PÍSANIE" data-en="START TYPING">SPUSTIŤ PÍSANIE</button>
         </div>
@@ -308,15 +318,15 @@
     </div>
 </div>
 
-<script src="js/config.js?v=4.5"></script>
-<script src="js/database.js?v=4.5"></script>
-<script src="js/audio.js?v=4.5"></script>
-<script src="js/ui.js?v=4.5"></script>
-<script src="js/train-utils.js?v=4.5"></script>
-<script src="js/train-vocab.js?v=4.5"></script>
-<script src="js/ai-content.js?v=4.5"></script>
-<script src="js/sensei.js?v=4.5"></script>
-<script src="js/auth.js?v=4.5"></script>
+<script src="js/config.js?v=4.6"></script>
+<script src="js/database.js?v=4.6"></script>
+<script src="js/audio.js?v=4.6"></script>
+<script src="js/ui.js?v=4.6"></script>
+<script src="js/train-utils.js?v=4.6"></script>
+<script src="js/train-vocab.js?v=4.6"></script>
+<script src="js/ai-content.js?v=4.6"></script>
+<script src="js/sensei.js?v=4.6"></script>
+<script src="js/auth.js?v=4.6"></script>
 
 </body>
 </html>
