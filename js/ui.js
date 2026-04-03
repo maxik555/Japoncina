@@ -1,6 +1,5 @@
-console.log("--- ui.js načítané (Master v4.5 - History Details & UI Fixes) ---");
+console.log("--- ui.js načítané (Master v4.6 - Single/Range Toggle Added) ---");
 
-// --- HLAVNÁ NAVIGÁCIA ---
 window.switchTab = function(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
     
@@ -31,7 +30,6 @@ window.switchTab = function(t) {
     }
 };
 
-// --- PREPÍNANIE JAZYKOV ---
 window.setLang = function(lang) {
     window.currentLang = lang; 
     localStorage.setItem('finale_lang', lang);
@@ -56,17 +54,14 @@ window.setLang = function(lang) {
         if (typeof window.populateSelects === 'function') window.populateSelects();
     }
 
-    // Ak je otvorený slovník alebo história, prekreslíme ich v novom jazyku
     if (document.getElementById('overlayDictionary') && document.getElementById('overlayDictionary').style.display !== 'none') {
         window.openMyDictionary();
     }
     
-    // Zatvoríme otvorený detail histórie pri zmene jazyka, aby sa predišlo mixovaniu textov
     const historyOverlay = document.getElementById('overlayHistoryDetails');
     if (historyOverlay) historyOverlay.style.display = 'none';
 };
 
-// --- POMOCNÉ UI FUNKCIE ---
 window.closeOverlay = function(id) { 
     const el = document.getElementById(id);
     if (el) el.style.display = 'none'; 
@@ -82,6 +77,27 @@ window.selectTestModeUI = function(m) {
     if (btn) btn.classList.add('active');
 };
 
+// --- PREPÍNAČ REŽIMU LEKCIÍ ---
+window.setLessonMode = function(mode, tab) {
+    let btnSingle = document.getElementById('btn' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Single');
+    let btnRange = document.getElementById('btn' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Range');
+    let singleBox = document.getElementById(tab + 'SingleBox');
+    let rangeBox = document.getElementById(tab + 'RangeBox');
+
+    if (btnSingle && btnRange && singleBox && rangeBox) {
+        btnSingle.classList.toggle('active', mode === 'single');
+        btnRange.classList.toggle('active', mode === 'range');
+        
+        if (mode === 'single') {
+            singleBox.classList.remove('hidden');
+            rangeBox.classList.add('hidden');
+        } else {
+            singleBox.classList.add('hidden');
+            rangeBox.classList.remove('hidden');
+        }
+    }
+};
+
 window.switchProfileTab = function(tabId) {
     document.querySelectorAll('.prof-tab').forEach(el => el.classList.add('hidden'));
     const targetTab = document.getElementById('prof-' + tabId);
@@ -92,7 +108,6 @@ window.switchProfileTab = function(tabId) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- MÔJ SLOVNÍK ---
 window.openMyDictionary = function() {
     let dictOverlay = document.getElementById('overlayDictionary');
     let isEn = window.currentLang === 'en';
@@ -196,7 +211,6 @@ window.filterDictionary = function() {
     if (input) window.renderDictionaryList(input.value);
 };
 
-// --- TÉMY (NASTAVENIA VZHĽADU) ---
 window.checkThemeLocks = function() {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -226,7 +240,6 @@ window.setTheme = function(themeName) {
     if (activeBtn) activeBtn.classList.add('active');
 };
 
-// --- ŠTATISTIKY A JLPT PROGRES ---
 window.updateProfileStats = function() {
     if (!window.state) return;
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
@@ -261,13 +274,11 @@ window.updateProfileStats = function() {
     }
 };
 
-// --- HISTÓRIA A JEJ DETAILY ---
 window.renderHistory = function() {
     const cont = document.getElementById('historyList');
     if (!cont || !window.state || !window.state.history) return;
     cont.innerHTML = '';
     
-    // Namapujeme si históriu s pôvodnými indexmi, aby sme pri .reverse() nestratili referenciu na správny test
     const historyWithIndex = window.state.history.map((h, i) => ({ ...h, originalIndex: i }));
     
     historyWithIndex.reverse().slice(0, 10).forEach((h) => {
@@ -275,11 +286,9 @@ window.renderHistory = function() {
         div.className = 'history-item';
         div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.05); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
         
-        // Hover efekty pre lepšie UX
         div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.1)'; div.style.transform = 'translateY(-2px)'; };
         div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.05)'; div.style.transform = 'translateY(0)'; };
         
-        // Kliknutím sa otvorí detail testu
         div.onclick = () => window.openHistoryDetails(h.originalIndex);
         
         div.innerHTML = `<b>${h.type}</b> <span style="color:var(--text-muted); font-size: 12px; margin-left: 5px;">(${h.lesson})</span> <span style="float:right; font-weight:bold; color:${h.passed ? 'var(--success)' : 'var(--danger)'};">${h.score}%</span>`;
