@@ -65,7 +65,7 @@ input, select, textarea { width: 100%; padding: 15px; border-radius: 12px; borde
 .card-back { background: var(--card-back); transform: rotateY(180deg); border-color: var(--primary); }
 
 .test-header { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
-#testScoreDisplay { margin-right: 40px; } /* OPRAVA PREKRÝVANIA SKÓRE A KRÍŽIKA */
+#testScoreDisplay { margin-right: 40px; }
 
 .word-display { font-size: 40px; font-weight: 900; text-align: center; margin: 20px 0; }
 .feedback-box { padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; text-align: center; font-size: 18px; }
@@ -97,295 +97,59 @@ input, select, textarea { width: 100%; padding: 15px; border-radius: 12px; borde
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* --- FARBY PRE TESTY --- */
-.input-correct {
-    background-color: #4CAF50 !important; /* Zelená - 100% správne */
-    color: white;
-}
+.input-correct { background-color: #4CAF50 !important; color: white; }
+.input-typo { background-color: #ff9800 !important; color: white; }
+.input-wrong { background-color: #f44336 !important; color: white; }
 
-.input-typo {
-    background-color: #ff9800 !important; /* Oranžová - uznaný preklep */
-    color: white;
-}
-
-.input-wrong {
-    background-color: #f44336 !important; /* Červená - chyba */
-    color: white;
-}
+/* --- PREPÍNAČ ROZSAHU LEKCIÍ --- */
+.toggle-group { display: flex; background: var(--bg-dark); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 15px; }
+.btn-toggle { flex: 1; background: transparent; border: none; color: var(--text-muted); padding: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
+.btn-toggle.active { background: var(--primary); color: white; }
 
 /* --- SENSEI POP-UP CHAT --- */
-#senseiChatBtn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #4CAF50; /* Zelená farba, môžeš zmeniť na var(--primary) */
-    color: white;
-    padding: 15px 20px;
-    border-radius: 30px;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    font-weight: bold;
-    z-index: 9999;
-    transition: transform 0.2s;
-}
-
+#senseiChatBtn { position: fixed; bottom: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px 20px; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-weight: bold; z-index: 9999; transition: transform 0.2s; }
 #senseiChatBtn:hover { transform: scale(1.05); }
-
-#senseiChatWindow {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 350px;
-    height: 450px;
-    background: #1e222d;
-    border: 1px solid #333;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-    z-index: 9999;
-    overflow: hidden;
-}
-
-.chat-header {
-    background: #2a2f3a;
-    color: white;
-    padding: 15px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #444;
-}
-
-.chat-header button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.chat-messages {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: #161920;
-}
-
-.msg {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 15px;
-    font-size: 14px;
-    line-height: 1.4;
-    color: #eee;
-}
-
-.sensei-msg {
-    background: #2a2f3a;
-    align-self: flex-start;
-    border-bottom-left-radius: 2px;
-}
-
-.user-msg {
-    background: #4CAF50;
-    align-self: flex-end;
-    border-bottom-right-radius: 2px;
-}
-
-.chat-input-area {
-    display: flex;
-    padding: 10px;
-    background: #2a2f3a;
-    border-top: 1px solid #444;
-}
-
-.chat-input-area input {
-    flex-grow: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 20px;
-    background: #161920;
-    color: white;
-    outline: none;
-}
-
-.chat-input-area button {
-    background: transparent;
-    border: none;
-    color: #4CAF50;
-    font-size: 20px;
-    cursor: pointer;
-    margin-left: 10px;
-}
+#senseiChatWindow { position: fixed; bottom: 80px; right: 20px; width: 350px; height: 450px; background: #1e222d; border: 1px solid #333; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.6); z-index: 9999; overflow: hidden; }
+.chat-header { background: #2a2f3a; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
+.chat-header button { background: none; border: none; color: white; font-size: 16px; cursor: pointer; }
+.chat-messages { flex-grow: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #161920; }
+.msg { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 14px; line-height: 1.4; color: #eee; }
+.sensei-msg { background: #2a2f3a; align-self: flex-start; border-bottom-left-radius: 2px; }
+.user-msg { background: #4CAF50; align-self: flex-end; border-bottom-right-radius: 2px; }
+.chat-input-area { display: flex; padding: 10px; background: #2a2f3a; border-top: 1px solid #444; }
+.chat-input-area input { flex-grow: 1; padding: 10px; border: none; border-radius: 20px; background: #161920; color: white; outline: none; }
+.chat-input-area button { background: transparent; border: none; color: #4CAF50; font-size: 20px; cursor: pointer; margin-left: 10px; }
 
 /* --- PROFIL A ODZNAKY --- */
 .prof-tab { display: block; animation: fadeIn 0.3s; }
 .prof-tab.hidden { display: none !important; }
+.progress-box { background: rgba(0,0,0,0.1); border: 1px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 15px; }
 
-.progress-box {
-    background: rgba(0,0,0,0.1);
-    border: 1px solid var(--border);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-}
-
-.badges-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 15px;
-}
-
-.badge-item {
-    background: var(--bg-dark);
-    border: 2px solid var(--primary);
-    border-radius: 12px;
-    padding: 15px 10px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.badge-item:hover { transform: translateY(-3px); }
-
-.badge-icon { font-size: 35px; margin-bottom: 10px; }
-.badge-title { font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 5px; line-height: 1.2;}
-.badge-desc { font-size: 11px; color: var(--text-muted); line-height: 1.2;}
-
-.badge-locked {
-    border-color: var(--border);
-    opacity: 0.5;
-    filter: grayscale(100%);
-    box-shadow: none;
-}
 /* --- MODERNIZÁCIA UX / UI (DUOLINGO STYLE) --- */
+.app-container { border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.4); padding: 30px; }
+.btn { border-radius: 16px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 0.5px; padding: 16px; }
+.btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.btn:active { transform: translateY(4px); box-shadow: none !important; }
+.btn-nav { border-radius: 14px; transition: all 0.3s ease; }
+.btn-nav:hover:not(.active) { background: rgba(255, 255, 255, 0.05); transform: translateY(-1px); }
 
-/* 1. Vzdušnejšie a zaoblenejšie hlavné kontajnery */
-.app-container {
-    border-radius: 24px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-    padding: 30px;
-}
+input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea { border-radius: 16px; border: 2px solid var(--border); transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25); transform: translateY(-1px); }
 
-/* 2. Moderné tlačidlá s 3D "klik" efektom */
-.btn {
-    border-radius: 16px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 16px;
-}
+@keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+.feedback-box { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-radius: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.card-face { border-radius: 24px; box-shadow: 0 12px 30px rgba(0,0,0,0.3); }
+.tab.active, .prof-tab.active { animation: fadeInSlide 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
+@keyframes fadeInSlide { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-.btn:hover {
-    transform: translateY(-2px);
-    filter: brightness(1.1);
-}
-
-.btn:active {
-    transform: translateY(4px); /* Fyzické zatlačenie dole */
-    box-shadow: none !important;
-}
-
-/* 3. Jemné prechody pre navigáciu (Taby v menu) */
-.btn-nav {
-    border-radius: 14px;
-    transition: all 0.3s ease;
-}
-
-.btn-nav:hover:not(.active) {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-1px);
-}
-
-/* 4. Prémiové vstupné polia (Inputy) */
-input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
-    border-radius: 16px;
-    border: 2px solid var(--border);
-    transition: all 0.3s ease;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Efekt žiary pri písaní */
-input[type="text"]:focus, input[type="number"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
-    border-color: var(--primary);
-    outline: none;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
-    transform: translateY(-1px);
-}
-
-/* 5. Bouncy animácie pre Feedback (Správne / Nesprávne) */
-@keyframes popIn {
-    0% { transform: scale(0.9); opacity: 0; }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-.feedback-box {
-    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    border-radius: 16px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-/* 6. Učenie - krajšie kartičky */
-.card-face {
-    border-radius: 24px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
-}
-
-/* 7. Plynulejšie prepínanie samotných okien aplikácie */
-.tab.active, .prof-tab.active {
-    animation: fadeInSlide 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
-}
-
-@keyframes fadeInSlide {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 /* --- OPRAVA PREKRÝVANIA KARTIČIEK --- */
+.flashcard-container { height: 380px; margin-bottom: 40px; }
+.btn-audio { margin-top: 10px; }
+.card-face { box-sizing: border-box !important; }
 
-.flashcard-container {
-    height: 380px; /* Pôvodne bolo 320px, dáme jej viac priestoru */
-    margin-bottom: 40px; /* Odstrčíme tlačidlá poriadne pod ňu */
-}
+.nav { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; padding: 10px; overflow-x: hidden !important; }
+.btn-nav { width: 100%; text-align: center; padding: 10px 5px !important; font-size: 12px !important; }
 
-.btn-audio {
-    margin-top: 10px; /* Pre istotu ešte odlepíme audio tlačidlo zhora */
-}
-
-/* --- OPRAVA VODOROVNÉHO POSUNU KARTIČIEK --- */
-
-.card-face {
-    box-sizing: border-box !important; /* Vynúti započítanie paddingu do šírky */
-}
-
-/* Upratanie navigácie do dvoch radov */
-.nav {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 8px;
-    padding: 10px;
-    overflow-x: hidden !important; /* Už sa nebude posúvať do strán */
-}
-
-.btn-nav {
-    width: 100%;
-    text-align: center;
-    padding: 10px 5px !important;
-    font-size: 12px !important;
-}
-
-/* Mobilná optimalizácia - fixne 3 stĺpce */
 @media (max-width: 480px) {
-    .nav {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    .nav { grid-template-columns: repeat(3, 1fr); }
 }
