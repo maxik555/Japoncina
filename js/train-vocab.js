@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.4 - Fixed Syntax Error) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.7 - Bulletproof Dropdowns) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -32,8 +32,14 @@ window.recordWordStat = function(wordSk, isCorrect) {
 window.startLearn = function(mode) {
     const select = document.getElementById('learnLessonSelect');
     if (!select) return;
-    fcQueue = window.db.filter(w => w.lekcia === parseInt(select.value));
+    
+    // Nepriestrelné získanie čísla lekcie
+    let targetLekcia = parseInt(select.value);
+    if (isNaN(targetLekcia)) targetLekcia = 1;
+
+    fcQueue = window.db.filter(w => w.lekcia === targetLekcia);
     if (fcQueue.length === 0) return alert(window.currentLang === 'en' ? "No words in this lesson yet." : "Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
+    
     fcIdx = 0;
     document.getElementById('learnSetup').classList.add('hidden');
     document.getElementById('learnCardsRun').classList.remove('hidden');
@@ -75,12 +81,12 @@ window.abortTraining = function() {
     clearInterval(window.quizTimerInterval);
     document.getElementById('trainRun').classList.add('hidden');
     
-    // Kompletný reset UI pri zrušení testu
     document.getElementById('twWord').style.display = '';
     document.querySelector('.test-header').style.display = '';
     document.getElementById('classicInputArea').style.display = '';
     document.getElementById('quizInputArea').style.display = '';
     document.getElementById('twNextBtn').style.display = '';
+    document.getElementById('twFeedback').style.display = 'none';
     
     let oldSummary = document.getElementById('testSummaryContainer');
     if (oldSummary) oldSummary.remove();
@@ -105,10 +111,39 @@ window.startTraining = function(type) {
         window.currentUnlockTarget = window.state.unlockedLesson;
         pool = window.db.filter(w => w.lekcia === window.currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
     } else {
-        let from = parseInt(document.getElementById(type+'From')?.value || 1);
-        let to = parseInt(document.getElementById(type+'To')?.value || window.state.unlockedLesson);
-        let count = parseInt(document.getElementById(type+'Count')?.value || 10);
+        // Nepriestrelná logika pre čítanie hodnôt z dropdownov
+        let from = 1;
+        let to = window.state.unlockedLesson || 1;
+        
+        let countEl = document.getElementById(type + 'Count');
+        let count = countEl ? parseInt(countEl.value) : 10;
+        if (isNaN(count)) count = 10;
+
+        let singleBox = document.getElementById(type + 'SingleBox');
+        let isSingle = false;
+        
+        if (singleBox && !singleBox.classList.contains('hidden')) {
+            isSingle = true;
+        }
+
+        if (isSingle) {
+            let singleSelect = document.getElementById(type + 'Single');
+            if (singleSelect && singleSelect.value) {
+                from = parseInt(singleSelect.value);
+                to = from;
+            }
+        } else {
+            let fromSelect = document.getElementById(type + 'From');
+            let toSelect = document.getElementById(type + 'To');
+            if (fromSelect && fromSelect.value) from = parseInt(fromSelect.value);
+            if (toSelect && toSelect.value) to = parseInt(toSelect.value);
+        }
+
+        // Záchranné siete, ak by predsa len niečo nevyšlo
+        if (isNaN(from)) from = 1;
+        if (isNaN(to)) to = window.state.unlockedLesson || 1;
         if (from > to) [from, to] = [to, from];
+
         pool = window.db.filter(w => w.lekcia >= from && w.lekcia <= to).sort(()=>0.5-Math.random()).slice(0, count);
     }
 
@@ -162,7 +197,6 @@ window.startSmartTraining = function() {
 };
 
 window.loadTrainWord = function() {
-    // Reset inline štýlov, ak by sme test spúšťali hneď po zobrazení predošlého zhrnutia
     document.getElementById('classicInputArea').style.display = '';
     document.getElementById('quizInputArea').style.display = '';
     document.getElementById('twNextBtn').style.display = '';
@@ -194,7 +228,6 @@ window.loadTrainWord = function() {
         document.getElementById('classicInputArea').classList.add('hidden');
         document.getElementById('quizInputArea').classList.remove('hidden');
         
-        // Zabezpečenie proti pádu, ak je v databáze menej ako 4 slov
         let others = window.db.filter(x => x.sk !== w.sk).sort(()=>0.5-Math.random());
         let availableOthers = others.slice(0, 3);
         quizOptions = [w, ...availableOthers].sort(()=>0.5-Math.random());
@@ -207,7 +240,7 @@ window.loadTrainWord = function() {
                 btn.className = 'btn-quiz'; 
                 btn.disabled = false;
             } else {
-                btn.style.visibility = 'hidden'; // Skryjeme tlačidlo, ak slová chýbajú
+                btn.style.visibility = 'hidden'; 
             }
         }
     } else {
@@ -492,14 +525,12 @@ window.endTraining = function() {
 
     summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
 
-    // Už použijeme len existujúcu premennú modal
     modal.insertAdjacentHTML('beforeend', summaryHtml);
 };
 
 window.closeSummaryAndReset = function(showUnlockAlert) {
     document.getElementById('trainRun').classList.add('hidden');
     
-    // Kompletný reset inline štýlov, aby bol test pripravený na ďalšie spustenie
     document.getElementById('twWord').style.display = '';
     document.querySelector('.test-header').style.display = '';
     document.getElementById('classicInputArea').style.display = '';
