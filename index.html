@@ -75,7 +75,6 @@
 
     <div class="nav main-nav">
         <button class="btn-nav active" onclick="window.switchTab('map')" id="btnTabMap" data-sk="🗺️ Mapa" data-en="🗺️ Map">🗺️ Mapa</button>
-        <button class="btn-nav" onclick="window.switchTab('learn')" id="btnTabLearn" data-sk="🎴 Učenie" data-en="🎴 Learn">🎴 Učenie</button>
         <button class="btn-nav" onclick="window.switchTab('train')" id="btnTabTrain" data-sk="📝 Test" data-en="📝 Test">📝 Test</button>
         <button class="btn-nav" onclick="window.switchTab('stories')" id="btnTabStories" data-sk="⛩️ Čitáreň" data-en="⛩️ Stories">⛩️ Čitáreň</button>
         <button class="btn-nav" onclick="window.switchTab('live')" id="btnTabLive" data-sk="🎙️ Hovory" data-en="🎙️ Live">🎙️ Hovory</button>
@@ -86,38 +85,11 @@
     </div>
 
     <div id="tab-map" class="tab active">
-        <h2 data-sk="Tvoja cesta" data-en="Your Path">Tvoja cesta</h2>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="margin:0;" data-sk="Tvoja cesta" data-en="Your Path">Tvoja cesta</h2>
+            <button class="btn btn-outline" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="window.openMyDictionary()" data-sk="📖 SLOVNÍK" data-en="📖 DICTIONARY">📖 SLOVNÍK</button>
+        </div>
         <div id="lessonMap" class="map-grid"></div>
-    </div>
-
-    <div id="tab-learn" class="tab hidden">
-        <h2 data-sk="Učenie" data-en="Learning">Učenie</h2>
-        <div id="learnSetup" class="info-box">
-            <select id="learnLessonSelect" style="margin-bottom:15px;"></select>
-            <button class="btn btn-primary" onclick="window.startLearn('cards')" data-sk="SPUSTIŤ KARTIČKY" data-en="START FLASHCARDS">SPUSTIŤ KARTIČKY</button>
-            <button class="btn btn-outline" style="margin-top:10px;" onclick="window.openMyDictionary()" data-sk="MÔJ SLOVNÍK" data-en="MY DICTIONARY">MÔJ SLOVNÍK</button>
-        </div>
-        <div id="learnCardsRun" class="hidden">
-            <div class="test-header"><span id="fcProgress"></span></div>
-            <div class="flashcard-container" onclick="window.flipCard()">
-                <div class="flashcard" id="fcElement">
-                    <div class="card-face card-front">
-                        <div id="fcImg" style="font-size:60px; margin-bottom: 10px;"></div>
-                        <div id="fcFrontSk" style="font-size:32px; font-weight: 800;"></div>
-                    </div>
-                    <div class="card-face card-back">
-                        <div id="fcBackRomaji" style="font-size:26px; color:var(--primary); font-weight:bold; margin-bottom:10px;"></div>
-                        <div id="fcBackKana" style="font-size:20px; color:var(--success);"></div>
-                        <div id="fcBackKanji" style="font-size:40px; margin-top:15px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:20px;">
-                <button class="btn btn-outline" onclick="window.prevFc()" data-sk="Späť" data-en="Back">Späť</button>
-                <button class="btn btn-success" onclick="window.nextFc()" style="flex:2;" data-sk="Ďalšia ➔" data-en="Next ➔">Ďalšia ➔</button>
-            </div>
-            <button class="btn btn-outline" style="margin-top:15px; border:none; opacity:0.6;" onclick="window.closeLearn()" data-sk="Ukončiť učenie" data-en="End Learning">Ukončiť učenie</button>
-        </div>
     </div>
 
     <div id="tab-train" class="tab hidden">
@@ -283,6 +255,41 @@
     </div>
 </div>
 
+<div id="overlayLessonChoice" class="test-overlay hidden">
+    <div class="test-modal" style="max-width: 400px;">
+        <button class="btn-close" onclick="window.closeOverlay('overlayLessonChoice')">&times;</button>
+        <h2 id="choiceTitle" style="margin-bottom: 25px; color: var(--primary);">Lekcia X</h2>
+        <div style="display:flex; flex-direction:column; gap:15px;">
+            <button class="btn btn-primary" onclick="window.startLessonFromMap('cards')" data-sk="🎴 TRÉNOVAŤ KARTIČKY" data-en="🎴 FLASHCARDS">🎴 TRÉNOVAŤ KARTIČKY</button>
+            <button class="btn btn-outline" onclick="window.startLessonFromMap('list')" data-sk="📖 ZOZNAM SLOVÍČOK" data-en="📖 WORD LIST">📖 ZOZNAM SLOVÍČOK</button>
+        </div>
+    </div>
+</div>
+
+<div id="overlayFlashcards" class="test-overlay hidden">
+    <div class="test-modal" style="max-width: 550px;">
+        <button class="btn-close" onclick="window.closeOverlay('overlayFlashcards')">&times;</button>
+        <div class="test-header"><span id="fcProgress"></span></div>
+        <div class="flashcard-container" onclick="window.flipCard()">
+            <div class="flashcard" id="fcElement">
+                <div class="card-face card-front">
+                    <div id="fcImg" style="font-size:60px; margin-bottom: 10px;"></div>
+                    <div id="fcFrontSk" style="font-size:32px; font-weight: 800;"></div>
+                </div>
+                <div class="card-face card-back">
+                    <div id="fcBackRomaji" style="font-size:26px; color:var(--primary); font-weight:bold; margin-bottom:10px;"></div>
+                    <div id="fcBackKana" style="font-size:20px; color:var(--success);"></div>
+                    <div id="fcBackKanji" style="font-size:40px; margin-top:15px;"></div>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button class="btn btn-outline" onclick="window.prevFc()" data-sk="Späť" data-en="Back">Späť</button>
+            <button class="btn btn-success" onclick="window.nextFc()" style="flex:2;" data-sk="Ďalšia ➔" data-en="Next ➔">Ďalšia ➔</button>
+        </div>
+    </div>
+</div>
+
 <div id="trainRun" class="test-overlay hidden">
     <div class="test-modal">
         <button class="btn-close" onclick="window.abortTraining()">&times;</button>
@@ -318,15 +325,15 @@
     </div>
 </div>
 
-<script src="js/config.js?v=4.6"></script>
-<script src="js/database.js?v=4.6"></script>
-<script src="js/audio.js?v=4.6"></script>
-<script src="js/ui.js?v=4.6"></script>
-<script src="js/train-utils.js?v=4.6"></script>
-<script src="js/train-vocab.js?v=4.6"></script>
-<script src="js/ai-content.js?v=4.6"></script>
-<script src="js/sensei.js?v=4.6"></script>
-<script src="js/auth.js?v=4.6"></script>
+<script src="js/config.js?v=4.7"></script>
+<script src="js/database.js?v=4.7"></script>
+<script src="js/audio.js?v=4.7"></script>
+<script src="js/ui.js?v=4.7"></script>
+<script src="js/train-utils.js?v=4.7"></script>
+<script src="js/train-vocab.js?v=4.7"></script>
+<script src="js/ai-content.js?v=4.7"></script>
+<script src="js/sensei.js?v=4.7"></script>
+<script src="js/auth.js?v=4.7"></script>
 
 </body>
 </html>
