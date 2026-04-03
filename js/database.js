@@ -80,18 +80,16 @@ function renderMap() {
         div.className = `lesson-node ${unlocked ? 'node-unlocked' : 'node-locked'}`;
         div.innerHTML = `L${l}`;
         if (unlocked) {
-            div.onclick = () => { 
-                switchTab('learn'); 
-                const sel = document.getElementById('learnLessonSelect');
-                if (sel) { sel.value = l; window.startLearn('cards'); }
-            };
+            // NOVÁ LOGIKA: Otvoriť modálne okno s voľbou Kartičky/Zoznam
+            div.onclick = () => window.openLessonChoice(l);
         }
         map.appendChild(div);
     });
 }
 
 function populateSelects() {
-    const ids = ['learnLessonSelect', 'quizFrom', 'quizTo', 'quizSingle', 'freeFrom', 'freeTo', 'freeSingle', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
+    // Odstránené learnLessonSelect, nakoľko sa tab zrušil
+    const ids = ['quizFrom', 'quizTo', 'quizSingle', 'freeFrom', 'freeTo', 'freeSingle', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
     const currentValues = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) currentValues[id] = el.value; });
 
