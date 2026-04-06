@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.8 - Kompletná verzia) ---");
+console.log("--- 2. train-vocab.js načítané (Giga Master v4.9 - Pridaný Kvíz Timer) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -26,6 +26,68 @@ window.recordWordStat = function(wordSk, isCorrect) {
     if (!window.state.wordStats[wordSk]) window.state.wordStats[wordSk] = { c: 0, w: 0 };
     if (isCorrect) window.state.wordStats[wordSk].c++;
     else window.state.wordStats[wordSk].w++;
+};
+
+// --- LOGIKA ČASOVAČA ---
+window.stopQuizTimer = function() {
+    clearInterval(window.quizTimerInterval);
+};
+
+window.startQuizTimer = function() {
+    window.stopQuizTimer();
+    const bar = document.getElementById('quizTimerBar');
+    const container = document.getElementById('quizTimerContainer');
+    
+    if (!bar || !container) return;
+
+    if (window.currentTestType !== 'quiz') {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+    bar.style.width = '100%';
+    bar.style.background = 'var(--success)';
+
+    let timeLeft = 10000; // 10 sekúnd na odpoveď
+    const totalTime = 10000;
+    const tick = 50;
+
+    window.quizTimerInterval = setInterval(() => {
+        timeLeft -= tick;
+        let perc = (timeLeft / totalTime) * 100;
+        if (perc < 0) perc = 0;
+        
+        bar.style.width = perc + '%';
+
+        if (perc < 50 && perc > 20) bar.style.background = 'var(--warning)';
+        else if (perc <= 20) bar.style.background = 'var(--danger)';
+
+        if (timeLeft <= 0) {
+            window.stopQuizTimer();
+            window.timeOutQuiz();
+        }
+    }, tick);
+};
+
+window.timeOutQuiz = function() {
+    let w = window.testQueue[window.currentIdx];
+    let isEn = window.currentLang === 'en';
+    
+    window.currentFullResults.push({ q: w.sk, a: isEn ? "(Timeout)" : "(Vypršal čas)", correct: w.romaji, isCorrect: false });
+    window.recordWordStat(w.sk, false);
+    
+    let fb = document.getElementById('twFeedback');
+    fb.style.display = 'block';
+    
+    let correctTxt = window.currentDirection === 'ja2sk' ? ((isEn && w.en) ? w.en : w.sk) : w.romaji;
+    fb.innerHTML = `⏰ <b>${isEn ? 'Time is up!' : 'Čas vypršal!'}</b> <br> ${correctTxt}`; 
+    fb.className = "feedback-box fb-wrong"; 
+    window.mistakes++; 
+    
+    window.updateScoreDisplay();
+    for(let i=0; i<4; i++) document.getElementById('qb'+i).disabled = true;
+    document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
 // --- KARTIČKY (CEZ MAPU) ---
@@ -73,7 +135,7 @@ window.updateScoreDisplay = function() {
 };
 
 window.abortTraining = function() {
-    clearInterval(window.quizTimerInterval);
+    window.stopQuizTimer();
     document.getElementById('trainRun').classList.add('hidden');
     document.getElementById('trainRun').style.display = 'none';
     
@@ -239,6 +301,9 @@ window.loadTrainWord = function() {
                 btn.style.visibility = 'hidden'; 
             }
         }
+        
+        // Spustíme časovač len pri kvíze
+        window.startQuizTimer();
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
         document.getElementById('quizInputArea').classList.add('hidden');
@@ -389,6 +454,8 @@ window.checkTrainAnswer = function() {
 };
 
 window.checkQuizAnswer = function(idx) {
+    window.stopQuizTimer(); // Ak odpovie, zastavíme časovač
+    
     let w = window.testQueue[window.currentIdx];
     let isCorrect = (quizOptions[idx].sk === w.sk);
     let isEn = window.currentLang === 'en';
@@ -434,7 +501,7 @@ window.nextTrainWord = function() {
 };
 
 window.endTraining = function() {
-    clearInterval(window.quizTimerInterval);
+    window.stopQuizTimer();
 
     let isEn = window.currentLang === 'en';
     let total = window.testQueue.length;
