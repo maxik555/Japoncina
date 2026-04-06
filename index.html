@@ -294,8 +294,14 @@
     <div class="test-modal">
         <button class="btn-close" onclick="window.abortTraining()">&times;</button>
         <div class="test-header" style="margin-bottom: 20px;"><span id="testProgress" style="font-weight: bold; font-size: 16px;"></span><span id="testScoreDisplay" style="float:right;"></span></div>
-        <div id="twWord" class="word-display" style="margin:30px 0; font-size:36px; font-weight:bold;"></div>
+        
+        <div id="quizTimerContainer" class="timer-container hidden">
+            <div id="quizTimerBar" class="timer-bar"></div>
+        </div>
+
+        <div id="twWord" class="word-display" style="margin:20px 0 30px 0; font-size:36px; font-weight:bold;"></div>
         <div id="twFeedback" class="feedback-box" style="margin-bottom:20px;"></div>
+        
         <div id="classicInputArea">
             <input type="text" id="twInput" autocomplete="off" placeholder="Tvoja odpoveď..." style="width: 100%; padding: 18px; border-radius: 16px; font-size: 20px; text-align: center; margin-bottom: 20px;">
             <button class="btn btn-primary" id="twSubmitBtn" onclick="window.checkTrainAnswer()" data-sk="POTVRDIŤ" data-en="SUBMIT">POTVRDIŤ</button>
@@ -325,15 +331,15 @@
     </div>
 </div>
 
-<script src="js/config.js?v=4.7"></script>
-<script src="js/database.js?v=4.7"></script>
-<script src="js/audio.js?v=4.7"></script>
-<script src="js/ui.js?v=4.7"></script>
-<script src="js/train-utils.js?v=4.7"></script>
-<script src="js/train-vocab.js?v=4.8"></script>
-<script src="js/ai-content.js?v=4.7"></script>
-<script src="js/sensei.js?v=4.7"></script>
-<script src="js/auth.js?v=4.7"></script>
+<script src="js/config.js?v=4.9"></script>
+<script src="js/database.js?v=4.9"></script>
+<script src="js/audio.js?v=4.9"></script>
+<script src="js/ui.js?v=4.9"></script>
+<script src="js/train-utils.js?v=4.9"></script>
+<script src="js/train-vocab.js?v=4.9"></script>
+<script src="js/ai-content.js?v=4.9"></script>
+<script src="js/sensei.js?v=4.9"></script>
+<script src="js/auth.js?v=4.9"></script>
 
 </body>
 </html>
