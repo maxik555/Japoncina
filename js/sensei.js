@@ -1,14 +1,14 @@
-console.log("--- sensei.js načítané (Dual Lang) ---");
+console.log("--- sensei.js načítané (Master v4.9 - API Key Fix) ---");
 
 let currentSenseiTask = "";
 let chatHistory = []; 
 
 window.callGemini = async function(promptText) {
-    if (!window.state.geminiKey) {
+    if (!window.state || !window.state.geminiKey) {
         const userInput = prompt("Zadaj svoj Gemini API kľúč / Enter Gemini API Key:");
         if (!userInput || userInput.trim() === "") return null;
         window.state.geminiKey = userInput.trim();
-        if (typeof saveState === 'function') window.saveState();
+        if (typeof window.saveState === 'function') window.saveState();
     }
     const key = window.state.geminiKey;
     try {
@@ -17,16 +17,23 @@ window.callGemini = async function(promptText) {
             body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
         const data = await response.json();
+        
+        // OPRAVA: Ak Gemini vráti chybu, ukážeme ju používateľovi a až potom kľúč vymažeme
         if (data.error) {
+            console.error("Gemini API Error:", data.error);
+            alert("⛔ Gemini API odmietlo tvoj kľúč!\nDôvod: " + data.error.message + "\n\nKľúč bol vymazaný, pri ďalšom pokuse zadaj platný.");
             window.state.geminiKey = null;
-            if (typeof saveState === 'function') window.saveState();
+            if (typeof window.saveState === 'function') window.saveState();
             return null;
         }
         if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text.replace(/\*/g, ""); 
         }
         return null;
-    } catch (error) { return null; }
+    } catch (error) { 
+        console.error("Gemini Fetch Error:", error);
+        return null; 
+    }
 };
 
 window.startSenseiSession = async function() {
