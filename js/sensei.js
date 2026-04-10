@@ -18,14 +18,22 @@ window.callGemini = async function(promptText) {
         });
         const data = await response.json();
         
-        // OPRAVA: Ak Gemini vráti chybu, ukážeme ju používateľovi a až potom kľúč vymažeme
+        // OPRAVA: Rozoznávame typy chýb od Googlu
         if (data.error) {
             console.error("Gemini API Error:", data.error);
-            alert("⛔ Gemini API odmietlo tvoj kľúč!\nDôvod: " + data.error.message + "\n\nKľúč bol vymazaný, pri ďalšom pokuse zadaj platný.");
-            window.state.geminiKey = null;
-            if (typeof window.saveState === 'function') window.saveState();
+            
+            // Ak je kľúč reálne neplatný (Error 400 alebo 403)
+            if (data.error.code === 400 || data.error.code === 403) {
+                alert("⛔ Neplatný Gemini API kľúč!\nDôvod: " + data.error.message + "\n\nKľúč bol vymazaný, pri ďalšom pokuse zadaj platný.");
+                window.state.geminiKey = null;
+                if (typeof window.saveState === 'function') window.saveState();
+            } else {
+                // Preťažený server (Error 503) alebo iná dočasná chyba
+                alert("⏳ Google Gemini server je momentálne preťažený (Error " + data.error.code + ").\nSkús to znova o malú chvíľu. (Tvoj kľúč zostáva bezpečne uložený v dódžó).");
+            }
             return null;
         }
+        
         if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text.replace(/\*/g, ""); 
         }
