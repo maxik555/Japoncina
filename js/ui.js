@@ -1,6 +1,6 @@
-console.log("--- ui.js načítané (Master v4.8 - Kompletná oprava UI) ---");
+console.log("--- ui.js načítané (Master v4.9 - Hub Map & UI Fixes) ---");
 
-let selectedLessonFromMap = 1; // Na sledovanie, na ktorú lekciu sa kliklo na mape
+let selectedLessonFromMap = 1;
 
 // --- HLAVNÁ NAVIGÁCIA ---
 window.switchTab = function(t) {
@@ -69,7 +69,7 @@ window.closeOverlay = function(id) {
     if (el) el.style.display = 'none';
 };
 
-// --- CHÝBAJÚCA FUNKCIA PRE TRÉNINGOVÚ ARÉNU ---
+// --- PREPÍNANIE TESTOVACÍCH REŽIMOV V ARÉNE ---
 window.selectTestModeUI = function(m) {
     document.querySelectorAll('#tab-train .setup-section').forEach(s => s.classList.add('hidden'));
     const target = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
@@ -222,8 +222,13 @@ window.setLessonMode = function(mode, tab) {
     if (btnSingle && btnRange && singleBox && rangeBox) {
         btnSingle.classList.toggle('active', mode === 'single');
         btnRange.classList.toggle('active', mode === 'range');
-        if (mode === 'single') { singleBox.classList.remove('hidden'); rangeBox.classList.add('hidden'); } 
-        else { singleBox.classList.add('hidden'); rangeBox.classList.remove('hidden'); }
+        if (mode === 'single') { 
+            singleBox.classList.remove('hidden'); 
+            rangeBox.classList.add('hidden'); 
+        } else { 
+            singleBox.classList.add('hidden'); 
+            rangeBox.classList.remove('hidden'); 
+        }
     }
 };
 
@@ -250,7 +255,7 @@ window.setTheme = function(themeName) {
 
     document.body.setAttribute('data-theme', themeName);
     window.state.theme = themeName;
-    if (typeof saveState === 'function') window.saveState();
+    if (typeof window.saveState === 'function') window.saveState();
 
     document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     let activeBtn = document.getElementById('theme-' + themeName);
