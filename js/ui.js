@@ -1,8 +1,7 @@
-console.log("--- ui.js načítané (Master v4.9 - Hub Map & UI Fixes) ---");
+console.log("--- ui.js načítané (Master v4.9 - Chunin Update) ---");
 
 let selectedLessonFromMap = 1;
 
-// --- HLAVNÁ NAVIGÁCIA ---
 window.switchTab = function(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
     
@@ -33,7 +32,6 @@ window.switchTab = function(t) {
     }
 };
 
-// --- PREPÍNANIE JAZYKOV ---
 window.setLang = function(lang) {
     window.currentLang = lang; 
     localStorage.setItem('finale_lang', lang);
@@ -69,7 +67,6 @@ window.closeOverlay = function(id) {
     if (el) el.style.display = 'none';
 };
 
-// --- PREPÍNANIE TESTOVACÍCH REŽIMOV V ARÉNE ---
 window.selectTestModeUI = function(m) {
     document.querySelectorAll('#tab-train .setup-section').forEach(s => s.classList.add('hidden'));
     const target = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
@@ -80,7 +77,6 @@ window.selectTestModeUI = function(m) {
     if (btn) btn.classList.add('active');
 };
 
-// --- LOGIKA MAPY (HUB) ---
 window.openLessonChoice = function(lessonNum) {
     selectedLessonFromMap = lessonNum;
     const overlay = document.getElementById('overlayLessonChoice');
@@ -104,7 +100,6 @@ window.startLessonFromMap = function(mode) {
     }
 };
 
-// --- MÔJ SLOVNÍK (S FILTROM) ---
 window.openMyDictionary = function(filterLesson = null) {
     let dictOverlay = document.getElementById('overlayDictionary');
     let isEn = window.currentLang === 'en';
@@ -212,7 +207,6 @@ window.filterDictionary = function() {
     if (input) window.renderDictionaryList(input.value);
 };
 
-// --- PREPÍNAČ REŽIMU LEKCIÍ ---
 window.setLessonMode = function(mode, tab) {
     let btnSingle = document.getElementById('btn' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Single');
     let btnRange = document.getElementById('btn' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Range');
@@ -232,7 +226,6 @@ window.setLessonMode = function(mode, tab) {
     }
 };
 
-// --- PROFIL A TÉMY ---
 window.checkThemeLocks = function() {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -267,6 +260,19 @@ window.updateProfileStats = function() {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
     let curXp = (window.state.xp || 0) % 500;
     
+    // Zobrazenie hodnosti Chunin / Genin
+    let rankEl = document.getElementById('uiRank');
+    if (rankEl) {
+        rankEl.innerText = window.state.rank === 'Chunin' ? '🥷 Chunin' : '🥷 Genin';
+    }
+
+    // Zobrazenie odznaku Chunin
+    let badgeEl = document.getElementById('profChuninBadge');
+    if (badgeEl) {
+        if (window.state.passedN5Boss) badgeEl.classList.remove('hidden');
+        else badgeEl.classList.add('hidden');
+    }
+
     if(document.getElementById('profLevelText')) document.getElementById('profLevelText').innerText = `Level ${lvl}`;
     if(document.getElementById('profXpText')) document.getElementById('profXpText').innerText = `${curXp} / 500 XP`;
     if(document.getElementById('profXpBar')) document.getElementById('profXpBar').style.width = `${(curXp/500)*100}%`;
