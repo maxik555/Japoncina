@@ -1,4 +1,4 @@
-console.log("--- 2. train-vocab.js načítané (Giga Master v4.9 - Pridaný Kvíz Timer) ---");
+console.log("--- 2. train-vocab.js načítané (Master v4.9 - Chunin Boss Fight) ---");
 
 let fcQueue = []; 
 let fcIdx = 0;
@@ -28,7 +28,6 @@ window.recordWordStat = function(wordSk, isCorrect) {
     else window.state.wordStats[wordSk].w++;
 };
 
-// --- LOGIKA ČASOVAČA ---
 window.stopQuizTimer = function() {
     clearInterval(window.quizTimerInterval);
 };
@@ -49,7 +48,7 @@ window.startQuizTimer = function() {
     bar.style.width = '100%';
     bar.style.background = 'var(--success)';
 
-    let timeLeft = 10000; // 10 sekúnd na odpoveď
+    let timeLeft = 10000; 
     const totalTime = 10000;
     const tick = 50;
 
@@ -90,7 +89,6 @@ window.timeOutQuiz = function() {
     document.getElementById('twNextBtn').classList.remove('hidden');
 };
 
-// --- KARTIČKY (CEZ MAPU) ---
 window.startLearn = function(lessonNum) {
     fcQueue = window.db.filter(w => w.lekcia === lessonNum);
     if (fcQueue.length === 0) return alert(window.currentLang === 'en' ? "No words in this lesson yet." : "Pre túto lekciu nie sú zatiaľ žiadne slovíčka.");
@@ -121,12 +119,9 @@ window.loadFc = function() {
 window.flipCard = function() { document.getElementById('fcElement').classList.toggle('is-flipped'); };
 window.nextFc = function() { if (fcIdx < fcQueue.length - 1) { fcIdx++; window.loadFc(); } else window.closeOverlay('overlayFlashcards'); };
 window.prevFc = function() { if (fcIdx > 0) { fcIdx--; window.loadFc(); } };
-window.closeLearn = function() { 
-    window.closeOverlay('overlayFlashcards');
-};
+window.closeLearn = function() { window.closeOverlay('overlayFlashcards'); };
 window.playCurrentAudioFC = function() { if (fcQueue[fcIdx]) playAudioText(fcQueue[fcIdx].romaji, 'ja-JP'); };
 
-// --- VIZUÁLNE AKTUALIZÁCIE TESTU ---
 window.updateScoreDisplay = function() {
     let scoreEl = document.getElementById('testScoreDisplay');
     let correct = window.currentIdx - window.mistakes;
@@ -150,7 +145,6 @@ window.abortTraining = function() {
     if (oldSummary) oldSummary.remove();
 };
 
-// --- TESTY (KVÍZ / PÍSANIE / ODOMKNUTIE / CHYTRÝ) ---
 window.startTraining = function(type) {
     window.currentTestType = type; 
     window.mistakes = 0; 
@@ -167,7 +161,19 @@ window.startTraining = function(type) {
 
     if (type === 'unlock') {
         window.currentUnlockTarget = window.state.unlockedLesson;
-        pool = window.db.filter(w => w.lekcia === window.currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
+        
+        // --- DETEKCIA BOSS FIGHTU CHUNIN (N5) ---
+        let n5Words = window.db.filter(w => (w.jlpt || 'N5').trim().toUpperCase() === 'N5');
+        let n5Unlocked = n5Words.filter(w => w.lekcia <= window.state.unlockedLesson);
+        
+        // Ak sú všetky N5 slová odomknuté a Boss test nebol zvládnutý
+        if (n5Words.length > 0 && n5Words.length === n5Unlocked.length && !window.state.passedN5Boss) {
+            window.currentTestType = 'bossN5';
+            pool = n5Words.sort(()=>0.5-Math.random()).slice(0, 100);
+            alert(window.currentLang === 'en' ? "⚠️ WARNING! Chunin Exam! 100 words from N5. You need 90% to pass!" : "⚠️ POZOR! Záverečná Chunin skúška! 100 slovíčok z celej úrovne N5. Na úspech potrebuješ aspoň 90%!");
+        } else {
+            pool = window.db.filter(w => w.lekcia === window.currentUnlockTarget).sort(()=>0.5-Math.random()).slice(0, 10);
+        }
     } else {
         let from = 1;
         let to = window.state.unlockedLesson || 1;
@@ -302,7 +308,6 @@ window.loadTrainWord = function() {
             }
         }
         
-        // Spustíme časovač len pri kvíze
         window.startQuizTimer();
     } else {
         document.getElementById('classicInputArea').classList.remove('hidden');
@@ -454,7 +459,7 @@ window.checkTrainAnswer = function() {
 };
 
 window.checkQuizAnswer = function(idx) {
-    window.stopQuizTimer(); // Ak odpovie, zastavíme časovač
+    window.stopQuizTimer(); 
     
     let w = window.testQueue[window.currentIdx];
     let isCorrect = (quizOptions[idx].sk === w.sk);
@@ -509,10 +514,16 @@ window.endTraining = function() {
     let correct = total - wrong;
     let perc = Math.round((correct / total) * 100);
 
-    let typeName = window.currentTestType === 'unlock' ? (isEn ? 'Unlock' : 'Odomknutie') : (window.currentTestType === 'smart' ? (isEn ? 'Smart Test' : 'Chytrý test') : (isEn ? 'Vocab' : 'Slovíčka'));
-    if (window.currentTestType === 'quiz') typeName = isEn ? 'Quiz' : 'Kvíz';
+    let typeName = "";
+    if (window.currentTestType === 'bossN5') typeName = isEn ? 'Chunin Exam' : 'Chunin Skúška';
+    else if (window.currentTestType === 'unlock') typeName = isEn ? 'Unlock' : 'Odomknutie';
+    else if (window.currentTestType === 'smart') typeName = isEn ? 'Smart Test' : 'Chytrý test';
+    else if (window.currentTestType === 'quiz') typeName = isEn ? 'Quiz' : 'Kvíz';
+    else typeName = isEn ? 'Vocab' : 'Slovíčka';
 
-    let lessonInfo = window.currentTestType === 'smart' ? `Mix (1-${window.state.unlockedLesson})` : `${isEn ? 'Lesson' : 'Lekcia'} ${window.testQueue[0].lekcia}`;
+    let lessonInfo = window.currentTestType === 'smart' || window.currentTestType === 'bossN5' ? `Mix (1-${window.state.unlockedLesson})` : `${isEn ? 'Lesson' : 'Lekcia'} ${window.testQueue[0].lekcia}`;
+
+    let passThreshold = window.currentTestType === 'bossN5' ? 90 : 80;
 
     if (!window.state.history) window.state.history = [];
     window.state.history.push({
@@ -520,12 +531,24 @@ window.endTraining = function() {
         lesson: lessonInfo,
         type: typeName,
         score: perc,
-        passed: perc >= 80,
+        passed: perc >= passThreshold,
         details: window.currentFullResults
     });
 
     let unlockedNew = false;
-    if (perc >= 90 && window.currentTestType === 'unlock') {
+    let bossPassed = false;
+
+    // VYHODNOTENIE SKÓRE PRE BOSS TEST A ODOMYKANIE
+    if (window.currentTestType === 'bossN5') {
+        if (perc >= 90) {
+            window.state.passedN5Boss = true;
+            window.state.rank = 'Chunin';
+            window.state.unlockedLesson++;
+            unlockedNew = true;
+            bossPassed = true;
+            if (typeof window.addXP === 'function') window.addXP(500); // Chunin bonus XP
+        }
+    } else if (perc >= 90 && window.currentTestType === 'unlock') {
         if(window.state.unlockedLesson === window.currentUnlockTarget) {
             window.state.unlockedLesson++;
             unlockedNew = true;
@@ -555,14 +578,17 @@ window.endTraining = function() {
     let msg = "";
     if (perc === 100) msg = isEn ? "Perfect! Flawless victory. 🥷" : "Perfektné! Úplne bez chýb. 🥷";
     else if (perc >= 90) msg = isEn ? "Great job! Just minor mistakes. 🔥" : "Skvelá práca! Len malinké zaváhania. 🔥";
-    else if (perc >= 80) msg = isEn ? "Good effort! A bit more practice. 👍" : "Dobrý výkon! Ešte trochu tréningu. 👍";
-    else msg = isEn ? "Learn from mistakes! Review below. 💪" : "Na chybách sa učíme! Pozri si ich nižšie. 💪";
+    else if (perc >= passThreshold) msg = isEn ? "Good effort! A bit more practice. 👍" : "Dobrý výkon! Ešte trochu tréningu. 👍";
+    else {
+        if (window.currentTestType === 'bossN5') msg = isEn ? "You failed the Chunin Exam! You need at least 90%." : "Neuspel si na Chunin Skúške! Potrebuješ aspoň 90%.";
+        else msg = isEn ? "Learn from mistakes! Review below. 💪" : "Na chybách sa učíme! Pozri si ich nižšie. 💪";
+    }
 
     let summaryHtml = `
         <div id="testSummaryContainer" style="margin-top: 10px;">
-            <h2 style="margin-top: 0; color: var(--primary); font-size: 40px; margin-bottom: 10px;">${perc}%</h2>
+            <h2 style="margin-top: 0; color: ${perc >= passThreshold ? 'var(--primary)' : 'var(--danger)'}; font-size: 40px; margin-bottom: 10px;">${perc}%</h2>
             <div style="text-align:center; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <p style="font-size: 16px; color: var(--text-muted); margin-top: 0;">${msg}</p>
+                <p style="font-size: 16px; color: var(--text-muted); margin-top: 0; font-weight: bold;">${msg}</p>
                 <div style="display:flex; justify-content:center; gap: 30px; font-size: 18px;">
                     <span style="color:var(--success); font-weight:bold;">✅ ${correct}</span>
                     <span style="color:var(--danger); font-weight:bold;">❌ ${wrong}</span>
@@ -586,12 +612,12 @@ window.endTraining = function() {
         summaryHtml += `</div>`;
     }
 
-    summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
+    summaryHtml += `<button class="btn btn-primary" onclick="window.closeSummaryAndReset(${unlockedNew}, ${bossPassed})" style="margin-top: 10px; width: 100%;">${isEn ? 'FINISH' : 'HOTOVO'}</button></div>`;
 
     modal.insertAdjacentHTML('beforeend', summaryHtml);
 };
 
-window.closeSummaryAndReset = function(showUnlockAlert) {
+window.closeSummaryAndReset = function(showUnlockAlert, isBossPassed) {
     document.getElementById('trainRun').classList.add('hidden');
     document.getElementById('trainRun').style.display = 'none';
     
@@ -605,7 +631,9 @@ window.closeSummaryAndReset = function(showUnlockAlert) {
     let oldSummary = document.getElementById('testSummaryContainer');
     if (oldSummary) oldSummary.remove();
 
-    if (showUnlockAlert) {
+    if (isBossPassed) {
+        setTimeout(() => alert(window.currentLang === 'en' ? "🏆 INCREDIBLE! You passed the Chunin Exam! N4 Unlocked!" : "🏆 NEUVERITEĽNÉ! Úspešne si zložil Chunin Skúšku! Úroveň N4 je odomknutá! Pozri si svoj nový odznak v Profile."), 300);
+    } else if (showUnlockAlert) {
         setTimeout(() => alert(window.currentLang === 'en' ? "🎉 Excellent! You unlocked a new lesson!" : "🎉 Výborne! Odomkol si novú lekciu!"), 300);
     }
 };
