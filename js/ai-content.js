@@ -272,6 +272,44 @@ function updateTranscriptBubble(id, text) {
 // ==========================================
 
 window.generateAIStory = async function() {
-    console.log("🛠️ AI Čitáreň spustená");
-    // Tu budeš môcť neskôr pridať svoju logiku pre AI Čitáreň
+    let isEn = window.currentLang === 'en';
+    let btn = document.querySelector('#tab-stories .btn-ai');
+    let contentDiv = document.getElementById('storyContent');
+    let transDiv = document.getElementById('storyTranslation');
+    let container = document.getElementById('storyContainer');
+
+    if (btn) btn.innerHTML = `⏳ ${isEn ? 'Generating...' : 'Generujem...'}`;
+    container.classList.remove('hidden');
+    contentDiv.innerHTML = `<span style="color:var(--text-muted);">⏳ ${isEn ? 'Sensei is writing a story...' : 'Sensei pre teba píše príbeh...'}</span>`;
+    transDiv.innerHTML = "";
+
+    // Vytiahneme odomknuté slovíčka, nech ich Sensei použije v príbehu
+    let unlockedWords = window.db.filter(w => w.lekcia <= (window.state.unlockedLesson || 1));
+    let sampleWords = unlockedWords.sort(() => 0.5 - Math.random()).slice(0, 10).map(w => w.sk).join(", ");
+
+    let prompt = isEn 
+        ? `Write a very short, simple Japanese story (JLPT N5 level) using some of these words if possible: ${sampleWords}. Format the response strictly like this: First, write the story in Japanese (Kanji and Kana). Then, add an empty line. Then write the Romaji version. Then add an empty line. Finally, write "TRANSLATION:" and the English translation.`
+        : `Napíš veľmi krátky a jednoduchý japonský príbeh (úroveň JLPT N5). Ak je to možné, použi aj tieto slovíčka: ${sampleWords}. Odpoveď naformátuj presne takto: Najprv napíš príbeh v japončine (Kandži a Kana). Potom vynechaj prázdny riadok. Potom napíš Romadži verziu. Potom vynechaj prázdny riadok. Nakoniec napíš "PREKLAD:" a slovenský preklad príbehu. Nepoužívaj Markdown hviezdičky.`;
+
+    let aiResponse = await window.callGemini(prompt);
+    
+    if (btn) btn.innerHTML = isEn ? "GENERATE NEW STORY" : "GENEROVAŤ NOVÝ PRÍBEH";
+
+    if (aiResponse) {
+        // Rozdelíme odpoveď na japonskú časť a slovenský preklad
+        let splitText = aiResponse.split(/(?:PREKLAD:|TRANSLATION:)/i);
+        let storyPart = splitText[0] ? splitText[0].trim().replace(/\n/g, '<br>') : "Chyba generovania.";
+        let transPart = splitText[1] ? splitText[1].trim().replace(/\n/g, '<br>') : "";
+
+        contentDiv.innerHTML = storyPart;
+        if (transPart) {
+            transDiv.innerHTML = transPart;
+            transDiv.classList.remove('hidden');
+        } else {
+            transDiv.classList.add('hidden');
+        }
+    } else {
+        contentDiv.innerHTML = `❌ ${isEn ? 'Failed to generate story.' : 'Nepodarilo sa vygenerovať príbeh.'}`;
+    }
+};
 };
