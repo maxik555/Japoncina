@@ -159,10 +159,39 @@
 
     <div id="tab-grammar" class="tab hidden">
         <h2 data-sk="⛩️ Skladanie viet" data-en="⛩️ Sentence Building">⛩️ Skladanie viet</h2>
+        
+        <div class="nav test-nav" style="border:none; padding:0; margin-bottom:20px; justify-content:center;">
+            <button class="btn-nav active" id="btnGrammarModeClick" onclick="window.setGrammarMode('click')" data-sk="🖱️ Skladanie" data-en="🖱️ Clicking">🖱️ Skladanie</button>
+            <button class="btn-nav" id="btnGrammarModeWrite" onclick="window.setGrammarMode('write')" data-sk="⌨️ Písanie" data-en="⌨️ Typing">⌨️ Písanie</button>
+        </div>
+
         <div id="grammarSetup" class="info-box" style="padding: 30px; text-align: center;">
             <label style="display:block; margin-bottom: 10px; color: var(--text-muted);" data-sk="VYBER LEKCIU:" data-en="SELECT LESSON:">VYBER LEKCIU:</label>
             <select id="grammarLessonSelect" style="margin-bottom: 20px;"></select>
             <button class="btn btn-primary" onclick="window.startGrammarTest()" data-sk="SPUSTIŤ VÝZVU" data-en="START CHALLENGE">SPUSTIŤ VÝZVU</button>
+        </div>
+
+        <div id="grammarRun" class="hidden info-box" style="text-align:center;">
+            <div class="test-header" style="margin-bottom: 15px;">
+                <span id="grammarProgress" style="font-weight: bold;"></span>
+                <span id="grammarLives" style="float:right; font-size:18px;">❤️❤️❤️</span>
+            </div>
+            
+            <div id="grammarTask" style="font-size:24px; font-weight:bold; margin:20px 0;"></div>
+            
+            <div id="grammarFeedback" class="feedback-box" style="margin-bottom:15px; display:none;"></div>
+            
+            <div id="grammarClickArea">
+                <div id="grammarSolution" style="min-height: 50px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border: 1px dashed var(--border);"></div>
+                <div id="grammarOptions" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px;"></div>
+            </div>
+            
+            <div id="grammarWriteArea" class="hidden">
+                <input type="text" id="grammarInput" placeholder="Napíš japonský preklad..." style="text-align: center;">
+            </div>
+            
+            <button class="btn btn-primary" id="btnCheckGrammar" onclick="window.checkGrammarAnswer()" data-sk="KONTROLA" data-en="CHECK">KONTROLA</button>
+            <button class="btn btn-success hidden" id="btnNextGrammar" onclick="window.nextGrammarSentence()" data-sk="ĎALŠIA VETA ➔" data-en="NEXT SENTENCE ➔">ĎALŠIA VETA ➔</button>
         </div>
     </div>
 
