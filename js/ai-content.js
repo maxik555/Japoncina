@@ -283,7 +283,6 @@ window.generateAIStory = async function() {
     contentDiv.innerHTML = `<span style="color:var(--text-muted);">⏳ ${isEn ? 'Sensei is writing a story...' : 'Sensei pre teba píše príbeh...'}</span>`;
     transDiv.innerHTML = "";
 
-    // Vytiahneme odomknuté slovíčka, nech ich Sensei použije v príbehu
     let unlockedWords = window.db.filter(w => w.lekcia <= (window.state.unlockedLesson || 1));
     let sampleWords = unlockedWords.sort(() => 0.5 - Math.random()).slice(0, 10).map(w => w.sk).join(", ");
 
@@ -296,7 +295,6 @@ window.generateAIStory = async function() {
     if (btn) btn.innerHTML = isEn ? "GENERATE NEW STORY" : "GENEROVAŤ NOVÝ PRÍBEH";
 
     if (aiResponse) {
-        // Rozdelíme odpoveď na japonskú časť a slovenský preklad
         let splitText = aiResponse.split(/(?:PREKLAD:|TRANSLATION:)/i);
         let storyPart = splitText[0] ? splitText[0].trim().replace(/\n/g, '<br>') : "Chyba generovania.";
         let transPart = splitText[1] ? splitText[1].trim().replace(/\n/g, '<br>') : "";
@@ -311,5 +309,4 @@ window.generateAIStory = async function() {
     } else {
         contentDiv.innerHTML = `❌ ${isEn ? 'Failed to generate story.' : 'Nepodarilo sa vygenerovať príbeh.'}`;
     }
-};
 };
