@@ -283,7 +283,6 @@ window.generateAIStory = async function() {
     contentDiv.innerHTML = `<span style="color:var(--text-muted);">⏳ ${isEn ? 'Sensei is writing a story...' : 'Sensei pre teba píše príbeh...'}</span>`;
     transDiv.innerHTML = "";
 
-    // Vytiahneme odomknuté slovíčka, nech ich Sensei použije v príbehu
     let unlockedWords = window.db.filter(w => w.lekcia <= (window.state.unlockedLesson || 1));
     let sampleWords = unlockedWords.sort(() => 0.5 - Math.random()).slice(0, 10).map(w => w.sk).join(", ");
 
@@ -296,12 +295,24 @@ window.generateAIStory = async function() {
     if (btn) btn.innerHTML = isEn ? "GENERATE NEW STORY" : "GENEROVAŤ NOVÝ PRÍBEH";
 
     if (aiResponse) {
-        // Rozdelíme odpoveď na japonskú časť (už s furiganou) a slovenský preklad
         let splitText = aiResponse.split(/(?:PREKLAD:|TRANSLATION:)/i);
-        let storyPart = splitText[0] ? splitText[0].trim().replace(/\n/g, '<br>') : "Chyba generovania.";
+        let rawStory = splitText[0] ? splitText[0].trim() : "Chyba generovania.";
         let transPart = splitText[1] ? splitText[1].trim().replace(/\n/g, '<br>') : "";
 
-        contentDiv.innerHTML = storyPart;
+        // Rozsekáme príbeh na vety podľa japonskej bodky "。"
+        let storySentences = rawStory.split('。').filter(s => s.trim().length > 0);
+        
+        // Zabalíme každú vetu do klikateľného spanu s jemným podsvietením pri hoveri
+        let interactiveStoryHtml = storySentences.map(sentence => {
+            let cleanSentence = sentence.trim().replace(/\n/g, '<br>');
+            return `<span onclick="window.readStorySentence(this.innerHTML)" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.borderRadius='5px'" onmouseout="this.style.background='transparent'" style="cursor: pointer; transition: 0.2s; display: inline; line-height: 2.5; padding: 2px;">${cleanSentence}。</span>`;
+        }).join(' ');
+
+        // Vytvorenie tlačidla na prečítanie celého textu
+        let readAllBtn = `<button class="btn btn-outline" style="margin-bottom: 20px; width: 100%; border-color: var(--success); color: var(--success);" onclick="window.readStorySentence(document.getElementById('storyTextData').innerHTML)">🔊 ${isEn ? 'READ FULL STORY' : 'PREČÍTAŤ CELÝ PRÍBEH'}</button>`;
+
+        contentDiv.innerHTML = `${readAllBtn}<div id="storyTextData" style="font-size: 18px;">${interactiveStoryHtml}</div>`;
+        
         if (transPart) {
             transDiv.innerHTML = transPart;
             transDiv.classList.remove('hidden');
@@ -310,5 +321,21 @@ window.generateAIStory = async function() {
         }
     } else {
         contentDiv.innerHTML = `❌ ${isEn ? 'Failed to generate story.' : 'Nepodarilo sa vygenerovať príbeh.'}`;
+    }
+};
+
+// Funkcia na vyčistenie a prečítanie textu
+window.readStorySentence = function(htmlText) {
+    if (!htmlText) return;
+    
+    // 1. Zmaže kompletne tagy <rt> aj s ich obsahom (odstráni furiganu z čítania)
+    let textWithoutFurigana = htmlText.replace(/<rt>.*?<\/rt>/gi, '');
+    
+    // 2. Zmaže všetky ostatné HTML tagy (ako <ruby>, <span>, <br>)
+    let cleanText = textWithoutFurigana.replace(/<[^>]+>/g, '');
+    
+    // 3. Pošle čistý text do audio enginu
+    if (typeof playAudioText === 'function') {
+        playAudioText(cleanText.trim(), 'ja-JP');
     }
 };
