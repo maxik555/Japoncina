@@ -2,7 +2,7 @@
    DÓDŽÓ - LIGHT ZEN AESTHETIC (Quiet Plan)
    ========================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
 :root {
     /* Základné Zen farby */
@@ -83,7 +83,7 @@ body {
     border-radius: 10px;
 }
 
-/* NAVIGÁCIA (Zen Lišta - Oprava pre kompletné zobrazenie) */
+/* NAVIGÁCIA (Zen Lišta) */
 .nav {
     display: flex;
     gap: 5px;
@@ -212,24 +212,40 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0
     font-weight: 500;
     font-size: 16px;
     cursor: not-allowed;
-    background: rgba(0, 0, 0, 0.03); /* Tlmené pozadie pre zamknuté */
-    border: 1px dashed var(--text-muted); /* Prerušovaná čiara pre zamknuté */
-    color: var(--text-muted);
-    opacity: 0.4;
+    background: rgba(0, 0, 0, 0.04); /* Jemnulinká sivá pre zamknuté */
+    border: none; /* Odstránime okraj pre zamknuté, nech to vyzerá ako obláčik */
+    color: rgba(44, 62, 80, 0.3); /* Veľmi vyblednutý text pre zamknuté */
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .map-node.unlocked {
     background: #ffffff; /* Čistá biela pre odomknuté */
-    border: 2px solid var(--primary); /* Výrazný modrý okraj */
-    color: var(--primary);
-    opacity: 1;
+    border: 2px solid var(--primary); /* Výrazný modrý okraj, zhodný s témou */
+    color: var(--primary); /* Tmavšia modrá na text */
     cursor: pointer;
-    font-weight: 600;
-    box-shadow: 0 8px 24px rgba(143, 170, 220, 0.25); /* Elegantný tieň */
+    font-weight: 700; /* Výraznejší text */
+    box-shadow: 0 8px 24px rgba(143, 170, 220, 0.3); /* Elegantný tieň */
+    opacity: 1;
 }
 .map-node.unlocked:hover { 
     transform: scale(1.1) translateY(-3px); 
-    box-shadow: 0 12px 28px rgba(143, 170, 220, 0.35);
+    box-shadow: 0 12px 28px rgba(143, 170, 220, 0.5);
+}
+
+/* VIZUÁLNE ODDELENIE ROLETIEK (Select Options) */
+select {
+    cursor: pointer;
+}
+select option {
+    background-color: #ffffff;
+    color: var(--primary);
+    font-weight: 600;
+    padding: 12px;
+}
+select option:disabled, select option.opt-locked {
+    color: var(--text-muted);
+    background-color: #e2e8f0; /* Viditeľné sivé pozadie pre zamknuté */
+    font-style: italic;
+    font-weight: 400;
 }
 
 /* MODÁLNE OKNÁ (Testy a Overlay) */
@@ -437,20 +453,3 @@ ruby rt {
 .toggle-group { display: flex; background: rgba(0,0,0,0.04); border-radius: 14px; padding: 5px; margin-bottom: 15px; }
 .btn-toggle { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; }
 .btn-toggle.active { background: #ffffff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 600; }
-
-/* VIZUÁLNE ODDELENIE ROLETIEK (Select Options) */
-select {
-    cursor: pointer;
-}
-select option {
-    background-color: #ffffff;
-    color: var(--primary);
-    font-weight: 600;
-    padding: 12px;
-}
-select option:disabled, select option.opt-locked {
-    color: var(--text-muted);
-    background-color: #e2e8f0; /* Viditeľné sivé pozadie pre zamknuté */
-    font-style: italic;
-    font-weight: 400;
-}
