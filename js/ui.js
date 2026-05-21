@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v4.9 - Chunin Update) ---");
+console.log("--- ui.js načítané (Master v4.9 - Locked Selects) ---");
 
 let selectedLessonFromMap = 1;
 
@@ -67,6 +67,46 @@ window.closeOverlay = function(id) {
     if (el) el.style.display = 'none';
 };
 
+// --- NOVÁ FUNKCIA: Plnenie a zamykanie roletiek ---
+window.populateSelects = function() {
+    if (!window.db || window.db.length === 0 || !window.state) return;
+    
+    let maxLessonDb = Math.max(...window.db.map(w => parseInt(w.lekcia) || 1));
+    let unlocked = window.state.unlockedLesson || 1;
+    let isEn = window.currentLang === 'en';
+    let lessonText = isEn ? "Lesson" : "Lekcia";
+
+    let optionsHtml = "";
+    for (let i = 1; i <= maxLessonDb; i++) {
+        if (i <= unlocked) {
+            optionsHtml += `<option value="${i}">${lessonText} ${i}</option>`;
+        } else {
+            optionsHtml += `<option value="${i}" disabled>🔒 ${lessonText} ${i}</option>`;
+        }
+    }
+
+    const selectIds = [
+        'quizSingle', 'quizFrom', 'quizTo',
+        'freeSingle', 'freeFrom', 'freeTo',
+        'senseiFrom', 'senseiTo',
+        'grammarLessonSelect'
+    ];
+
+    selectIds.forEach(id => {
+        let el = document.getElementById(id);
+        if (el) {
+            let currentVal = el.value; 
+            el.innerHTML = optionsHtml;
+            // Zachováme výber len ak je odomknutý, inak hodíme na lekciu 1
+            if (currentVal && currentVal <= unlocked) {
+                el.value = currentVal;
+            } else {
+                el.value = "1";
+            }
+        }
+    });
+};
+
 window.selectTestModeUI = function(m) {
     document.querySelectorAll('#tab-train .setup-section').forEach(s => s.classList.add('hidden'));
     const target = document.getElementById('setup' + m.charAt(0).toUpperCase() + m.slice(1));
@@ -130,9 +170,16 @@ window.openMyDictionary = function(filterLesson = null) {
     }
 
     const filterSelect = document.getElementById('dictLessonFilter');
+    let maxLessonDb = Math.max(...window.db.map(w => parseInt(w.lekcia) || 1));
     let filterOpts = `<option value="all">${isEn ? "All Lessons" : "Všetky lekcie"}</option>`;
-    for (let i = 1; i <= (window.state.unlockedLesson || 1); i++) {
-        filterOpts += `<option value="${i}">${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
+    
+    // Zámky aj v slovníku
+    for (let i = 1; i <= maxLessonDb; i++) {
+        if (i <= (window.state.unlockedLesson || 1)) {
+            filterOpts += `<option value="${i}">${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
+        } else {
+            filterOpts += `<option value="${i}" disabled>🔒 ${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
+        }
     }
     filterSelect.innerHTML = filterOpts;
 
@@ -260,13 +307,11 @@ window.updateProfileStats = function() {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
     let curXp = (window.state.xp || 0) % 500;
     
-    // Zobrazenie hodnosti Chunin / Genin
     let rankEl = document.getElementById('uiRank');
     if (rankEl) {
         rankEl.innerText = window.state.rank === 'Chunin' ? '🥷 Chunin' : '🥷 Genin';
     }
 
-    // Zobrazenie odznaku Chunin
     let badgeEl = document.getElementById('profChuninBadge');
     if (badgeEl) {
         if (window.state.passedN5Boss) badgeEl.classList.remove('hidden');
