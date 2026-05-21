@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v4.9 - Locked Selects) ---");
+console.log("--- ui.js načítané (Master v4.9 - Visual Select Locks) ---");
 
 let selectedLessonFromMap = 1;
 
@@ -67,7 +67,6 @@ window.closeOverlay = function(id) {
     if (el) el.style.display = 'none';
 };
 
-// --- NOVÁ FUNKCIA: Plnenie a zamykanie roletiek ---
 window.populateSelects = function() {
     if (!window.db || window.db.length === 0 || !window.state) return;
     
@@ -79,9 +78,10 @@ window.populateSelects = function() {
     let optionsHtml = "";
     for (let i = 1; i <= maxLessonDb; i++) {
         if (i <= unlocked) {
-            optionsHtml += `<option value="${i}">${lessonText} ${i}</option>`;
+            optionsHtml += `<option value="${i}" class="opt-unlocked">🔓 ${lessonText} ${i}</option>`;
         } else {
-            optionsHtml += `<option value="${i}" disabled>🔒 ${lessonText} ${i}</option>`;
+            let lockedText = isEn ? "Locked" : "Zamknutá";
+            optionsHtml += `<option value="${i}" class="opt-locked" disabled>🔒 ${lessonText} ${i} (${lockedText})</option>`;
         }
     }
 
@@ -97,7 +97,6 @@ window.populateSelects = function() {
         if (el) {
             let currentVal = el.value; 
             el.innerHTML = optionsHtml;
-            // Zachováme výber len ak je odomknutý, inak hodíme na lekciu 1
             if (currentVal && currentVal <= unlocked) {
                 el.value = currentVal;
             } else {
@@ -161,7 +160,7 @@ window.openMyDictionary = function(filterLesson = null) {
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
                     <select id="dictLessonFilter" style="flex:1; margin-bottom:0;" onchange="window.renderDictionaryList(document.getElementById('dictSearch').value)">
                     </select>
-                    <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="flex:2; padding: 12px; margin-bottom: 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: white;" onkeyup="window.filterDictionary()">
+                    <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="flex:2; padding: 12px; margin-bottom: 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);" onkeyup="window.filterDictionary()">
                 </div>
                 <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px;"></div>
             </div>
@@ -171,14 +170,14 @@ window.openMyDictionary = function(filterLesson = null) {
 
     const filterSelect = document.getElementById('dictLessonFilter');
     let maxLessonDb = Math.max(...window.db.map(w => parseInt(w.lekcia) || 1));
-    let filterOpts = `<option value="all">${isEn ? "All Lessons" : "Všetky lekcie"}</option>`;
+    let filterOpts = `<option value="all" class="opt-unlocked">${isEn ? "All Lessons" : "Všetky lekcie"}</option>`;
     
-    // Zámky aj v slovníku
     for (let i = 1; i <= maxLessonDb; i++) {
         if (i <= (window.state.unlockedLesson || 1)) {
-            filterOpts += `<option value="${i}">${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
+            filterOpts += `<option value="${i}" class="opt-unlocked">🔓 ${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
         } else {
-            filterOpts += `<option value="${i}" disabled>🔒 ${isEn ? "Lesson" : "Lekcia"} ${i}</option>`;
+            let lockedText = isEn ? "Locked" : "Zamknutá";
+            filterOpts += `<option value="${i}" class="opt-locked" disabled>🔒 ${isEn ? "Lesson" : "Lekcia"} ${i} (${lockedText})</option>`;
         }
     }
     filterSelect.innerHTML = filterOpts;
@@ -223,7 +222,7 @@ window.renderDictionaryList = function(searchQuery = '') {
     }
 
     let html = `<table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px;">
-        <thead style="background: var(--bg-dark); position: sticky; top: 0; z-index: 1;">
+        <thead style="background: rgba(0,0,0,0.02); position: sticky; top: 0; z-index: 1;">
             <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
                 <th style="padding: 12px;">${isEn ? "Lesson" : "Lekcia"}</th>
                 <th style="padding: 12px;">${isEn ? "Meaning" : "Význam"}</th>
@@ -236,7 +235,7 @@ window.renderDictionaryList = function(searchQuery = '') {
     words.sort((a, b) => a.lekcia - b.lekcia).forEach(w => {
         let safeAudioText = w.romaji.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let meaning = (isEn && w.en) ? w.en : w.sk;
-        html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
+        html += `<tr style="border-bottom: 1px solid var(--border); cursor: pointer;" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
                 <td style="padding:12px; font-weight: bold; color: var(--primary);">${w.lekcia}</td>
                 <td style="padding:12px; font-weight: bold;">${meaning}</td>
                 <td style="padding:12px; color: var(--text-muted);">${w.romaji} 🔊</td>
@@ -366,10 +365,10 @@ window.renderHistory = function() {
     historyWithIndex.reverse().slice(0, 10).forEach((h) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.05); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
+        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.6); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
         
-        div.onmouseover = () => { div.style.background = 'rgba(255,255,255,0.1)'; div.style.transform = 'translateY(-2px)'; };
-        div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.05)'; div.style.transform = 'translateY(0)'; };
+        div.onmouseover = () => { div.style.background = '#ffffff'; div.style.transform = 'translateY(-2px)'; };
+        div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.6)'; div.style.transform = 'translateY(0)'; };
         
         div.onclick = () => window.openHistoryDetails(h.originalIndex);
         
@@ -418,7 +417,7 @@ window.openHistoryDetails = function(index) {
             let answerColor = isCorrect ? 'var(--success)' : 'var(--danger)';
             let answerStyle = isCorrect ? '' : 'text-decoration: line-through; opacity: 0.8;';
             detailsHtml += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr style="border-bottom: 1px solid var(--border);">
                     <td style="padding: 10px; font-weight: bold;">${d.q}</td>
                     <td style="padding: 10px; color: ${answerColor}; ${answerStyle}">${d.a}</td>
                     <td style="padding: 10px; color: var(--success); font-weight: bold;">${d.correct}</td>
