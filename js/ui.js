@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v4.9 - Visual Select Locks) ---");
+console.log("--- ui.js načítané (Master v5.0 - Universal Map Fix) ---");
 
 let selectedLessonFromMap = 1;
 
@@ -19,6 +19,10 @@ window.switchTab = function(t) {
 
     if (['train', 'sensei', 'grammar', 'stories'].includes(t)) {
         if (typeof window.populateSelects === 'function') window.populateSelects();
+    }
+    
+    if (t === 'map') {
+        if (typeof window.renderMap === 'function') window.renderMap();
     }
     
     if (t === 'profile') { 
@@ -54,6 +58,7 @@ window.setLang = function(lang) {
     
     if (window.db && window.db.length > 0) {
         if (typeof window.populateSelects === 'function') window.populateSelects();
+        if (typeof window.renderMap === 'function') window.renderMap();
     }
 
     if (document.getElementById('overlayDictionary') && document.getElementById('overlayDictionary').style.display !== 'none') {
@@ -104,6 +109,36 @@ window.populateSelects = function() {
             }
         }
     });
+};
+
+// --- KĽÚČOVÁ OPRAVA: Dynamické vykreslenie mapy s priradením správnych CSS tried ---
+window.renderMap = function() {
+    const mapContainer = document.getElementById('lessonMap');
+    if (!mapContainer || !window.db || window.db.length === 0 || !window.state) return;
+
+    let maxLessonDb = Math.max(...window.db.map(w => parseInt(w.lekcia) || 1));
+    let unlocked = window.state.unlockedLesson || 1;
+    let isEn = window.currentLang === 'en';
+    let lessonText = "L"; // Skratka L, aby to v guličkách na displeji telefónu netlačilo okraje
+
+    let html = "";
+    for (let i = 1; i <= maxLessonDb; i++) {
+        if (i <= unlocked) {
+            // Odomknutá lekcia dostane triedu 'unlocked' a funkčné kliknutie
+            html += `<div class="map-node unlocked" onclick="window.openLessonChoice(${i})">${lessonText}${i}</div>`;
+        } else {
+            // Zamknutá lekcia dostane základnú triedu a natívnu výstrahu
+            let msg = isEn ? "This lesson is locked yet!" : "Táto lekcia je zatiaľ zamknutá!";
+            html += `<div class="map-node" onclick="alert('${msg}')">${lessonText}${i}</div>`;
+        }
+    }
+    mapContainer.innerHTML = html;
+};
+
+// Globálna funkcia na update celého UI (volaná napr. z train-vocab.js po úspešnom teste)
+window.updateUI = function() {
+    if (typeof window.updateProfileStats === 'function') window.updateProfileStats();
+    if (typeof window.renderMap === 'function') window.renderMap();
 };
 
 window.selectTestModeUI = function(m) {
@@ -344,6 +379,9 @@ window.updateProfileStats = function() {
         if(document.getElementById('profN4Text')) document.getElementById('profN4Text').innerText = `${n4Perc}%`;
         if(document.getElementById('profN4Bar')) document.getElementById('profN4Bar').style.width = `${n4Perc}%`;
     }
+
+    // Zaistíme, že mapa sa prekreslí aj pri inicializácii profilových dát po prihlásení
+    if (typeof window.renderMap === 'function') window.renderMap();
 };
 
 window.switchProfileTab = function(tabId) {
@@ -365,10 +403,10 @@ window.renderHistory = function() {
     historyWithIndex.reverse().slice(0, 10).forEach((h) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255,255,255,0.6); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
+        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255, 255, 255, 0.6); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
         
         div.onmouseover = () => { div.style.background = '#ffffff'; div.style.transform = 'translateY(-2px)'; };
-        div.onmouseout = () => { div.style.background = 'rgba(255,255,255,0.6)'; div.style.transform = 'translateY(0)'; };
+        div.onmouseout = () => { div.style.background = 'rgba(255, 255, 255, 0.6)'; div.style.transform = 'translateY(0)'; };
         
         div.onclick = () => window.openHistoryDetails(h.originalIndex);
         
