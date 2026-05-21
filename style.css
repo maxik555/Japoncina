@@ -437,3 +437,20 @@ ruby rt {
 .toggle-group { display: flex; background: rgba(0,0,0,0.04); border-radius: 14px; padding: 5px; margin-bottom: 15px; }
 .btn-toggle { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; }
 .btn-toggle.active { background: #ffffff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 600; }
+
+/* VIZUÁLNE ODDELENIE ROLETIEK (Select Options) */
+select {
+    cursor: pointer;
+}
+select option {
+    background-color: #ffffff;
+    color: var(--primary);
+    font-weight: 600;
+    padding: 12px;
+}
+select option:disabled, select option.opt-locked {
+    color: var(--text-muted);
+    background-color: #e2e8f0; /* Viditeľné sivé pozadie pre zamknuté */
+    font-style: italic;
+    font-weight: 400;
+}
