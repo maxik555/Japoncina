@@ -453,3 +453,40 @@ ruby rt {
 .toggle-group { display: flex; background: rgba(0,0,0,0.04); border-radius: 14px; padding: 5px; margin-bottom: 15px; }
 .btn-toggle { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; }
 .btn-toggle.active { background: #ffffff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 600; }
+
+/* KVÍZOVÉ TLAČIDLÁ (Oprava zobrazenia) */
+.quiz-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    width: 100%;
+}
+
+.btn-quiz {
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid var(--border);
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 600;
+    padding: 20px 10px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-soft);
+    font-family: inherit;
+    text-align: center;
+}
+
+.btn-quiz:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    background: #ffffff;
+}
+
+.btn-quiz:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
