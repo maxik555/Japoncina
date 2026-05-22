@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v5.0 - Universal Map Fix) ---");
+console.log("--- ui.js načítané (Master v5.1 - Unified Modals Fix) ---");
 
 let selectedLessonFromMap = 1;
 
@@ -111,7 +111,6 @@ window.populateSelects = function() {
     });
 };
 
-// --- KĽÚČOVÁ OPRAVA: Dynamické vykreslenie mapy s priradením správnych CSS tried ---
 window.renderMap = function() {
     const mapContainer = document.getElementById('lessonMap');
     if (!mapContainer || !window.db || window.db.length === 0 || !window.state) return;
@@ -119,15 +118,13 @@ window.renderMap = function() {
     let maxLessonDb = Math.max(...window.db.map(w => parseInt(w.lekcia) || 1));
     let unlocked = window.state.unlockedLesson || 1;
     let isEn = window.currentLang === 'en';
-    let lessonText = "L"; // Skratka L, aby to v guličkách na displeji telefónu netlačilo okraje
+    let lessonText = "L"; 
 
     let html = "";
     for (let i = 1; i <= maxLessonDb; i++) {
         if (i <= unlocked) {
-            // Odomknutá lekcia dostane triedu 'unlocked' a funkčné kliknutie
             html += `<div class="map-node unlocked" onclick="window.openLessonChoice(${i})">${lessonText}${i}</div>`;
         } else {
-            // Zamknutá lekcia dostane základnú triedu a natívnu výstrahu
             let msg = isEn ? "This lesson is locked yet!" : "Táto lekcia je zatiaľ zamknutá!";
             html += `<div class="map-node" onclick="alert('${msg}')">${lessonText}${i}</div>`;
         }
@@ -135,7 +132,6 @@ window.renderMap = function() {
     mapContainer.innerHTML = html;
 };
 
-// Globálna funkcia na update celého UI (volaná napr. z train-vocab.js po úspešnom teste)
 window.updateUI = function() {
     if (typeof window.updateProfileStats === 'function') window.updateProfileStats();
     if (typeof window.renderMap === 'function') window.renderMap();
@@ -183,13 +179,12 @@ window.openMyDictionary = function(filterLesson = null) {
     if (!dictOverlay) {
         dictOverlay = document.createElement('div');
         dictOverlay.id = 'overlayDictionary';
-        dictOverlay.className = 'overlay';
-        dictOverlay.style = 'display:none; align-items:center; justify-content:center; z-index: 4000;';
+        dictOverlay.className = 'test-overlay'; 
         
         dictOverlay.innerHTML = `
-            <div class="overlay-content" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="test-modal" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; text-align: left;">
                 <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
-                    <span id="dictTitle">${titleText}</span>
+                    <span id="dictTitle" style="color: var(--text-main); font-weight: 700;">${titleText}</span>
                     <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1;">&times;</button>
                 </h3>
                 <div style="display:flex; gap:10px; margin-bottom:15px;">
@@ -380,7 +375,6 @@ window.updateProfileStats = function() {
         if(document.getElementById('profN4Bar')) document.getElementById('profN4Bar').style.width = `${n4Perc}%`;
     }
 
-    // Zaistíme, že mapa sa prekreslí aj pri inicializácii profilových dát po prihlásení
     if (typeof window.renderMap === 'function') window.renderMap();
 };
 
@@ -425,8 +419,7 @@ window.openHistoryDetails = function(index) {
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'overlayHistoryDetails';
-        overlay.className = 'overlay';
-        overlay.style = 'display:none; align-items:center; justify-content:center; z-index: 4000;';
+        overlay.className = 'test-overlay'; 
         document.body.appendChild(overlay);
     }
 
@@ -469,7 +462,7 @@ window.openHistoryDetails = function(index) {
     }
 
     overlay.innerHTML = `
-        <div class="overlay-content" style="max-width: 650px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 25px;">
+        <div class="test-modal" style="max-width: 650px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; padding: 25px; text-align: left;">
             <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                 <span>${titleText} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal; margin-left: 10px;">${h.type} (${h.score}%)</span></span>
                 <button onclick="document.getElementById('overlayHistoryDetails').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
