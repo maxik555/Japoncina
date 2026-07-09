@@ -1,31 +1,57 @@
 /* ==========================================
-DÓDŽÓ - LIGHT ZEN AESTHETIC (Quiet Plan)
+DÓDŽÓ - AESTHETIC STYLES (Light & Dark)
 ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
-:root {
-/* Základné Zen farby /
---bg-main: #f5f5f3;        / Biela káva / Ranná hmla /
---bg-card: rgba(255, 255, 255, 0.65); / Matné sklo /
---text-main: #2c3e50;      / Hlboká sivomodrá /
---text-muted: #8391a1;     / Jemná sivá */
+/* SVETLÁ TÉMA (Základná) */
+:root, [data-theme="light"] {
+--bg-main: #f5f5f3;
 
-/* Pastelové akcenty */
---primary: #8faadc;        /* Nebeská modrá */
+--bg-card: rgba(255, 255, 255, 0.65);
+--text-main: #2c3e50;
+
+--text-muted: #8391a1;
+
+--primary: #8faadc;
+
 --primary-hover: #7b96c7;
---success: #a3c1ad;        /* Matcha zelená */
---danger: #e5989b;         /* Sakura / Tlmená červená */
---warning: #f4a261;        /* Teplý piesok */
+--success: #a3c1ad;
 
-/* Efekty a tiene */
+--danger: #e5989b;
+
+--warning: #f4a261;
+
 --border: rgba(0, 0, 0, 0.06);
 --glass-border: 1px solid rgba(255, 255, 255, 0.8);
 --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.04);
 --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.08);
---ai-glow: #a2d2ff;
+--bg-dark: rgba(0, 0, 0, 0.04);
+}
 
+/* TMAVÁ TÉMA */
+[data-theme="dark"] {
+--bg-main: #0f172a;
 
+--bg-card: rgba(30, 41, 59, 0.75);
+--text-main: #f8fafc;
+
+--text-muted: #94a3b8;
+
+--primary: #3b82f6;
+
+--primary-hover: #60a5fa;
+--success: #10b981;
+
+--danger: #ef4444;
+
+--warning: #f59e0b;
+
+--border: rgba(255, 255, 255, 0.1);
+--glass-border: 1px solid rgba(255, 255, 255, 0.05);
+--shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.3);
+--shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.5);
+--bg-dark: rgba(0, 0, 0, 0.3);
 }
 
 /* ZÁKLAD */
@@ -39,7 +65,7 @@ color: var(--text-main);
 font-family: 'Inter', 'Noto Sans JP', sans-serif;
 line-height: 1.6;
 -webkit-font-smoothing: antialiased;
-transition: background-color 0.5s ease;
+transition: background-color 0.5s ease, color 0.5s ease;
 }
 
 .hidden { display: none !important; }
@@ -73,7 +99,7 @@ margin-bottom: 25px;
 .rpg-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; margin-top: 2px; }
 
 .xp-bar-container {
-background: rgba(0, 0, 0, 0.05);
+background: rgba(0, 0, 0, 0.1);
 border-radius: 10px;
 overflow: hidden;
 width: 100%;
@@ -93,7 +119,6 @@ gap: 5px;
 padding: 6px;
 background: var(--bg-card);
 backdrop-filter: blur(15px);
--webkit-backdrop-filter: blur(15px);
 border: var(--glass-border);
 border-radius: 20px;
 box-shadow: var(--shadow-soft);
@@ -115,19 +140,18 @@ transition: all 0.4s ease;
 flex: 1;
 text-align: center;
 }
-.btn-nav:hover { color: var(--text-main); background: rgba(0,0,0,0.02); }
+.btn-nav:hover { color: var(--text-main); background: var(--bg-dark); }
 .btn-nav.active {
-background: #ffffff;
-color: var(--primary);
-box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+background: var(--primary);
+color: white;
+box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 font-weight: 600;
 }
 
-/* INFORMAČNÉ BOXY (Glassmorphism kontajnery) */
+/* INFORMAČNÉ BOXY */
 .info-box {
 background: var(--bg-card);
 backdrop-filter: blur(20px);
--webkit-backdrop-filter: blur(20px);
 border: var(--glass-border);
 border-radius: 24px;
 padding: 30px;
@@ -135,7 +159,6 @@ box-shadow: var(--shadow-soft);
 margin-bottom: 20px;
 transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
-.info-box:hover { box-shadow: var(--shadow-hover); }
 
 /* TLAČIDLÁ */
 .btn {
@@ -150,25 +173,18 @@ width: 100%;
 letter-spacing: 0.5px;
 }
 .btn:active { transform: scale(0.97); }
-
-.btn-primary { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(143, 170, 220, 0.3); }
-.btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
-
-.btn-success { background: var(--success); color: white; box-shadow: 0 8px 20px rgba(163, 193, 173, 0.3); }
+.btn-primary { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3); }
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.btn-success { background: var(--success); color: white; }
 .btn-danger { background: var(--danger); color: white; }
 .btn-warning { background: var(--warning); color: white; }
-
-.btn-outline {
-background: transparent;
-border: 2px solid var(--border);
-color: var(--text-main);
-}
+.btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
 
 .btn-ai {
-background: linear-gradient(135deg, #a2d2ff 0%, #ffc8dd 100%);
-color: #2c3e50;
-box-shadow: 0 8px 20px rgba(162, 210, 255, 0.4);
+background: linear-gradient(135deg, var(--primary) 0%, var(--danger) 100%);
+color: white;
+box-shadow: 0 8px 20px rgba(162, 210, 255, 0.2);
 border-radius: 16px;
 padding: 14px 24px;
 border: none;
@@ -177,13 +193,13 @@ cursor: pointer;
 width: 100%;
 transition: all 0.3s ease;
 }
-.btn-ai:hover { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(162, 210, 255, 0.5); filter: brightness(1.05); }
+.btn-ai:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
-/* VSTUPY (Input, Select, Textarea) */
+/* VSTUPY */
 input, select, textarea {
 width: 100%;
 padding: 16px;
-background: rgba(255, 255, 255, 0.8);
+background: var(--bg-dark);
 border: 1px solid var(--border);
 border-radius: 16px;
 color: var(--text-main);
@@ -194,12 +210,10 @@ transition: all 0.3s ease;
 }
 input:focus, select:focus, textarea:focus {
 border-color: var(--primary);
-background: #ffffff;
-box-shadow: 0 0 0 4px rgba(143, 170, 220, 0.15);
+box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
-input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: 0.7; }
 
-/* MAPA LEKCIÍ (Vizuálny kontrast pre Light režim) /
+/* MAPA LEKCIÍ (Opravená) */
 .map-grid {
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -215,126 +229,39 @@ justify-content: center;
 font-weight: 500;
 font-size: 16px;
 cursor: not-allowed;
-background: rgba(0, 0, 0, 0.04); / Jemnulinká sivá pre zamknuté /
-border: none; / Odstránime okraj pre zamknuté, nech to vyzerá ako obláčik /
-color: rgba(44, 62, 80, 0.3); / Veľmi vyblednutý text pre zamknuté /
+background: var(--bg-dark);
+border: 2px solid transparent;
+color: var(--text-muted);
 transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .map-node.unlocked {
-background: #ffffff; / Čistá biela pre odomknuté /
-border: 2px solid var(--primary); / Výrazný modrý okraj, zhodný s témou /
-color: var(--primary); / Tmavšia modrá na text /
+background: var(--bg-card);
+border: 2px solid var(--primary);
+color: var(--primary);
 cursor: pointer;
-font-weight: 700; / Výraznejší text /
-box-shadow: 0 8px 24px rgba(143, 170, 220, 0.3); / Elegantný tieň */
-opacity: 1;
+font-weight: 700;
+box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 .map-node.unlocked:hover {
 transform: scale(1.1) translateY(-3px);
-box-shadow: 0 12px 28px rgba(143, 170, 220, 0.5);
+box-shadow: 0 12px 28px rgba(59, 130, 246, 0.3);
 }
 
-/* VIZUÁLNE ODDELENIE ROLETIEK (Select Options) /
-select {
-cursor: pointer;
-}
-select option {
-background-color: #ffffff;
-color: var(--primary);
-font-weight: 600;
-padding: 12px;
-}
-select option:disabled, select option.opt-locked {
-color: var(--text-muted);
-background-color: #e2e8f0; / Viditeľné sivé pozadie pre zamknuté */
-font-style: italic;
-font-weight: 400;
-}
-
-/* MODÁLNE OKNÁ (Testy a Overlay) /
-.test-overlay {
-position: fixed;
-inset: 0;
-background: rgba(245, 245, 243, 0.85); / Svetlé matné pozadie /
-backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
-z-index: 2000;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-.test-modal {
-background: rgba(255, 255, 255, 0.85);
-backdrop-filter: blur(25px);
--webkit-backdrop-filter: blur(25px);
-padding: 55px 30px 40px 30px; / Zvýšený horný padding pre zamedzenie prekrytia */
-border-radius: 30px;
-width: 92%;
-max-width: 500px;
-position: relative;
-border: var(--glass-border);
-box-shadow: 0 25px 60px rgba(0,0,0,0.08);
-text-align: center;
-}
-.btn-close {
-position: absolute;
-top: 20px;
-right: 25px;
-background: none;
-border: none;
-color: var(--text-muted);
-font-size: 32px;
-cursor: pointer;
-transition: color 0.3s ease;
-z-index: 10;
-}
-.btn-close:hover { color: var(--danger); }
-
-/* JEDNOTNÁ HLAVIČKA TESTOV S FLEXBOXOM /
+/* HLAVIČKA TESTU - FLEXBOX FIX PRE PREKRÝVANIE /
 .test-header {
 display: flex;
 justify-content: space-between;
 align-items: center;
 width: 100%;
-padding-right: 45px; / Bezpečný odstup sprava pred zatváracím krížikom */
-margin-bottom: 20px;
+padding-right: 45px; / Bezpečnostná zóna pre krížik /
+margin-bottom: 25px;
 box-sizing: border-box;
 }
+.test-header span {
+float: none !important; / Zrušíme staré plávanie */
+}
 
-/* KARTIČKY (Flashcards) */
-.flashcard-container {
-perspective: 1000px;
-width: 100%;
-height: 300px;
-margin: 20px 0;
-cursor: pointer;
-}
-.flashcard {
-width: 100%;
-height: 100%;
-position: relative;
-transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-transform-style: preserve-3d;
-}
-.flashcard.is-flipped { transform: rotateY(180deg); }
-.card-face {
-position: absolute;
-width: 100%;
-height: 100%;
-backface-visibility: hidden;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-background: #ffffff;
-border: var(--glass-border);
-border-radius: 24px;
-box-shadow: var(--shadow-soft);
-padding: 20px;
-}
-.card-back { transform: rotateY(180deg); background: #fcfcfc; }
-
-/* SPÄTNÁ VÄZBA (Feedback boxy) */
+/* SPÄTNÁ VÄZBA A CHAT */
 .feedback-box {
 padding: 20px;
 border-radius: 16px;
@@ -343,142 +270,13 @@ font-size: 16px;
 animation: fadeIn 0.4s ease;
 }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.fb-correct { background: rgba(163, 193, 173, 0.15); color: #4b7a5d; border: 1px solid rgba(163, 193, 173, 0.4); }
-.fb-wrong { background: rgba(229, 152, 155, 0.15); color: #9c4a4c; border: 1px solid rgba(229, 152, 155, 0.4); }
+.fb-correct { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+.fb-wrong { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
 
-/* ČITÁREŇ - FURIGANA A ESTETIKA /
-ruby { ruby-align: center; }
-ruby rt {
-font-size: 0.55em;
-color: var(--text-muted); / Tlmená farba pre nápovedu /
-opacity: 0.85;
-font-weight: 400;
-transform: translateY(-2px); / Mierne oddelenie od znaku */
-}
-
-/* TIMER */
-.timer-container {
-background: rgba(0,0,0,0.05);
-height: 8px;
-border-radius: 4px;
-margin-bottom: 25px;
-overflow: hidden;
-}
-.timer-bar {
-height: 100%;
-width: 100%;
-background: var(--success);
-transition: width 0.05s linear, background-color 0.3s;
-}
-
-/* SENSEI CHAT */
-#senseiChatBtn {
-position: fixed;
-bottom: 30px;
-right: 30px;
-background: var(--bg-card);
-backdrop-filter: blur(15px);
-border: var(--glass-border);
-box-shadow: var(--shadow-hover);
-padding: 15px 25px;
-border-radius: 30px;
-cursor: pointer;
-font-weight: 600;
-z-index: 1000;
-transition: transform 0.3s ease;
-}
-#senseiChatBtn:hover { transform: translateY(-5px); }
-#senseiChatWindow {
-position: fixed;
-bottom: 90px;
-right: 30px;
-width: 320px;
-background: var(--bg-card);
-backdrop-filter: blur(25px);
-border: var(--glass-border);
-border-radius: 24px;
-box-shadow: var(--shadow-hover);
-z-index: 1000;
-display: flex;
-flex-direction: column;
-overflow: hidden;
-}
-.chat-header {
-background: rgba(255, 255, 255, 0.5);
-padding: 15px 20px;
-font-weight: 600;
-display: flex;
-justify-content: space-between;
-border-bottom: 1px solid var(--border);
-}
-.chat-messages {
-height: 300px;
-padding: 20px;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-gap: 10px;
-}
-.msg { padding: 12px 16px; border-radius: 18px; font-size: 14px; max-width: 85%; line-height: 1.4; }
-.user-msg { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-.sensei-msg { background: #ffffff; border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
-.chat-input-area {
-display: flex;
-padding: 15px;
-border-top: 1px solid var(--border);
-background: rgba(255,255,255,0.4);
-}
-.chat-input-area input { border-radius: 20px; padding: 10px 15px; }
-.chat-input-area button {
-background: transparent;
-border: none;
-font-size: 20px;
-margin-left: 10px;
-cursor: pointer;
-}
-
-/* SPINNER */
-.spinner {
-width: 40px;
-height: 40px;
-border: 4px solid var(--border);
-border-top: 4px solid var(--primary);
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin: 0 auto 20px auto;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* Zoznam histórie testov */
-.history-item {
-border-left: 4px solid var(--success);
-background: rgba(255, 255, 255, 0.6);
-padding: 15px 20px;
-margin-bottom: 12px;
-border-radius: 16px;
-font-size: 14px;
-cursor: pointer;
-transition: transform 0.3s ease, background 0.3s ease;
-border: 1px solid var(--border);
-box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-}
-.history-item:hover { transform: translateY(-3px); background: #ffffff; }
-
-/* Prepínače (Toggle buttons) */
-.toggle-group { display: flex; background: rgba(0,0,0,0.04); border-radius: 14px; padding: 5px; margin-bottom: 15px; }
-.btn-toggle { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-weight: 500; transition: 0.3s; }
-.btn-toggle.active { background: #ffffff; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-weight: 600; }
-
-/* KVÍZOVÉ TLAČIDLÁ (Oprava zobrazenia) */
-.quiz-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 15px;
-width: 100%;
-}
-
+/* KVÍZOVÉ TLAČIDLÁ */
+.quiz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
 .btn-quiz {
-background: rgba(255, 255, 255, 0.7);
+background: var(--bg-card);
 border: 2px solid var(--border);
 color: var(--text-main);
 font-size: 18px;
@@ -487,21 +285,20 @@ padding: 20px 10px;
 border-radius: 16px;
 cursor: pointer;
 transition: all 0.3s ease;
-box-shadow: var(--shadow-soft);
-font-family: inherit;
-text-align: center;
 }
+.btn-quiz:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); transform: translateY(-3px); }
 
-.btn-quiz:hover:not(:disabled) {
-border-color: var(--primary);
-color: var(--primary);
-transform: translateY(-3px);
-box-shadow: var(--shadow-hover);
-background: #ffffff;
-}
+/* KARTIČKY */
+.flashcard-container { perspective: 1000px; width: 100%; height: 300px; margin: 20px 0; cursor: pointer; }
+.flashcard { width: 100%; height: 100%; position: relative; transition: transform 0.8s; transform-style: preserve-3d; }
+.flashcard.is-flipped { transform: rotateY(180deg); }
+.card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-card); border: var(--glass-border); border-radius: 24px; box-shadow: var(--shadow-soft); padding: 20px; }
+.card-back { transform: rotateY(180deg); }
 
-.btn-quiz:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-transform: none;
-}
+/* TIMER */
+.timer-container { background: rgba(0,0,0,0.1); height: 8px; border-radius: 4px; margin-bottom: 25px; overflow: hidden; }
+.timer-bar { height: 100%; width: 100%; background: var(--success); transition: width 0.05s linear; }
+
+/* SPINNER */
+.spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
