@@ -65,6 +65,7 @@ function finalizeDatabaseLoad() {
     if (typeof setLang === 'function') setLang(window.currentLang);
 }
 
+// OPRAVENÁ FUNKCIA MAPY - Zjednotené CSS triedy s ui.js
 function renderMap() {
     const map = document.getElementById('lessonMap');
     if (!map) return;
@@ -73,22 +74,25 @@ function renderMap() {
     if (!window.db || window.db.length === 0) return;
     
     const lessons = [...new Set(window.db.map(w => w.lekcia))].sort((a,b)=>a-b);
+    let lessonText = window.currentLang === 'en' ? 'L' : 'L';
     
     lessons.forEach(l => {
         let unlocked = l <= window.state.unlockedLesson;
         let div = document.createElement('div');
-        div.className = `lesson-node ${unlocked ? 'node-unlocked' : 'node-locked'}`;
-        div.innerHTML = `L${l}`;
+        // Tu bola predtým chyba (lesson-node namiesto map-node)
+        div.className = `map-node ${unlocked ? 'unlocked' : ''}`;
+        div.innerHTML = `${lessonText}${l}`;
         if (unlocked) {
-            // NOVÁ LOGIKA: Otvoriť modálne okno s voľbou Kartičky/Zoznam
             div.onclick = () => window.openLessonChoice(l);
+        } else {
+            let msg = window.currentLang === 'en' ? "This lesson is locked yet!" : "Táto lekcia je zatiaľ zamknutá!";
+            div.onclick = () => alert(msg);
         }
         map.appendChild(div);
     });
 }
 
 function populateSelects() {
-    // Odstránené learnLessonSelect, nakoľko sa tab zrušil
     const ids = ['quizFrom', 'quizTo', 'quizSingle', 'freeFrom', 'freeTo', 'freeSingle', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
     const currentValues = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) currentValues[id] = el.value; });
