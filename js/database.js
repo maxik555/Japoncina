@@ -17,7 +17,8 @@ async function fetchDatabaseFromCloud() {
     
     try {
         console.log("Sťahujem čerstvú databázu (s podporou EN)...");
-        const res = await fetch('./Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
+        // OPRAVA: Zmenené na absolútnu URL z GitHubu, aby sme sa vyhli OpaqueResponseBlocking
+        const res = await fetch('https://raw.githubusercontent.com/maxik555/Japoncina/main/Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(new Uint8Array(ab), {type: 'array'});
         
