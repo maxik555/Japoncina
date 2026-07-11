@@ -1,4 +1,9 @@
-// --- NAČÍTANIE DÁT Z EXCELU ---
+// ==========================================
+// PWA: Japonský Tréning - Dódžó
+// Súbor: js/database.js
+// Úloha: Načítanie a spracovanie Excel databázy
+// Verzia: 5.3 (Relatívna cesta k Excelu)
+// ==========================================
 
 async function fetchDatabaseFromCloud() {
     const cached = localStorage.getItem('cached_db_v3');
@@ -16,9 +21,20 @@ async function fetchDatabaseFromCloud() {
     }
     
     try {
-        console.log("Sťahujem čerstvú databázu (s podporou EN)...");
-        // OPRAVA: Zmenené na absolútnu URL z GitHubu, aby sme sa vyhli OpaqueResponseBlocking
-        const res = await fetch('https://raw.githubusercontent.com/maxik555/Japoncina/main/Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now());
+        console.log("Sťahujem čerstvú databázu...");
+        
+        // 🚨 OPRAVA 404: Používame relatívnu cestu! 
+        // Keďže je Excel priamo pri index.html, stačí zadať iba jeho názov.
+        const url = 'Kompletna_Databaza_3000_Slov.xlsx?v=' + Date.now();
+        const res = await fetch(url);
+        
+        // Ochrana pred 404: Ak sa súbor nenájde, kód sa hneď zastaví a nevyvolá kritickú chybu v XLSX
+        if (!res.ok) {
+            alert(`⛔ CHYBA 404: Excel databáza nebola nájdená!\n\nHľadal som súbor: ${url}\n\nUisti sa, že sa súbor na GitHube volá presne takto (záleží na veľkých/malých písmenách a nesmú tam byť medzery).`);
+            hideLoadingScreen();
+            return;
+        }
+
         const ab = await res.arrayBuffer();
         const wb = XLSX.read(new Uint8Array(ab), {type: 'array'});
         
@@ -56,63 +72,23 @@ async function fetchDatabaseFromCloud() {
 
     } catch (e) { 
         console.error("Chyba Excelu:", e); 
+        alert("⛔ Chyba pri sťahovaní/spracovaní Excelu: " + e.message);
+        hideLoadingScreen();
     }
 }
 
 function finalizeDatabaseLoad() {
-    renderMap(); 
-    populateSelects();
+    if (typeof renderMap === 'function') renderMap(); 
+    if (typeof populateSelects === 'function') populateSelects();
     if (typeof updateProfileStats === 'function') updateProfileStats();
     if (typeof setLang === 'function') setLang(window.currentLang);
+    hideLoadingScreen(); // Uistíme sa, že po úspechu sa Loading schová
 }
 
-// OPRAVENÁ FUNKCIA MAPY - Zjednotené CSS triedy s ui.js
-function renderMap() {
-    const map = document.getElementById('lessonMap');
-    if (!map) return;
-    map.innerHTML = '';
-    
-    if (!window.db || window.db.length === 0) return;
-    
-    const lessons = [...new Set(window.db.map(w => w.lekcia))].sort((a,b)=>a-b);
-    let lessonText = window.currentLang === 'en' ? 'L' : 'L';
-    
-    lessons.forEach(l => {
-        let unlocked = l <= window.state.unlockedLesson;
-        let div = document.createElement('div');
-        // Tu bola predtým chyba (lesson-node namiesto map-node)
-        div.className = `map-node ${unlocked ? 'unlocked' : ''}`;
-        div.innerHTML = `${lessonText}${l}`;
-        if (unlocked) {
-            div.onclick = () => window.openLessonChoice(l);
-        } else {
-            let msg = window.currentLang === 'en' ? "This lesson is locked yet!" : "Táto lekcia je zatiaľ zamknutá!";
-            div.onclick = () => alert(msg);
-        }
-        map.appendChild(div);
-    });
-}
-
-function populateSelects() {
-    const ids = ['quizFrom', 'quizTo', 'quizSingle', 'freeFrom', 'freeTo', 'freeSingle', 'senseiFrom', 'senseiTo', 'grammarLessonSelect'];
-    const currentValues = {};
-    ids.forEach(id => { const el = document.getElementById(id); if (el) currentValues[id] = el.value; });
-
-    let opts = "";
-    let lessonText = window.currentLang === 'en' ? 'Lesson' : 'Lekcia';
-    let maxLvl = window.state.unlockedLesson || 1;
-    
-    for (let i = 1; i <= maxLvl; i++) {
-        opts += `<option value="${i}">${lessonText} ${i}</option>`;
+function hideLoadingScreen() {
+    let loader = document.getElementById('loadingOverlay');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 500);
     }
-    
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.innerHTML = opts;
-            if (currentValues[id]) el.value = currentValues[id];
-        }
-    });
-
-    if (typeof window.selectTestModeUI === 'function') window.selectTestModeUI('unlock');
 }
