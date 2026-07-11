@@ -1,50 +1,44 @@
-/* ==========================================
+/* STREAMING_CHUNK:Inicializácia farieb a tém... /
+/ ==========================================
 DÓDŽÓ - AESTHETIC STYLES (Light & Dark)
 ========================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
-/* SVETLÁ TÉMA (Základná) */
+/* SVETLÁ TÉMA - OPRAVENÝ KONTRAST /
 :root, [data-theme="light"] {
---bg-main: #f5f5f3;
+--bg-main: #f8fafc;
+--bg-card: #ffffff; / Čistá biela, bez priehľadnosti pre dokonalú čitateľnosť /
+--text-main: #0f172a; / Výrazná tmavá farba textu */
+--text-muted: #64748b;
 
---bg-card: rgba(255, 255, 255, 0.65);
---text-main: #2c3e50;
+/* Zvýšený kontrast pre tlačidlá a slovíčka */
+--primary: #3b82f6; 
+--primary-hover: #2563eb;
+--success: #10b981; /* Ostrá zelená, biely text na nej pekne svieti */
+--danger: #ef4444; 
+--warning: #ea580c; /* Ostrá oranžová/tehlová, čitateľná na bielom pozadí */
 
---text-muted: #8391a1;
+--border: rgba(0, 0, 0, 0.08);
+--glass-border: 1px solid rgba(0, 0, 0, 0.05);
+--shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.05);
+--shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.1);
+--bg-dark: #f1f5f9; /* Svetlošedá pre inputy a tabuľky */
 
---primary: #8faadc;
 
---primary-hover: #7b96c7;
---success: #a3c1ad;
-
---danger: #e5989b;
-
---warning: #f4a261;
-
---border: rgba(0, 0, 0, 0.06);
---glass-border: 1px solid rgba(255, 255, 255, 0.8);
---shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.04);
---shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.08);
---bg-dark: rgba(0, 0, 0, 0.04);
 }
 
 /* TMAVÁ TÉMA */
 [data-theme="dark"] {
 --bg-main: #0f172a;
-
---bg-card: rgba(30, 41, 59, 0.75);
+--bg-card: rgba(30, 41, 59, 0.85);
 --text-main: #f8fafc;
-
 --text-muted: #94a3b8;
 
 --primary: #3b82f6;
-
 --primary-hover: #60a5fa;
 --success: #10b981;
-
 --danger: #ef4444;
-
 --warning: #f59e0b;
 
 --border: rgba(255, 255, 255, 0.1);
@@ -52,9 +46,12 @@ DÓDŽÓ - AESTHETIC STYLES (Light & Dark)
 --shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.3);
 --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.5);
 --bg-dark: rgba(0, 0, 0, 0.3);
+
+
 }
 
-/* ZÁKLAD */
+/* STREAMING_CHUNK:Základné nastavenia elementov... /
+/ ZÁKLAD */
 
 { box-sizing: border-box; }
 body {
@@ -98,6 +95,7 @@ margin-bottom: 25px;
 .rpg-val { font-weight: 600; font-size: 16px; color: var(--text-main); }
 .rpg-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; margin-top: 2px; }
 
+/* STREAMING_CHUNK:Progress bary a navigácia... */
 .xp-bar-container {
 background: rgba(0, 0, 0, 0.1);
 border-radius: 10px;
@@ -148,7 +146,8 @@ box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 font-weight: 600;
 }
 
-/* INFORMAČNÉ BOXY */
+/* STREAMING_CHUNK:UI Boxy a Tlačidlá... /
+/ INFORMAČNÉ BOXY */
 .info-box {
 background: var(--bg-card);
 backdrop-filter: blur(20px);
@@ -213,7 +212,8 @@ border-color: var(--primary);
 box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
-/* MAPA LEKCIÍ (Opravená) */
+/* STREAMING_CHUNK:Mapa, kvíz a kartičky... /
+/ MAPA LEKCIÍ */
 .map-grid {
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -247,18 +247,14 @@ transform: scale(1.1) translateY(-3px);
 box-shadow: 0 12px 28px rgba(59, 130, 246, 0.3);
 }
 
-/* HLAVIČKA TESTU - FLEXBOX FIX PRE PREKRÝVANIE /
 .test-header {
 display: flex;
 justify-content: space-between;
 align-items: center;
 width: 100%;
-padding-right: 45px; / Bezpečnostná zóna pre krížik /
+padding-right: 45px;
 margin-bottom: 25px;
 box-sizing: border-box;
-}
-.test-header span {
-float: none !important; / Zrušíme staré plávanie */
 }
 
 /* SPÄTNÁ VÄZBA A CHAT */
@@ -295,10 +291,9 @@ transition: all 0.3s ease;
 .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-card); border: var(--glass-border); border-radius: 24px; box-shadow: var(--shadow-soft); padding: 20px; }
 .card-back { transform: rotateY(180deg); }
 
-/* TIMER */
+/* TIMER A SPINNER */
 .timer-container { background: rgba(0,0,0,0.1); height: 8px; border-radius: 4px; margin-bottom: 25px; overflow: hidden; }
 .timer-bar { height: 100%; width: 100%; background: var(--success); transition: width 0.05s linear; }
 
-/* SPINNER */
 .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px auto; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
