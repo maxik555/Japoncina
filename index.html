@@ -4,42 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Japonský Tréning - Master Edition</title>
-
-    <!-- 🚨 SUPER POISTKA: Odhalí presne, ktorý súbor hádže 404 a schová Loading 🚨 -->
-    <script>
-        window.addEventListener('error', function(e) {
-            // Detekcia chýbajúcich skriptov a štýlov (404)
-            if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-                var file = e.target.src || e.target.href;
-                alert("⛔ CHYBA 404: Prehliadač nenašiel súbor:\n" + file + "\n\n1. Ak používaš GitHub, skontroluj či tam tento súbor naozaj je.\n2. Ak nemáš na GitHube priečinok 'js', musíš v index.html vymazať text 'js/' z ciest k skriptom.");
-                
-                var loader = document.getElementById('loadingOverlay');
-                if (loader) loader.style.display = 'none';
-            }
-        }, true);
-
-        // Globálna poistka pre klasické JS chyby, aby nebola biela obrazovka
-        window.addEventListener('error', function(e) {
-            if (e.message) {
-                console.error("Zachytená kritická chyba:", e.message);
-                var loader = document.getElementById('loadingOverlay');
-                if (loader) loader.style.display = 'none';
-            }
-        });
-    </script>
+    
+    <!-- OPRAVA 404: Pridaná favicona, aby ju prehliadač nehľadal naprázdno -->
+    <link rel="icon" href="icon.png" type="image/png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
+    <!-- Super Poistka pre chýbajúce súbory (zachytí 404 a schová biele loading okno) -->
+    <script>
+        window.addEventListener('error', function(e) {
+            if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                var file = e.target.src || e.target.href;
+                alert("⛔ CHYBA 404: Prehliadač nenašiel súbor:\n" + file + "\n\n(Ak ide o fonty .woff2, stačí stlačiť CTRL+F5 pre vymazanie cache prehliadača)");
+                var loader = document.getElementById('loadingOverlay');
+                if (loader) loader.style.display = 'none';
+            }
+        }, true);
+    </script>
+
     <link rel="stylesheet" href="style.css">
 
     <style>
-        .test-overlay { position: fixed; inset: 0; background: rgba(10, 15, 30, 0.96); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        /* OPRAVA: Prekrývacie okná sú teraz vždy jemne tmavé pre lepší kontrast, aj v svetlom režime */
+        .test-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .test-overlay.hidden { display: none !important; }
-        .test-modal { background: var(--bg-card); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto; text-align: center; }
-        .btn-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 32px; cursor: pointer; }
+        
+        /* OPRAVA: Modálne okná majú striktne farbu karty, aby text na nich vynikol */
+        .test-modal { background: var(--bg-card); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; text-align: center; }
+        .btn-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 32px; cursor: pointer; transition: 0.2s;}
+        .btn-close:hover { color: var(--danger); }
 
         .mic-btn { width: 75px; height: 75px; border-radius: 50%; border: none; background: var(--primary); color: white; font-size: 30px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; margin: 20px auto; }
         .mic-btn.active { background: var(--danger); box-shadow: 0 0 25px var(--danger); animation: pulse 1.5s infinite; }
@@ -47,10 +43,8 @@
 
         .setup-section.hidden, .prof-tab.hidden, .tab.hidden { display: none !important; }
 
-        /* Furigana styling */
         ruby rt { font-size: 0.55em; color: var(--success); }
 
-        /* Mriežka pre Nastavenia Tém */
         .theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
         .theme-btn { padding: 10px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; position: relative; overflow: hidden; }
         .theme-btn:hover:not(.locked) { transform: translateY(-2px); border-color: var(--primary); }
@@ -58,7 +52,6 @@
         .theme-btn.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         .theme-btn.locked::after { content: '🔒 LVL ' attr(data-lvl); position: absolute; bottom: 2px; right: 5px; font-size: 10px; color: var(--danger); }
         
-        /* Loading Screen */
         #loadingOverlay {
             position: fixed; inset: 0; background: var(--bg-main); z-index: 9999; 
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -82,7 +75,7 @@
         .chat-header button { background: none; border: none; color: var(--text-main); cursor: pointer; font-size: 20px;}
         .chat-messages { height: 300px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
-        .sensei-msg { background: rgba(59, 130, 246, 0.2); align-self: flex-start; border-bottom-left-radius: 0; }
+        .sensei-msg { background: rgba(59, 130, 246, 0.2); align-self: flex-start; border-bottom-left-radius: 0; color: var(--text-main); }
         .user-msg { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 0; }
         .chat-input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--border); }
         .chat-input-area input { padding: 10px; flex: 1; margin: 0; }
@@ -197,7 +190,7 @@
         <button class="btn-ai" onclick="window.generateAIStory()" data-sk="GENEROVAŤ NOVÝ PRÍBEH" data-en="GENERATE NEW STORY">GENEROVAŤ NOVÝ PRÍBEH</button>
         <div id="storyContainer" class="hidden">
             <div class="story-box" id="storyContent" style="margin-top:20px; padding:20px; background:var(--bg-card); border-radius:12px;"></div>
-            <div id="storyTranslation" style="margin-top:20px; padding:20px; background:rgba(255,255,255,0.05); border-radius:12px; font-style:italic; color: var(--primary); border-left: 4px solid var(--primary);"></div>
+            <div id="storyTranslation" style="margin-top:20px; padding:20px; background:rgba(0,0,0,0.05); border-radius:12px; font-style:italic; color: var(--primary); border-left: 4px solid var(--primary);"></div>
         </div>
     </div>
 
@@ -206,7 +199,7 @@
         <div class="info-box" style="text-align:center; padding: 30px;">
             <p id="liveStatus" style="font-weight:bold; color:var(--text-muted);" data-sk="Pripravený na rozhovor..." data-en="Ready to talk...">Pripravený na rozhovor...</p>
             <button id="micBtn" class="mic-btn" onclick="window.toggleLiveSensei()">🎤</button>
-            <div id="liveTranscript" style="margin-top:25px; text-align:left; font-size:16px; max-height:250px; overflow-y:auto; padding:15px; background:rgba(0,0,0,0.4); border-radius:12px; border: 1px solid var(--border);"></div>
+            <div id="liveTranscript" style="margin-top:25px; text-align:left; font-size:16px; max-height:250px; overflow-y:auto; padding:15px; background:var(--bg-dark); border-radius:12px; border: 1px solid var(--border);"></div>
         </div>
     </div>
 
@@ -235,7 +228,7 @@
             <div id="grammarFeedback" class="feedback-box" style="margin-bottom:15px; display:none;"></div>
 
             <div id="grammarClickArea">
-                <div id="grammarSolution" style="min-height: 50px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border: 1px dashed var(--border);"></div>
+                <div id="grammarSolution" style="min-height: 50px; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border: 1px dashed var(--border);"></div>
                 <div id="grammarOptions" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px;"></div>
             </div>
 
@@ -257,7 +250,7 @@
             </select>
             <textarea id="transInput" rows="3" placeholder="Zadaj text..." data-sk="Zadaj text..." data-en="Enter text..."></textarea>
             <button class="btn btn-primary" style="margin-top:10px;" onclick="window.translateText()" data-sk="PRELOŽIŤ" data-en="TRANSLATE">PRELOŽIŤ</button>
-            <div id="transOutput" style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; min-height:50px;"></div>
+            <div id="transOutput" style="margin-top:20px; padding:15px; background:var(--bg-dark); border-radius:12px; min-height:50px;"></div>
         </div>
     </div>
 
@@ -360,12 +353,12 @@
             <div class="flashcard" id="fcElement">
                 <div class="card-face card-front">
                     <div id="fcImg" style="font-size:60px; margin-bottom: 10px;"></div>
-                    <div id="fcFrontSk" style="font-size:32px; font-weight: 800;"></div>
+                    <div id="fcFrontSk" style="font-size:32px; font-weight: 800; color: var(--text-main);"></div>
                 </div>
                 <div class="card-face card-back">
                     <div id="fcBackRomaji" style="font-size:26px; color:var(--primary); font-weight:bold; margin-bottom:10px;"></div>
                     <div id="fcBackKana" style="font-size:20px; color:var(--success);"></div>
-                    <div id="fcBackKanji" style="font-size:40px; margin-top:15px;"></div>
+                    <div id="fcBackKanji" style="font-size:40px; margin-top:15px; color: var(--text-main);"></div>
                 </div>
             </div>
         </div>
@@ -417,6 +410,7 @@
     </div>
 </div>
 
+<!-- Načítanie skriptov -->
 <script src="js/config.js?v=4.9"></script>
 <script src="js/database.js?v=4.9"></script>
 <script src="js/audio.js?v=4.9"></script>
