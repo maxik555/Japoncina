@@ -1,4 +1,4 @@
-console.log("--- ui.js načítané (Master v5.1 - Unified Modals Fix) ---");
+console.log("--- ui.js načítané (Master v5.2 - Opravený kontrast tabuľky) ---");
 
 let selectedLessonFromMap = 1;
 
@@ -182,17 +182,16 @@ window.openMyDictionary = function(filterLesson = null) {
         dictOverlay.className = 'test-overlay'; 
         
         dictOverlay.innerHTML = `
-            <div class="test-modal" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; text-align: left;">
-                <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+            <div class="test-modal" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; text-align: left; background: var(--bg-card);">
+                <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                     <span id="dictTitle" style="color: var(--text-main); font-weight: 700;">${titleText}</span>
                     <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1;">&times;</button>
                 </h3>
-                <div style="display:flex; gap:10px; margin-bottom:15px;">
-                    <select id="dictLessonFilter" style="flex:1; margin-bottom:0;" onchange="window.renderDictionaryList(document.getElementById('dictSearch').value)">
-                    </select>
-                    <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="flex:2; padding: 12px; margin-bottom: 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);" onkeyup="window.filterDictionary()">
+                <div style="display:flex; gap:10px; margin-bottom:15px; margin-top: 15px;">
+                    <select id="dictLessonFilter" style="flex:1; margin-bottom:0;" onchange="window.renderDictionaryList(document.getElementById('dictSearch').value)"></select>
+                    <input type="text" id="dictSearch" placeholder="${searchPlaceholder}" style="flex:2; padding: 12px; margin-bottom: 0; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); color: var(--text-main);" onkeyup="window.filterDictionary()">
                 </div>
-                <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px;"></div>
+                <div id="dictList" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; border-radius: 8px; border: 1px solid var(--border);"></div>
             </div>
         `;
         document.body.appendChild(dictOverlay);
@@ -251,26 +250,28 @@ window.renderDictionaryList = function(searchQuery = '') {
         return;
     }
 
-    let html = `<table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px;">
-        <thead style="background: rgba(0,0,0,0.02); position: sticky; top: 0; z-index: 1;">
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
-                <th style="padding: 12px;">${isEn ? "Lesson" : "Lekcia"}</th>
-                <th style="padding: 12px;">${isEn ? "Meaning" : "Význam"}</th>
-                <th style="padding: 12px;">Romaji</th>
-                <th style="padding: 12px;">Kana</th>
-                <th style="padding: 12px;">Kanji</th>
+    /* Vylepšené farby tabuľky pre dokonalý kontrast v oboch režimoch */
+    let html = `<table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px; background: var(--bg-card);">
+        <thead style="background: var(--bg-dark); position: sticky; top: 0; z-index: 1;">
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-main);">
+                <th style="padding: 15px 12px;">${isEn ? "Lesson" : "Lekcia"}</th>
+                <th style="padding: 15px 12px;">${isEn ? "Meaning" : "Význam"}</th>
+                <th style="padding: 15px 12px;">Romaji</th>
+                <th style="padding: 15px 12px;">Kana</th>
+                <th style="padding: 15px 12px;">Kanji</th>
             </tr>
         </thead><tbody>`;
     
     words.sort((a, b) => a.lekcia - b.lekcia).forEach(w => {
         let safeAudioText = w.romaji.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let meaning = (isEn && w.en) ? w.en : w.sk;
-        html += `<tr style="border-bottom: 1px solid var(--border); cursor: pointer;" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
+        // Pridaný jemný hover efekt cez onmouseover
+        html += `<tr style="border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-dark)'" onmouseout="this.style.background='transparent'" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
                 <td style="padding:12px; font-weight: bold; color: var(--primary);">${w.lekcia}</td>
-                <td style="padding:12px; font-weight: bold;">${meaning}</td>
-                <td style="padding:12px; color: var(--text-muted);">${w.romaji} 🔊</td>
-                <td style="padding:12px; color: var(--success);">${w.kana !== '-' ? w.kana : ''}</td>
-                <td style="padding:12px; color: var(--warning); font-size: 16px;">${w.kanji !== '-' ? w.kanji : ''}</td>
+                <td style="padding:12px; font-weight: bold; color: var(--text-main);">${meaning}</td>
+                <td style="padding:12px; color: var(--text-muted);">${w.romaji} <span style="opacity: 0.5;">🔊</span></td>
+                <td style="padding:12px; color: var(--success); font-weight: 500;">${w.kana !== '-' ? w.kana : ''}</td>
+                <td style="padding:12px; color: var(--warning); font-size: 16px; font-weight: bold;">${w.kanji !== '-' ? w.kanji : ''}</td>
             </tr>`;
     });
     
@@ -397,10 +398,10 @@ window.renderHistory = function() {
     historyWithIndex.reverse().slice(0, 10).forEach((h) => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: rgba(255, 255, 255, 0.6); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, background 0.2s;`;
+        div.style = `border-left: 4px solid ${h.passed ? 'var(--success)' : 'var(--danger)'}; background: var(--bg-card); padding: 12px 15px; margin-bottom: 10px; border-radius: 12px; font-size: 14px; cursor: pointer; transition: transform 0.2s, filter 0.2s; border: 1px solid var(--border);`;
         
-        div.onmouseover = () => { div.style.background = '#ffffff'; div.style.transform = 'translateY(-2px)'; };
-        div.onmouseout = () => { div.style.background = 'rgba(255, 255, 255, 0.6)'; div.style.transform = 'translateY(0)'; };
+        div.onmouseover = () => { div.style.filter = 'brightness(1.1)'; div.style.transform = 'translateY(-2px)'; };
+        div.onmouseout = () => { div.style.filter = 'none'; div.style.transform = 'translateY(0)'; };
         
         div.onclick = () => window.openHistoryDetails(h.originalIndex);
         
@@ -432,9 +433,9 @@ window.openHistoryDetails = function(index) {
     
     if (h.details && h.details.length > 0) {
         detailsHtml = `
-            <table style="width:100%; border-collapse: collapse; font-size: 14px; text-align: left;">
-                <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 1;">
-                    <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+            <table style="width:100%; border-collapse: collapse; font-size: 14px; text-align: left; background: var(--bg-card);">
+                <thead style="position: sticky; top: 0; background: var(--bg-dark); z-index: 1;">
+                    <tr style="border-bottom: 2px solid var(--border); color: var(--text-main);">
                         <th style="padding: 10px;">${qText}</th>
                         <th style="padding: 10px;">${aText}</th>
                         <th style="padding: 10px;">${cText}</th>
@@ -449,7 +450,7 @@ window.openHistoryDetails = function(index) {
             let answerStyle = isCorrect ? '' : 'text-decoration: line-through; opacity: 0.8;';
             detailsHtml += `
                 <tr style="border-bottom: 1px solid var(--border);">
-                    <td style="padding: 10px; font-weight: bold;">${d.q}</td>
+                    <td style="padding: 10px; font-weight: bold; color: var(--text-main);">${d.q}</td>
                     <td style="padding: 10px; color: ${answerColor}; ${answerStyle}">${d.a}</td>
                     <td style="padding: 10px; color: var(--success); font-weight: bold;">${d.correct}</td>
                 </tr>
@@ -467,7 +468,7 @@ window.openHistoryDetails = function(index) {
                 <span>${titleText} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal; margin-left: 10px;">${h.type} (${h.score}%)</span></span>
                 <button onclick="document.getElementById('overlayHistoryDetails').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
             </h3>
-            <div style="overflow-y: auto; flex-grow: 1; margin-top: 10px;">
+            <div style="overflow-y: auto; flex-grow: 1; margin-top: 10px; border: 1px solid var(--border); border-radius: 8px;">
                 ${detailsHtml}
             </div>
         </div>
