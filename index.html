@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Japonský Tréning - Master Edition</title>
     
-    <!-- OPRAVA 404: Pridaná favicona, aby ju prehliadač nehľadal naprázdno -->
     <link rel="icon" href="icon.png" type="image/png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -13,12 +12,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
-    <!-- Super Poistka pre chýbajúce súbory (zachytí 404 a schová biele loading okno) -->
     <script>
         window.addEventListener('error', function(e) {
             if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
                 var file = e.target.src || e.target.href;
-                alert("⛔ CHYBA 404: Prehliadač nenašiel súbor:\n" + file + "\n\n(Ak ide o fonty .woff2, stačí stlačiť CTRL+F5 pre vymazanie cache prehliadača)");
+                console.error("⛔ CHYBA 404: Prehliadač nenašiel súbor: " + file);
                 var loader = document.getElementById('loadingOverlay');
                 if (loader) loader.style.display = 'none';
             }
@@ -28,12 +26,12 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* OPRAVA: Prekrývacie okná sú teraz vždy jemne tmavé pre lepší kontrast, aj v svetlom režime */
-        .test-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        /* Modály musia mať nepriehľadné pozadie, aby text vždy vynikol (aj pri zlom načítaní témy) */
+        .test-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
         .test-overlay.hidden { display: none !important; }
         
-        /* OPRAVA: Modálne okná majú striktne farbu karty, aby text na nich vynikol */
         .test-modal { background: var(--bg-card); padding: 30px 25px; border-radius: 20px; width: 92%; max-width: 550px; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 60px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto; text-align: center; }
+        
         .btn-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 32px; cursor: pointer; transition: 0.2s;}
         .btn-close:hover { color: var(--danger); }
 
@@ -48,7 +46,7 @@
         .theme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 15px; }
         .theme-btn { padding: 10px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg-dark); color: var(--text-muted); cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.3s; position: relative; overflow: hidden; }
         .theme-btn:hover:not(.locked) { transform: translateY(-2px); border-color: var(--primary); }
-        .theme-btn.active { border-color: var(--primary); color: var(--primary); background: rgba(59, 130, 246, 0.1); }
+        .theme-btn.active { border-color: var(--primary); color: #ffffff; background: var(--primary); }
         .theme-btn.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         .theme-btn.locked::after { content: '🔒 LVL ' attr(data-lvl); position: absolute; bottom: 2px; right: 5px; font-size: 10px; color: var(--danger); }
         
@@ -58,7 +56,6 @@
             transition: opacity 0.5s ease;
         }
 
-        /* Vlastný Chat Overlay pre Sensei */
         #senseiChatBtn {
             position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white;
             padding: 15px 20px; border-radius: 30px; cursor: pointer; box-shadow: var(--shadow-hover);
@@ -69,13 +66,12 @@
             position: fixed; bottom: 80px; right: 20px; width: 320px; background: var(--bg-card);
             border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-hover);
             z-index: 1000; overflow: hidden; display: flex; flex-direction: column;
-            backdrop-filter: blur(15px);
         }
         .chat-header { background: var(--bg-dark); padding: 15px; font-weight: bold; display: flex; justify-content: space-between;}
         .chat-header button { background: none; border: none; color: var(--text-main); cursor: pointer; font-size: 20px;}
         .chat-messages { height: 300px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px 15px; border-radius: 15px; max-width: 80%; font-size: 14px; }
-        .sensei-msg { background: rgba(59, 130, 246, 0.2); align-self: flex-start; border-bottom-left-radius: 0; color: var(--text-main); }
+        .sensei-msg { background: var(--bg-dark); align-self: flex-start; border-bottom-left-radius: 0; color: var(--text-main); }
         .user-msg { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 0; }
         .chat-input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid var(--border); }
         .chat-input-area input { padding: 10px; flex: 1; margin: 0; }
@@ -91,13 +87,13 @@
 
 <div id="auth-container" class="app-container" style="display:none; max-width:400px; margin-top: 50px;">
     <h2 style="text-align:center; font-size: 38px;">🏯 Dódžó</h2>
-    <button class="btn" style="background:white; color:black; margin-bottom:20px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold;" onclick="window.loginWithGoogle()">
+    <button class="btn" style="background:#ffffff; color:#000000; margin-bottom:20px; width:100%; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold;" onclick="window.loginWithGoogle()">
         <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style="width:20px;" alt="Google"> <span data-sk="Prihlásiť cez Google" data-en="Login with Google">Prihlásiť cez Google</span>
     </button>
     <div style="text-align:center; color:var(--text-muted); margin-bottom:20px;" data-sk="— alebo —" data-en="— or —">— alebo —</div>
     <input type="email" id="authEmail" placeholder="Email" data-sk="Email" data-en="Email">
-    <input type="password" id="authPass" placeholder="Heslo" data-sk="Heslo" data-en="Password">
-    <button class="btn btn-primary" onclick="window.loginUser()" data-sk="Vstúpiť" data-en="Enter">Vstúpiť</button>
+    <input type="password" id="authPass" placeholder="Heslo" data-sk="Heslo" data-en="Password" style="margin-top: 10px;">
+    <button class="btn btn-primary" style="margin-top: 15px;" onclick="window.loginUser()" data-sk="Vstúpiť" data-en="Enter">Vstúpiť</button>
     <button class="btn btn-outline" style="margin-top:10px;" onclick="window.registerUser()" data-sk="Vytvoriť účet" data-en="Create Account">Vytvoriť účet</button>
     <p id="authError" style="color:var(--danger); text-align:center; margin-top:15px; font-weight: bold;"></p>
 </div>
@@ -154,13 +150,13 @@
         </div>
 
         <div id="setupQuiz" class="setup-section hidden info-box">
-            <div class="toggle-group" style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <button class="btn btn-outline active" id="btnQuizSingle" onclick="window.setLessonMode('single', 'quiz')" data-sk="Jedna lekcia" data-en="Single Lesson">Jedna lekcia</button>
                 <button class="btn btn-outline" id="btnQuizRange" onclick="window.setLessonMode('range', 'quiz')" data-sk="Viac lekcií" data-en="Multiple Lessons">Viac lekcií</button>
             </div>
             <div id="quizSingleBox" style="margin-bottom:15px;"><select id="quizSingle"></select></div>
             <div id="quizRangeBox" class="hidden" style="display:flex; gap:10px; margin-bottom:15px;"><select id="quizFrom"></select><select id="quizTo"></select></div>
-            <input type="number" id="quizCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count" style="margin-bottom:15px;">
+            <input type="number" id="quizCount" value="10" placeholder="Počet slov" data-sk="Počet slov" data-en="Word count" style="margin-bottom: 15px;">
             <button class="btn btn-warning" onclick="window.startTraining('quiz')" data-sk="SPUSTIŤ KVÍZ" data-en="START QUIZ">SPUSTIŤ KVÍZ</button>
         </div>
 
@@ -169,7 +165,7 @@
                 <option value="sk2ja" data-sk="Slovenčina ➡️ Japončina" data-en="English ➡️ Japanese">Slovenčina ➡️ Japončina</option>
                 <option value="ja2sk" data-sk="Japončina ➡️ Slovenčina" data-en="Japanese ➡️ English">Japončina ➡️ Slovenčina</option>
             </select>
-            <div class="toggle-group" style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <button class="btn btn-outline active" id="btnFreeSingle" onclick="window.setLessonMode('single', 'free')" data-sk="Jedna lekcia" data-en="Single Lesson">Jedna lekcia</button>
                 <button class="btn btn-outline" id="btnFreeRange" onclick="window.setLessonMode('range', 'free')" data-sk="Viac lekcií" data-en="Multiple Lessons">Viac lekcií</button>
             </div>
@@ -189,14 +185,14 @@
         <h2 data-sk="⛩️ AI Čitáreň" data-en="⛩️ AI Stories">⛩️ AI Čitáreň</h2>
         <button class="btn-ai" onclick="window.generateAIStory()" data-sk="GENEROVAŤ NOVÝ PRÍBEH" data-en="GENERATE NEW STORY">GENEROVAŤ NOVÝ PRÍBEH</button>
         <div id="storyContainer" class="hidden">
-            <div class="story-box" id="storyContent" style="margin-top:20px; padding:20px; background:var(--bg-card); border-radius:12px;"></div>
-            <div id="storyTranslation" style="margin-top:20px; padding:20px; background:rgba(0,0,0,0.05); border-radius:12px; font-style:italic; color: var(--primary); border-left: 4px solid var(--primary);"></div>
+            <div class="story-box info-box" id="storyContent" style="margin-top:20px;"></div>
+            <div id="storyTranslation" style="margin-top:20px; padding:20px; background:var(--bg-dark); border-radius:12px; font-style:italic; color: var(--primary); border-left: 4px solid var(--primary);"></div>
         </div>
     </div>
 
     <div id="tab-live" class="tab hidden">
         <h2 data-sk="🎙️ Sensei Live" data-en="🎙️ Sensei Live">🎙️ Sensei Live</h2>
-        <div class="info-box" style="text-align:center; padding: 30px;">
+        <div class="info-box" style="text-align:center;">
             <p id="liveStatus" style="font-weight:bold; color:var(--text-muted);" data-sk="Pripravený na rozhovor..." data-en="Ready to talk...">Pripravený na rozhovor...</p>
             <button id="micBtn" class="mic-btn" onclick="window.toggleLiveSensei()">🎤</button>
             <div id="liveTranscript" style="margin-top:25px; text-align:left; font-size:16px; max-height:250px; overflow-y:auto; padding:15px; background:var(--bg-dark); border-radius:12px; border: 1px solid var(--border);"></div>
@@ -211,7 +207,7 @@
             <button class="btn-nav" id="btnGrammarModeWrite" onclick="window.setGrammarMode('write')" data-sk="⌨️ Písanie" data-en="⌨️ Typing">⌨️ Písanie</button>
         </div>
 
-        <div id="grammarSetup" class="info-box" style="padding: 30px; text-align: center;">
+        <div id="grammarSetup" class="info-box" style="text-align: center;">
             <label style="display:block; margin-bottom: 10px; color: var(--text-muted);" data-sk="VYBER LEKCIU:" data-en="SELECT LESSON:">VYBER LEKCIU:</label>
             <select id="grammarLessonSelect" style="margin-bottom: 20px;"></select>
             <button class="btn btn-primary" onclick="window.startGrammarTest()" data-sk="SPUSTIŤ VÝZVU" data-en="START CHALLENGE">SPUSTIŤ VÝZVU</button>
@@ -228,7 +224,7 @@
             <div id="grammarFeedback" class="feedback-box" style="margin-bottom:15px; display:none;"></div>
 
             <div id="grammarClickArea">
-                <div id="grammarSolution" style="min-height: 50px; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border: 1px dashed var(--border);"></div>
+                <div id="grammarSolution" style="min-height: 50px; background: var(--bg-dark); border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; border: 1px dashed var(--border);"></div>
                 <div id="grammarOptions" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px;"></div>
             </div>
 
@@ -335,10 +331,10 @@
 </div>
 
 <div id="overlayLessonChoice" class="test-overlay hidden">
-    <div class="test-modal" style="max-width: 400px;">
+    <div class="test-modal" style="max-width: 400px; background: var(--bg-card); color: var(--text-main);">
         <button class="btn-close" onclick="window.closeOverlay('overlayLessonChoice')">&times;</button>
-            <h2 id="choiceTitle" style="margin-bottom: 25px; color: var(--text-main); font-size: 34px; font-weight: 800; letter-spacing: -1px;">Lekcia X</h2>       
-            <div style="display:flex; flex-direction:column; gap:15px;">
+        <h2 id="choiceTitle" style="margin-bottom: 25px; color: var(--text-main); font-size: 34px; font-weight: 800; letter-spacing: -1px;">Lekcia X</h2>       
+        <div style="display:flex; flex-direction:column; gap:15px;">
             <button class="btn btn-primary" onclick="window.startLessonFromMap('cards')" data-sk="🎴 TRÉNOVAŤ KARTIČKY" data-en="🎴 FLASHCARDS">🎴 TRÉNOVAŤ KARTIČKY</button>
             <button class="btn btn-outline" onclick="window.startLessonFromMap('list')" data-sk="📖 ZOZNAM SLOVÍČOK" data-en="📖 WORD LIST">📖 ZOZNAM SLOVÍČOK</button>
         </div>
@@ -346,7 +342,7 @@
 </div>
 
 <div id="overlayFlashcards" class="test-overlay hidden">
-    <div class="test-modal" style="max-width: 550px;">
+    <div class="test-modal" style="max-width: 550px; background: var(--bg-card); color: var(--text-main);">
         <button class="btn-close" onclick="window.closeOverlay('overlayFlashcards')">&times;</button>
         <div class="test-header"><span id="fcProgress"></span></div>
         <div class="flashcard-container" onclick="window.flipCard()">
@@ -370,7 +366,7 @@
 </div>
 
 <div id="trainRun" class="test-overlay hidden">
-    <div class="test-modal">
+    <div class="test-modal" style="background: var(--bg-card); color: var(--text-main);">
         <button class="btn-close" onclick="window.abortTraining()">&times;</button>
         <div class="test-header" style="margin-bottom: 20px;"><span id="testProgress" style="font-weight: bold; font-size: 16px;"></span><span id="testScoreDisplay" style="float:right;"></span></div>
 
@@ -378,7 +374,7 @@
             <div id="quizTimerBar" class="timer-bar"></div>
         </div>
 
-        <div id="twWord" class="word-display" style="margin:20px 0 30px 0; font-size:36px; font-weight:bold;"></div>
+        <div id="twWord" class="word-display" style="margin:20px 0 30px 0; font-size:36px; font-weight:bold; color: var(--text-main);"></div>
         <div id="twFeedback" class="feedback-box" style="margin-bottom:20px;"></div>
 
         <div id="classicInputArea">
@@ -411,16 +407,16 @@
 </div>
 
 <!-- Načítanie skriptov -->
-<script src="js/config.js?v=4.9"></script>
-<script src="js/database.js?v=4.9"></script>
-<script src="js/audio.js?v=4.9"></script>
-<script src="js/ui.js?v=4.9"></script>
-<script src="js/train-utils.js?v=4.9"></script>
-<script src="js/train-grammar.js?v=4.9"></script>
-<script src="js/train-vocab.js?v=4.9"></script>
-<script src="js/ai-content.js?v=4.9"></script>
-<script src="js/sensei.js?v=4.9"></script>
-<script src="js/auth.js?v=4.9"></script>
+<script src="js/config.js?v=5.0"></script>
+<script src="js/database.js?v=5.0"></script>
+<script src="js/audio.js?v=5.0"></script>
+<script src="js/ui.js?v=5.0"></script>
+<script src="js/train-utils.js?v=5.0"></script>
+<script src="js/train-grammar.js?v=5.0"></script>
+<script src="js/train-vocab.js?v=5.0"></script>
+<script src="js/ai-content.js?v=5.0"></script>
+<script src="js/sensei.js?v=5.0"></script>
+<script src="js/auth.js?v=5.0"></script>
 
 </body>
 </html>
