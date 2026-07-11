@@ -1,6 +1,26 @@
-console.log("--- ui.js načítané (Master v5.2 - Opravený kontrast tabuľky) ---");
+console.log("--- ui.js načítané (Master v6.0 - Bezpečný kontrast modálov a Custom Alerts) ---");
 
 let selectedLessonFromMap = 1;
+
+// Vlastná funkcia na bezpečné upozornenia, aby sme nepoužívali natívny blokujúci alert()
+window.showAppAlert = function(msg) {
+    let alertOverlay = document.getElementById('customAlertOverlay');
+    if (!alertOverlay) {
+        alertOverlay = document.createElement('div');
+        alertOverlay.id = 'customAlertOverlay';
+        alertOverlay.className = 'test-overlay';
+        alertOverlay.style.zIndex = '9999';
+        alertOverlay.innerHTML = `
+            <div class="test-modal" style="max-width: 400px; text-align: center; background: var(--bg-card, #ffffff); border: 1px solid var(--border, #ccc);">
+                <p id="customAlertMsg" style="font-size: 16px; margin-bottom: 20px; color: var(--text-main, #000);"></p>
+                <button class="btn btn-primary" onclick="document.getElementById('customAlertOverlay').style.display='none'">OK</button>
+            </div>
+        `;
+        document.body.appendChild(alertOverlay);
+    }
+    document.getElementById('customAlertMsg').innerText = msg;
+    alertOverlay.style.display = 'flex';
+};
 
 window.switchTab = function(t) {
     document.querySelectorAll('.tab, .btn-nav').forEach(el => el.classList.remove('active'));
@@ -126,7 +146,7 @@ window.renderMap = function() {
             html += `<div class="map-node unlocked" onclick="window.openLessonChoice(${i})">${lessonText}${i}</div>`;
         } else {
             let msg = isEn ? "This lesson is locked yet!" : "Táto lekcia je zatiaľ zamknutá!";
-            html += `<div class="map-node" onclick="alert('${msg}')">${lessonText}${i}</div>`;
+            html += `<div class="map-node" onclick="window.showAppAlert('${msg}')">${lessonText}${i}</div>`;
         }
     }
     mapContainer.innerHTML = html;
@@ -181,10 +201,11 @@ window.openMyDictionary = function(filterLesson = null) {
         dictOverlay.id = 'overlayDictionary';
         dictOverlay.className = 'test-overlay'; 
         
+        // Zabezpečujeme fallback farby (napr. #ffffff a #000) priamo v štýle, keby CSS zlyhalo.
         dictOverlay.innerHTML = `
-            <div class="test-modal" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; text-align: left; background: var(--bg-card);">
+            <div class="test-modal" style="max-width: 800px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; text-align: left; background: var(--bg-card, #ffffff); color: var(--text-main, #000000);">
                 <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 15px;">
-                    <span id="dictTitle" style="color: var(--text-main); font-weight: 700;">${titleText}</span>
+                    <span id="dictTitle" style="color: var(--text-main, #000000); font-weight: 700;">${titleText}</span>
                     <button onclick="document.getElementById('overlayDictionary').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1;">&times;</button>
                 </h3>
                 <div style="display:flex; gap:10px; margin-bottom:15px; margin-top: 15px;">
@@ -250,10 +271,9 @@ window.renderDictionaryList = function(searchQuery = '') {
         return;
     }
 
-    /* Vylepšené farby tabuľky pre dokonalý kontrast v oboch režimoch */
-    let html = `<table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px; background: var(--bg-card);">
-        <thead style="background: var(--bg-dark); position: sticky; top: 0; z-index: 1;">
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-main);">
+    let html = `<table style="width:100%; font-size:14px; border-collapse: collapse; text-align: left; min-width: 600px; background: var(--bg-card, #ffffff);">
+        <thead style="background: var(--bg-dark, #f1f5f9); position: sticky; top: 0; z-index: 1;">
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-main, #000000);">
                 <th style="padding: 15px 12px;">${isEn ? "Lesson" : "Lekcia"}</th>
                 <th style="padding: 15px 12px;">${isEn ? "Meaning" : "Význam"}</th>
                 <th style="padding: 15px 12px;">Romaji</th>
@@ -265,10 +285,10 @@ window.renderDictionaryList = function(searchQuery = '') {
     words.sort((a, b) => a.lekcia - b.lekcia).forEach(w => {
         let safeAudioText = w.romaji.replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let meaning = (isEn && w.en) ? w.en : w.sk;
-        // Pridaný jemný hover efekt cez onmouseover
-        html += `<tr style="border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-dark)'" onmouseout="this.style.background='transparent'" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
+        // Pridaný jemný hover efekt, farba textu má default čiernu ako poistku.
+        html += `<tr style="border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-dark, #f1f5f9)'" onmouseout="this.style.background='transparent'" onclick="if(typeof playAudioText === 'function') playAudioText('${safeAudioText}', 'ja-JP')">
                 <td style="padding:12px; font-weight: bold; color: var(--primary);">${w.lekcia}</td>
-                <td style="padding:12px; font-weight: bold; color: var(--text-main);">${meaning}</td>
+                <td style="padding:12px; font-weight: bold; color: var(--text-main, #000000);">${meaning}</td>
                 <td style="padding:12px; color: var(--text-muted);">${w.romaji} <span style="opacity: 0.5;">🔊</span></td>
                 <td style="padding:12px; color: var(--success); font-weight: 500;">${w.kana !== '-' ? w.kana : ''}</td>
                 <td style="padding:12px; color: var(--warning); font-size: 16px; font-weight: bold;">${w.kanji !== '-' ? w.kanji : ''}</td>
@@ -319,9 +339,9 @@ window.setTheme = function(themeName) {
     let lvl = Math.floor((window.state.xp || 0) / 500) + 1;
     let isEn = window.currentLang === 'en';
     
-    if (themeName === 'konoha' && lvl < 5) return alert(isEn ? "You need to reach Level 5!" : "Musíš dosiahnuť Level 5!");
-    if (themeName === 'sharingan' && lvl < 10) return alert(isEn ? "You need to reach Level 10!" : "Musíš dosiahnuť Level 10!");
-    if (themeName === 'nara' && lvl < 15) return alert(isEn ? "You need to reach Level 15!" : "Musíš dosiahnuť Level 15!");
+    if (themeName === 'konoha' && lvl < 5) return window.showAppAlert(isEn ? "You need to reach Level 5!" : "Musíš dosiahnuť Level 5!");
+    if (themeName === 'sharingan' && lvl < 10) return window.showAppAlert(isEn ? "You need to reach Level 10!" : "Musíš dosiahnuť Level 10!");
+    if (themeName === 'nara' && lvl < 15) return window.showAppAlert(isEn ? "You need to reach Level 15!" : "Musíš dosiahnuť Level 15!");
 
     document.body.setAttribute('data-theme', themeName);
     window.state.theme = themeName;
@@ -433,9 +453,9 @@ window.openHistoryDetails = function(index) {
     
     if (h.details && h.details.length > 0) {
         detailsHtml = `
-            <table style="width:100%; border-collapse: collapse; font-size: 14px; text-align: left; background: var(--bg-card);">
-                <thead style="position: sticky; top: 0; background: var(--bg-dark); z-index: 1;">
-                    <tr style="border-bottom: 2px solid var(--border); color: var(--text-main);">
+            <table style="width:100%; border-collapse: collapse; font-size: 14px; text-align: left; background: var(--bg-card, #ffffff);">
+                <thead style="position: sticky; top: 0; background: var(--bg-dark, #f1f5f9); z-index: 1;">
+                    <tr style="border-bottom: 2px solid var(--border); color: var(--text-main, #000000);">
                         <th style="padding: 10px;">${qText}</th>
                         <th style="padding: 10px;">${aText}</th>
                         <th style="padding: 10px;">${cText}</th>
@@ -450,7 +470,7 @@ window.openHistoryDetails = function(index) {
             let answerStyle = isCorrect ? '' : 'text-decoration: line-through; opacity: 0.8;';
             detailsHtml += `
                 <tr style="border-bottom: 1px solid var(--border);">
-                    <td style="padding: 10px; font-weight: bold; color: var(--text-main);">${d.q}</td>
+                    <td style="padding: 10px; font-weight: bold; color: var(--text-main, #000000);">${d.q}</td>
                     <td style="padding: 10px; color: ${answerColor}; ${answerStyle}">${d.a}</td>
                     <td style="padding: 10px; color: var(--success); font-weight: bold;">${d.correct}</td>
                 </tr>
@@ -462,9 +482,10 @@ window.openHistoryDetails = function(index) {
         detailsHtml = `<p style="text-align:center; color: var(--text-muted); padding: 30px 0;">${isEn ? "No detailed history available for this older test." : "Pre tento starší test nie sú uložené detailné záznamy."}</p>`;
     }
 
+    // Bezpečný kontrast aj pre modal
     overlay.innerHTML = `
-        <div class="test-modal" style="max-width: 650px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; padding: 25px; text-align: left;">
-            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 15px;">
+        <div class="test-modal" style="max-width: 650px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; padding: 25px; text-align: left; background: var(--bg-card, #ffffff); color: var(--text-main, #000000);">
+            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; color: var(--text-main, #000000); border-bottom: 1px solid var(--border); padding-bottom: 15px;">
                 <span>${titleText} <span style="font-size: 14px; color: var(--text-muted); font-weight: normal; margin-left: 10px;">${h.type} (${h.score}%)</span></span>
                 <button onclick="document.getElementById('overlayHistoryDetails').style.display='none'" style="background:none; border:none; color:var(--text-muted); font-size:32px; cursor:pointer; padding:0; line-height:1; transition: 0.2s;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
             </h3>
